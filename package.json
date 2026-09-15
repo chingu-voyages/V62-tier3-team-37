@@ -1,0 +1,22 @@
+{
+  "name": "voyage-tasks",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Root JavaScript tooling for Voyage Tasks (Next.js frontend + Laravel API backend).",
+  "scripts": {
+    "prepare": "husky",
+    "lint:staged": "lint-staged",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "biome check ."
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,mjs,cjs,json,jsonc,css}": "biome check --write --no-errors-on-unmatched",
+    "*.php": "backend/vendor/bin/pint"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.13",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1"
+  }
+}
