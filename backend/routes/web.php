@@ -3,5 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return response()->json(['message' => 'Voyage API']);
+    return ['Laravel' => app()->version()];
 });
+
+require __DIR__.'/auth.php';
