@@ -6,12 +6,13 @@ use App\Enums\UserGender;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
@@ -30,6 +31,7 @@ class User extends Authenticatable
         'password',
         'phone',
         'role',
+        'terms_accepted',
     ];
 
     /**
@@ -39,6 +41,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 
     /**
@@ -49,15 +52,13 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'first_name' => 'string',
-            'last_name' => 'string',
             'birth_date' => 'date',
-            'phone' => 'string',
-            'password' => 'hashed',
-            'email_verified' => 'boolean',
+            'email_verified_at' => 'datetime',
             'gender' => UserGender::class,
             'role' => UserRole::class,
             'status' => UserStatus::class,
+            'terms_accepted' => 'boolean',
+            'password' => 'hashed',
         ];
     }
 }
