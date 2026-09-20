@@ -9,7 +9,7 @@ export default function HomePage() {
 
   return (
     <main>
-      <h1>Zustand Test</h1>
+      <h1 className="">Zustand Test</h1>
       <p>Count: {count}</p>
       <button type="button" onClick={increment}>
         +
