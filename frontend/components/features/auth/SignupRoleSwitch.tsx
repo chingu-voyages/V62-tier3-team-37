@@ -25,7 +25,7 @@ export function SignupRoleSwitch({ role, onRoleChange }: SignupRoleSwitchProps) 
     <>
       Signing up as a{" "}
       <span className="font-semibold text-foreground">{SIGNUP_ROLE_LABELS[role]}</span>.{" "}
-      {isPatient ? "Not a patient?" : "Not a professional?"}{" "}
+      {isPatient ? "Not a patient?" : "Not a healthcare professional?"}{" "}
       <button
         type="button"
         onClick={() => onRoleChange(nextRole)}

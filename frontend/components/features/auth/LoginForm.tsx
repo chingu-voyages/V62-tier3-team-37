@@ -1,9 +1,12 @@
 ﻿"use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
+import { useLoginMutation } from "@/hooks/use-auth-mutations";
+import { getApiErrorMessage } from "@/lib/api";
 import { firstTouchedError } from "./field-error";
 import { PasswordField } from "./PasswordField";
 import { TextField } from "./TextField";
@@ -24,6 +27,9 @@ function passwordError(value: string): string | undefined {
 }
 
 export function LoginForm() {
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const loginMutation = useLoginMutation();
+
   const form = useForm({
     defaultValues: {
       email: "",
@@ -31,7 +37,18 @@ export function LoginForm() {
     },
 
     onSubmit: ({ value }) => {
-      console.info("Login payload", value);
+      setSubmitError(null);
+      loginMutation.mutate(
+        { email: value.email, password: value.password, remember: false },
+        {
+          onSuccess: () => {
+            console.log("Login succeeded");
+          },
+          onError: (error) => {
+            setSubmitError(getApiErrorMessage(error));
+          },
+        },
+      );
     },
   });
 
@@ -57,7 +74,7 @@ export function LoginForm() {
             label="Email address"
             type="email"
             autoComplete="email"
-            placeholder="John.smith@example.com"
+            placeholder="Enter your email"
             value={field.state.value}
             error={firstTouchedError(field.state.meta)}
             onChange={(value) => field.handleChange(value)}
@@ -95,8 +112,22 @@ export function LoginForm() {
         </button>
       </div>
 
-      <Button type="submit" size="lg" className="mt-1 h-11 w-full">
-        Log in
+      {submitError ? (
+        <p
+          role="alert"
+          className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
+          {submitError}
+        </p>
+      ) : null}
+
+      <Button
+        type="submit"
+        size="lg"
+        className="mt-1 h-11 w-full"
+        disabled={loginMutation.isPending}
+      >
+        {loginMutation.isPending ? "Logging in…" : "Log in"}
       </Button>
     </form>
   );

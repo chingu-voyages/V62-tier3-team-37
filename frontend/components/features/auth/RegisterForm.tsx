@@ -2,6 +2,7 @@
 
 import { useForm } from "@tanstack/react-form";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useRegisterMutation } from "@/hooks/use-auth-mutations";
+import { getApiErrorMessage } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/use-auth-store";
 import { AuthCard } from "./AuthCard";
 import { firstTouchedError } from "./field-error";
 import { PasswordField } from "./PasswordField";
@@ -74,6 +79,11 @@ type RegisterFormProps = {
 export function RegisterForm({ tabs }: RegisterFormProps) {
   const [role, setRole] = useState<SignupRole>("PATIENT");
   const [pendingSignup, setPendingSignup] = useState<RegisterValues | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const router = useRouter();
+  const setSignupContext = useAuthStore((state) => state.setSignupContext);
+  const registerMutation = useRegisterMutation();
+  const isRegistering = registerMutation.isPending;
 
   const form = useForm({
     defaultValues: {
@@ -92,11 +102,39 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
   });
 
   function handleConfirm() {
-    if (!pendingSignup) return;
-    // TEMPORARY development behavior — actual API integration lands in a later
-    // step: PATIENT -> POST /register/patient, HCP -> POST /register/hcp.
-    console.info("Register confirmation (no API call yet)", { role, ...pendingSignup });
-    setPendingSignup(null);
+    if (!pendingSignup || isRegistering) return;
+    setSubmitError(null);
+
+    registerMutation.mutate(
+      {
+        role,
+        payload: {
+          first_name: pendingSignup.firstName,
+          last_name: pendingSignup.lastName,
+          email: pendingSignup.email,
+          date_of_birth: pendingSignup.dateOfBirth,
+          gender: pendingSignup.gender,
+          password: pendingSignup.password,
+          password_confirmation: pendingSignup.confirmPassword,
+        },
+      },
+      {
+        onSuccess: () => {
+          setSignupContext({
+            email: pendingSignup.email,
+            firstName: pendingSignup.firstName,
+            lastName: pendingSignup.lastName,
+            role,
+          });
+          setPendingSignup(null);
+          router.push("/auth/otp");
+        },
+        onError: (error) => {
+          setSubmitError(getApiErrorMessage(error));
+          setPendingSignup(null);
+        },
+      },
+    );
   }
 
   return (
@@ -189,29 +227,51 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
             )}
           </form.Field>
 
-          <form.Field name="gender">
-            {(field) => (
-              <div className="space-y-1.5">
-                <span className="text-sm font-medium">Gender</span>
-                <RadioGroup
-                  value={field.state.value}
-                  onValueChange={(value) => field.handleChange(value as RegisterValues["gender"])}
-                  className="grid gap-2 sm:grid-cols-2"
-                >
-                  {GENDERS.map((option) => (
-                    <div
-                      key={option.value}
-                      className="flex items-center gap-2.5 rounded-lg border px-3 py-2.5 has-data-[state=checked]:border-ring"
-                    >
-                      <RadioGroupItem id={`gender-${option.value}`} value={option.value} />
-                      <Label htmlFor={`gender-${option.value}`} className="text-sm font-medium">
-                        {option.label}
-                      </Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-            )}
+          <form.Field
+            name="gender"
+            validators={{
+              onChange: ({ value }) => (value.length === 0 ? "Gender is required" : undefined),
+            }}
+          >
+            {(field) => {
+              const error = firstTouchedError(field.state.meta);
+              return (
+                <div className="space-y-1.5" aria-describedby={error ? "gender-error" : undefined}>
+                  <span className="text-sm font-medium">Gender</span>
+                  <RadioGroup
+                    value={field.state.value}
+                    onValueChange={(value) => field.handleChange(value as RegisterValues["gender"])}
+                    className="grid gap-2 sm:grid-cols-2"
+                  >
+                    {GENDERS.map((option) => (
+                      <div
+                        key={option.value}
+                        className={cn(
+                          "flex items-center gap-2.5 rounded-lg border px-3 py-2.5",
+                          error
+                            ? "border-destructive has-data-[state=checked]:border-destructive"
+                            : "has-data-[state=checked]:border-ring",
+                        )}
+                      >
+                        <RadioGroupItem
+                          id={`gender-${option.value}`}
+                          value={option.value}
+                          aria-invalid={error ? true : undefined}
+                        />
+                        <Label htmlFor={`gender-${option.value}`} className="text-sm font-medium">
+                          {option.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                  {error ? (
+                    <p id="gender-error" className="text-sm text-destructive">
+                      {error}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            }}
           </form.Field>
 
           <form.Field
@@ -301,6 +361,15 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
             )}
           </form.Field>
 
+          {submitError ? (
+            <p
+              role="alert"
+              className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {submitError}
+            </p>
+          ) : null}
+
           <Button type="submit" size="lg" className="mt-1 h-11 w-full">
             Create account
           </Button>
@@ -327,8 +396,8 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
                 Cancel
               </Button>
             </DialogClose>
-            <Button onClick={handleConfirm} className="p-4 w-[60%]">
-              Confirm
+            <Button onClick={handleConfirm} className="p-4 w-[60%]" disabled={isRegistering}>
+              {isRegistering ? "Creating account…" : "Confirm"}
             </Button>
           </DialogFooter>
         </DialogContent>
