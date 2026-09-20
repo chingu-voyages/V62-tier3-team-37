@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -60,5 +61,10 @@ class User extends Authenticatable implements MustVerifyEmail
             'terms_accepted' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    public function emailVerificationOtp(): HasOne
+    {
+        return $this->hasOne(EmailVerificationOtp::class);
     }
 }

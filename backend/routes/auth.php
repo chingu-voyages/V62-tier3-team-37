@@ -9,6 +9,8 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterPatientController;
 use App\Http\Controllers\Auth\RegisterHCPController;
+use App\Http\Controllers\Auth\ResendEmailOtpController;
+use App\Http\Controllers\Auth\VerifyEmailOtpController;
 
 Route::post('/register/patient', [RegisterPatientController::class, 'store'])
     ->middleware('guest')
@@ -30,14 +32,28 @@ Route::post('/reset-password', [NewPasswordController::class, 'store'])
     ->middleware('guest')
     ->name('password.store');
 
-Route::get('/verify-email/{id}/{hash}', VerifyEmailController::class)
-    ->middleware(['signed', 'throttle:6,1'])
-    ->name('verification.verify');
+// Route::get('/verify-email/{id}/{hash}', VerifyEmailController::class)
+//     ->middleware(['signed', 'throttle:6,1'])
+//     ->name('verification.verify');
 
-Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
-    ->middleware(['auth:sanctum', 'throttle:6,1'])
-    ->name('verification.send');
+// Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
+//     ->middleware(['auth:sanctum', 'throttle:6,1'])
+//     ->name('verification.send');
 
+Route::post('/email/otp/verify',VerifyEmailOtpController::class)
+    ->middleware([
+        'auth:sanctum',
+        'throttle:10,1',
+    ])
+    ->name('verification.otp.verify');
+
+Route::post('/email/otp/resend',ResendEmailOtpController::class)
+    ->middleware([
+        'auth:sanctum',
+        'throttle:3,5',
+    ])
+    ->name('verification.otp.resend');
+    
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
     ->middleware('auth:sanctum')
     ->name('logout');
