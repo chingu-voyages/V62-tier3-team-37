@@ -46,4 +46,32 @@ class RegistrationTest extends TestCase
             'role' => 'HCP',
         ]);
     }
+
+    public function test_register_returns_json_conflict_when_already_authenticated(): void
+    {
+        $this->post('/register/patient', [
+            'first_name' => 'Test',
+            'last_name' => 'User',
+            'birth_date' => '1995-05-15',
+            'gender' => 'MALE',
+            'email' => 'test@example.com',
+            'password' => 'Password1!',
+            'password_confirmation' => 'Password1!',
+            'terms_accepted' => true,
+        ]);
+
+        $response = $this->postJson('/register/patient', [
+            'first_name' => 'Another',
+            'last_name' => 'User',
+            'birth_date' => '1995-05-15',
+            'gender' => 'MALE',
+            'email' => 'other@example.com',
+            'password' => 'Password1!',
+            'password_confirmation' => 'Password1!',
+            'terms_accepted' => true,
+        ]);
+
+        $response->assertStatus(409)
+            ->assertJson(['message' => 'You are already authenticated. Please log out before registering a new account.']);
+    }
 }

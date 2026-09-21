@@ -8,12 +8,21 @@ export type SignupContext = {
   role: SignupRole | null;
 };
 
+const EMPTY_SIGNUP: SignupContext = {
+  email: null,
+  firstName: null,
+  lastName: null,
+  role: null,
+};
+
 type AuthStore = {
   signup: SignupContext;
   setSignupContext: (context: SignupContext) => void;
+  resetSignupContext: () => void;
 };
 
 export const useAuthStore = create<AuthStore>((set) => ({
-  signup: { email: null, firstName: null, lastName: null, role: null },
+  signup: EMPTY_SIGNUP,
   setSignupContext: (signup) => set({ signup }),
+  resetSignupContext: () => set({ signup: EMPTY_SIGNUP }),
 }));

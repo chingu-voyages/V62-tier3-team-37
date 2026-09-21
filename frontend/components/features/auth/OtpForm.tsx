@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { useResendOtpMutation, useVerifyOtpMutation } from "@/hooks/use-auth-mutations";
+import {
+  useLogoutMutation,
+  useResendOtpMutation,
+  useVerifyOtpMutation,
+} from "@/hooks/use-auth-mutations";
 import { getApiErrorMessage } from "@/lib/api";
 import { useAuthStore } from "@/store/use-auth-store";
 
@@ -34,16 +38,38 @@ export function OtpForm() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const email = useAuthStore((state) => state.signup.email);
+  const resetSignupContext = useAuthStore((state) => state.resetSignupContext);
   const router = useRouter();
 
   const verifyMutation = useVerifyOtpMutation();
   const resendMutation = useResendOtpMutation();
+  const logoutMutation = useLogoutMutation();
 
   const busy = verifyMutation.isPending || resendMutation.isPending;
+  const loggingOut = logoutMutation.isPending;
+
+  function handleBackToSignIn() {
+    if (loggingOut) return;
+
+    logoutMutation.mutate(undefined, {
+      onSettled: () => {
+        resetSignupContext();
+        router.push("/auth");
+      },
+    });
+  }
 
   useEffect(() => {
     if (!email) router.replace("/auth");
   }, [email, router]);
+
+  useEffect(() => {
+    const handlePopState = () => resetSignupContext();
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [resetSignupContext]);
 
   const code = digits.join("");
   const complete = code.length === OTP_LENGTH;
@@ -106,9 +132,14 @@ export function OtpForm() {
       footer={
         <Link
           href="/auth"
+          aria-disabled={loggingOut}
+          onClick={(event) => {
+            event.preventDefault();
+            handleBackToSignIn();
+          }}
           className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-muted-foreground"
         >
-          Back to sign in
+          {loggingOut ? "Logging out…" : "Back to sign in"}
         </Link>
       }
     >

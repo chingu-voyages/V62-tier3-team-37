@@ -36,20 +36,27 @@ function getCookie(name: string): string | undefined {
   }
 }
 
+async function fetchCsrfCookie(): Promise<void> {
+  if (csrfRequest) {
+    await csrfRequest;
+    return;
+  }
+
+  csrfRequest = fetch(`${API_BASE_URL}${CSRF_COOKIE_URL}`, { credentials: "include" })
+    .then(() => undefined)
+    .catch(() => {})
+    .finally(() => {
+      csrfRequest = null;
+    });
+
+  await csrfRequest;
+}
+
 async function ensureCsrfToken(): Promise<string | undefined> {
   const existing = getCookie(CSRF_COOKIE);
   if (existing) return existing;
 
-  if (!csrfRequest) {
-    csrfRequest = fetch(`${API_BASE_URL}${CSRF_COOKIE_URL}`, { credentials: "include" })
-      .then(() => undefined)
-      .catch(() => {})
-      .finally(() => {
-        csrfRequest = null;
-      });
-  }
-
-  await csrfRequest;
+  await fetchCsrfCookie();
   return getCookie(CSRF_COOKIE);
 }
 
@@ -90,24 +97,34 @@ type RequestOptions = Omit<RequestInit, "body"> & {
 };
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const token = await ensureCsrfToken();
-  const headers = new Headers(options.headers);
-
   const hasBody = options.body !== undefined;
-  if (hasBody) {
-    headers.set("Content-Type", "application/json");
-  }
-  if (token) {
-    headers.set("X-XSRF-TOKEN", token);
-  }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    method: options.method ?? "GET",
-    credentials: "include",
-    headers,
-    body: hasBody ? JSON.stringify(options.body) : undefined,
-  });
+  const send = async (token: string | undefined): Promise<Response> => {
+    const headers = new Headers(options.headers);
+    if (hasBody) {
+      headers.set("Content-Type", "application/json");
+    }
+    if (token) {
+      headers.set("X-XSRF-TOKEN", token);
+    } else {
+      headers.delete("X-XSRF-TOKEN");
+    }
+    return fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      method: options.method ?? "GET",
+      credentials: "include",
+      headers,
+      body: hasBody ? JSON.stringify(options.body) : undefined,
+    });
+  };
+
+  const token = await ensureCsrfToken();
+  let response = await send(token);
+
+  if (response.status === 419) {
+    await fetchCsrfCookie();
+    response = await send(getCookie(CSRF_COOKIE));
+  }
 
   if (!response.ok) {
     throw await readApiError(response);

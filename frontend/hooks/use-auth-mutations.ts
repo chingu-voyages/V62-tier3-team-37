@@ -5,6 +5,7 @@ import type { SignupRole } from "@/components/features/auth/SignupRoleSwitch";
 import {
   type LoginPayload,
   loginUser,
+  logoutUser,
   type RegisterPayload,
   registerUser,
   resendOtp,
@@ -37,5 +38,11 @@ export function useVerifyOtpMutation() {
 export function useResendOtpMutation() {
   return useMutation({
     mutationFn: () => resendOtp(),
+  });
+}
+
+export function useLogoutMutation() {
+  return useMutation({
+    mutationFn: () => logoutUser(),
   });
 }

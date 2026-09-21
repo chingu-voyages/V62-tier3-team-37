@@ -3,7 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -80,6 +80,7 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
   const [role, setRole] = useState<SignupRole>("PATIENT");
   const [pendingSignup, setPendingSignup] = useState<RegisterValues | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
   const router = useRouter();
   const setSignupContext = useAuthStore((state) => state.setSignupContext);
   const registerMutation = useRegisterMutation();
@@ -102,7 +103,8 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
   });
 
   function handleConfirm() {
-    if (!pendingSignup || isRegistering) return;
+    if (!pendingSignup || submittingRef.current || isRegistering) return;
+    submittingRef.current = true;
     setSubmitError(null);
 
     registerMutation.mutate(
@@ -116,10 +118,12 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
           gender: pendingSignup.gender,
           password: pendingSignup.password,
           password_confirmation: pendingSignup.confirmPassword,
+          terms: pendingSignup.terms,
         },
       },
       {
         onSuccess: () => {
+          submittingRef.current = false;
           setSignupContext({
             email: pendingSignup.email,
             firstName: pendingSignup.firstName,
@@ -130,6 +134,7 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
           router.push("/auth/otp");
         },
         onError: (error) => {
+          submittingRef.current = false;
           setSubmitError(getApiErrorMessage(error));
           setPendingSignup(null);
         },
@@ -324,41 +329,49 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
           <form.Field
             name="terms"
             validators={{
-              onChange: ({ value }) => (value ? undefined : "this should be a required field"),
+              onChange: ({ value }) => (value ? undefined : "Please accept the Terms of Service"),
             }}
           >
-            {(field) => (
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2.5">
-                  <Checkbox
-                    id="terms"
-                    checked={field.state.value}
-                    onCheckedChange={(checked) => field.handleChange(checked === true)}
-                    aria-invalid={firstTouchedError(field.state.meta) ? true : undefined}
-                  />
-                  <Label
-                    htmlFor="terms"
-                    className="pt-0.5 text-sm font-normal leading-5 text-muted-foreground"
-                  >
-                    I have read and agree to the{" "}
-                    <Link
-                      href="/terms"
-                      className="font-medium text-foreground underline-offset-4 hover:underline"
+            {(field) => {
+              const error = firstTouchedError(field.state.meta);
+              return (
+                <div className="space-y-1.5" aria-describedby={error ? "terms-error" : undefined}>
+                  <div className="flex items-center gap-2.5">
+                    <Checkbox
+                      id="terms"
+                      checked={field.state.value}
+                      onCheckedChange={(checked) => field.handleChange(checked === true)}
+                      aria-invalid={error ? true : undefined}
+                    />
+                    <Label
+                      htmlFor="terms"
+                      className="pt-0.5 text-sm font-normal leading-5 text-muted-foreground"
                     >
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link
-                      href="/privacy"
-                      className="font-medium text-foreground underline-offset-4 hover:underline"
-                    >
-                      Privacy Policy
-                    </Link>
-                    .
-                  </Label>
+                      I have read and agree to the{" "}
+                      <Link
+                        href="/terms"
+                        className="font-medium text-foreground underline-offset-4 hover:underline"
+                      >
+                        Terms of Service
+                      </Link>{" "}
+                      and{" "}
+                      <Link
+                        href="/privacy"
+                        className="font-medium text-foreground underline-offset-4 hover:underline"
+                      >
+                        Privacy Policy
+                      </Link>
+                      .
+                    </Label>
+                  </div>
+                  {error ? (
+                    <p id="terms-error" className="text-sm text-destructive">
+                      {error}
+                    </p>
+                  ) : null}
                 </div>
-              </div>
-            )}
+              );
+            }}
           </form.Field>
 
           {submitError ? (
