@@ -86,9 +86,7 @@ async function readApiError(response: Response): Promise<ApiError> {
     if (isRecord(data) && isRecord(data.errors)) {
       errors = toJsonError(data.errors as Record<string, string[]>);
     }
-  } catch {
-    // Empty or non-JSON error body — keep the generic fallback message.
-  }
+  } catch {}
   return new ApiError(message, response.status, errors);
 }
 

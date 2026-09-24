@@ -1,0 +1,119 @@
+
+> frontend@0.1.0 dev
+> next dev --webpack
+
+▲ Next.js 16.3.5 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.100.179:3000
+✓ Ready in 707ms
+✓ Running next.config.ts took 47ms
+
+[browser] ./app/globals.css
+Error: Error evaluating Node.js code
+Error: Cannot find module '@tailwindcss/postcss'
+Require stack:
+- C:\Users\Animo\OneDrive\Desktop\V62-tier3-team-37\frontend\.next\dev\build\chunks\[root-of-the-server]__1kki86f._.js
+- C:\Users\Animo\OneDrive\Desktop\V62-tier3-team-37\frontend\.next\dev\build\chunks\[turbopack]_runtime.js
+- C:\Users\Animo\OneDrive\Desktop\V62-tier3-team-37\frontend\.next\dev\build\chunks\pool_entry-[turbopack-node]_transforms_postcss_ts_0tp-k2v._.js
+    [at Module._resolveFilename (node:internal/modules/cjs/loader:1405:15)]
+    [at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)]
+    [at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)]
+    [at Module._load (node:internal/modules/cjs/loader:1215:37)]
+    [at TracingChannel.traceSync (node:diagnostics_channel:322:14)]
+    [at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)]
+    [at Module.require (node:internal/modules/cjs/loader:1491:12)]
+    [at require (node:internal/modules/helpers:135:16)]
+    [at <anonymous> (turbopack:///[turbopack-node]/transforms/postcss.ts?config=[project]/postcss.config.mjs:49:25)]
+    [at <anonymous>]
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component] 
+    at handleErrors (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:647:21)
+    at processMessage (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:708:28)
+    at <unknown> (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:553:13)
+    at WebSocket.handleMessage (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:991:17) (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:647:21)
+[browser] ./app/globals.css
+Error: Error evaluating Node.js code
+Error: Cannot find module '@tailwindcss/postcss'
+Require stack:
+- C:\Users\Animo\OneDrive\Desktop\V62-tier3-team-37\frontend\.next\dev\build\chunks\[root-of-the-server]__1kki86f._.js
+- C:\Users\Animo\OneDrive\Desktop\V62-tier3-team-37\frontend\.next\dev\build\chunks\[turbopack]_runtime.js
+- C:\Users\Animo\OneDrive\Desktop\V62-tier3-team-37\frontend\.next\dev\build\chunks\pool_entry-[turbopack-node]_transforms_postcss_ts_0tp-k2v._.js
+    [at Module._resolveFilename (node:internal/modules/cjs/loader:1405:15)]
+    [at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)]
+    [at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)]
+    [at Module._load (node:internal/modules/cjs/loader:1215:37)]
+    [at TracingChannel.traceSync (node:diagnostics_channel:322:14)]
+    [at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)]
+    [at Module.require (node:internal/modules/cjs/loader:1491:12)]
+    [at require (node:internal/modules/helpers:135:16)]
+    [at <anonymous> (turbopack:///[turbopack-node]/transforms/postcss.ts?config=[project]/postcss.config.mjs:49:25)]
+    [at <anonymous>]
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component] 
+    at handleErrors (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:647:21)
+    at processMessage (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:708:28)
+    at <unknown> (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:553:13)
+    at WebSocket.handleMessage (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:991:17) (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:647:21)
+[browser] ./app/globals.css
+Error: Error evaluating Node.js code
+Error: Cannot find module '@tailwindcss/postcss'
+Require stack:
+- C:\Users\Animo\OneDrive\Desktop\V62-tier3-team-37\frontend\.next\dev\build\chunks\[root-of-the-server]__1kki86f._.js
+- C:\Users\Animo\OneDrive\Desktop\V62-tier3-team-37\frontend\.next\dev\build\chunks\[turbopack]_runtime.js
+- C:\Users\Animo\OneDrive\Desktop\V62-tier3-team-37\frontend\.next\dev\build\chunks\pool_entry-[turbopack-node]_transforms_postcss_ts_0tp-k2v._.js
+    [at Module._resolveFilename (node:internal/modules/cjs/loader:1405:15)]
+    [at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)]
+    [at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)]
+    [at Module._load (node:internal/modules/cjs/loader:1215:37)]
+    [at TracingChannel.traceSync (node:diagnostics_channel:322:14)]
+    [at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)]
+    [at Module.require (node:internal/modules/cjs/loader:1491:12)]
+    [at require (node:internal/modules/helpers:135:16)]
+    [at <anonymous> (turbopack:///[turbopack-node]/transforms/postcss.ts?config=[project]/postcss.config.mjs:49:25)]
+    [at <anonymous>]
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component] 
+    at handleErrors (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:647:21)
+    at processMessage (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:708:28)
+    at <unknown> (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:553:13)
+    at WebSocket.handleMessage (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:991:17) (file://C:/Users/Animo/OneDrive/Desktop/V62-tier3-team-37/frontend/.next/dev/static/chunks/node_modules_next_dist_client_16lnmlo._.js:647:21)
+⨯ The directory at "C:\Users\Animo\OneDrive\Desktop\V62-tier3-team-37\frontend\.next\dev" was deleted.
+
+Deleting this directory while Next.js is running can lead to undefined behavior. Restarting the server to recover...
+▲ Next.js 16.3.5 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.100.179:3000
+✓ Ready in 751ms
+✓ Running next.config.ts took 47ms
+
+○ Compiling / ...
+ GET / 200 in 7.9s (next.js: 7.6s, application-code: 323ms)
+ GET / 200 in 55ms (next.js: 9ms, application-code: 46ms)
+○ Compiling /auth/otp ...
+ GET /auth/otp 200 in 3.6s (next.js: 3.3s, application-code: 266ms)
+ GET / 200 in 56ms (next.js: 13ms, application-code: 44ms)
+○ Compiling /auth ...
+ GET /auth 200 in 7.2s (next.js: 7.1s, application-code: 113ms)
+ GET /auth 200 in 62ms (next.js: 6ms, application-code: 55ms)
+ GET / 200 in 195ms (next.js: 9ms, application-code: 186ms)
+ GET /auth 200 in 294ms (next.js: 5ms, application-code: 289ms)
+ GET /auth/otp 200 in 58ms (next.js: 10ms, application-code: 49ms)
+ GET /auth 200 in 52ms (next.js: 5ms, application-code: 47ms)
+ GET /auth 200 in 27ms (next.js: 5ms, application-code: 22ms)
+ GET /auth 200 in 63ms (next.js: 4ms, application-code: 59ms)
+ GET /auth/otp 200 in 35ms (next.js: 7ms, application-code: 28ms)
+ GET /auth 200 in 965ms (next.js: 325ms, application-code: 640ms)
+ GET /auth 200 in 147ms (next.js: 42ms, application-code: 105ms)
+ GET /auth 200 in 352ms (next.js: 257ms, application-code: 94ms)
+ GET /auth/otp 200 in 60ms (next.js: 19ms, application-code: 41ms)
+ GET /auth 200 in 1119ms (next.js: 388ms, application-code: 731ms)
+ GET /auth 200 in 129ms (next.js: 18ms, application-code: 111ms)
