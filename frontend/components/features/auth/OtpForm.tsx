@@ -34,6 +34,7 @@ export function OtpForm() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const email = useAuthStore((state) => state.signup.email);
+  const role = useAuthStore((state) => state.signup.role);
   const router = useRouter();
 
   const verifyMutation = useVerifyOtpMutation();
@@ -75,6 +76,9 @@ export function OtpForm() {
           const message = response.message ?? "Email verified successfully.";
           console.log(message);
           setNotice(message);
+          if (role === "HCP") {
+            router.push("/hcp/verification");
+          }
         },
         onError: (error) => {
           setFormError(getApiErrorMessage(error));
