@@ -1,0 +1,14 @@
+<?php
+
+namespace App\Enums;
+
+enum DocumentType: string
+{
+    case MEDICAL_EXAMINATION = 'MEDICAL_EXAMINATION';
+
+    case GOVERNMENT_ID_FRONT = 'GOVERNMENT_ID_FRONT';
+    case GOVERNMENT_ID_BACK = 'GOVERNMENT_ID_BACK';
+
+    case MEDICAL_LICENSE = 'MEDICAL_LICENSE';
+    case QUALIFICATION = 'QUALIFICATION';
+}
