@@ -35,3 +35,20 @@ export type PatientNavigationItem = {
   icon: React.ComponentType<{ className?: string }>;
   ariaLabel: string;
 };
+
+export type HcpVerificationStatus =
+  | "UNDER_REVIEW"
+  | "APPROVED"
+  | "REJECTED"
+  | "PENDING"
+  | "SUBMITTED";
+
+export type HcpOnboardingResponse = {
+  message: string;
+  data: {
+    verification_status: HcpVerificationStatus;
+    submitted_at: string;
+  };
+};
+
+export type HcpApiValidationErrors = Record<string, string[]>;

@@ -31,6 +31,7 @@ type CameraError = {
 export type LivenessCheckProps = {
   onComplete?: () => void;
   onCancel?: () => void;
+  onResult?: (result: "passed" | "failed" | "idle") => void;
   disabled?: boolean;
 };
 
@@ -245,7 +246,7 @@ function LivenessStatusIcon({ status }: { status: LivenessStatus }) {
 }
 
 export const LivenessCheck = forwardRef<LivenessCheckHandle, LivenessCheckProps>(
-  function LivenessCheck({ onComplete, onCancel, disabled = false }, ref) {
+  function LivenessCheck({ onComplete, onCancel, onResult, disabled = false }, ref) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const challengeCanvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
@@ -318,7 +319,8 @@ export const LivenessCheck = forwardRef<LivenessCheckHandle, LivenessCheckProps>
       setError(null);
       setStatus("success");
       onComplete?.();
-    }, [onComplete, stopChallenge, stopStream, updateChallengeStep]);
+      onResult?.("passed");
+    }, [onComplete, onResult, stopChallenge, stopStream, updateChallengeStep]);
 
     const failChallenge = useCallback(() => {
       if (!mountedRef.current) return;
@@ -330,7 +332,8 @@ export const LivenessCheck = forwardRef<LivenessCheckHandle, LivenessCheckProps>
       stopStream();
       setError({ kind: "challenge", ...cameraErrorMessages.challenge });
       setStatus("error");
-    }, [stopChallenge, stopStream, updateChallengeStep]);
+      onResult?.("failed");
+    }, [onResult, stopChallenge, stopStream, updateChallengeStep]);
 
     const cancelSession = useCallback(() => {
       requestIdRef.current += 1;
@@ -341,7 +344,8 @@ export const LivenessCheck = forwardRef<LivenessCheckHandle, LivenessCheckProps>
       setError(null);
       setStatus("idle");
       onCancel?.();
-    }, [onCancel, stopChallenge, stopStream, updateChallengeStep]);
+      onResult?.("idle");
+    }, [onCancel, onResult, stopChallenge, stopStream, updateChallengeStep]);
 
     const resetSession = useCallback(() => {
       requestIdRef.current += 1;
@@ -351,7 +355,8 @@ export const LivenessCheck = forwardRef<LivenessCheckHandle, LivenessCheckProps>
       stopStream();
       setError(null);
       setStatus("idle");
-    }, [stopChallenge, stopStream, updateChallengeStep]);
+      onResult?.("idle");
+    }, [onResult, stopChallenge, stopStream, updateChallengeStep]);
 
     const complete = useCallback(() => {
       if (!mountedRef.current || status !== "active") return;

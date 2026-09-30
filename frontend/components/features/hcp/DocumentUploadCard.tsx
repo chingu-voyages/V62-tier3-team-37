@@ -16,11 +16,18 @@ type DocumentUploadCardProps = {
   id: string;
   title: string;
   description: string;
+  file?: File | null;
+  onFileChange?: (file: File | null) => void;
 };
 
-export function DocumentUploadCard({ id, title, description }: DocumentUploadCardProps) {
+export function DocumentUploadCard({
+  id,
+  title,
+  description,
+  file = null,
+  onFileChange,
+}: DocumentUploadCardProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const descriptionId = `${id}-description`;
   const errorId = `${id}-error`;
@@ -31,11 +38,11 @@ export function DocumentUploadCard({ id, title, description }: DocumentUploadCar
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
-    const file = input.files?.[0];
+    const nextFile = input.files?.[0] ?? null;
 
-    if (!file) return;
+    if (!nextFile) return;
 
-    const validationError = validateDocumentFile(file);
+    const validationError = validateDocumentFile(nextFile);
 
     if (validationError) {
       setError(validationError);
@@ -43,14 +50,14 @@ export function DocumentUploadCard({ id, title, description }: DocumentUploadCar
       return;
     }
 
-    setSelectedFile(file);
     setError(null);
+    onFileChange?.(nextFile);
     input.value = "";
   }
 
   function handleRemove() {
-    setSelectedFile(null);
     setError(null);
+    onFileChange?.(null);
 
     if (inputRef.current) {
       inputRef.current.value = "";
@@ -86,13 +93,13 @@ export function DocumentUploadCard({ id, title, description }: DocumentUploadCar
         onChange={handleFileChange}
       />
 
-      {selectedFile ? (
+      {file ? (
         <div className="mt-4 flex min-w-0 items-center gap-2 rounded-sm border bg-background px-3 py-2">
           <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
           <div className="min-w-0 flex-1" aria-live="polite">
-            <p className="truncate text-xs font-medium text-foreground">{selectedFile.name}</p>
+            <p className="truncate text-xs font-medium text-foreground">{file.name}</p>
             <p className="text-xs text-muted-foreground">
-              {getFileTypeLabel(selectedFile)} · {formatFileSize(selectedFile.size)}
+              {getFileTypeLabel(file)} · {formatFileSize(file.size)}
             </p>
           </div>
           <Button
@@ -100,7 +107,7 @@ export function DocumentUploadCard({ id, title, description }: DocumentUploadCar
             variant="ghost"
             size="icon"
             className="size-9 shrink-0"
-            aria-label={`Remove ${selectedFile.name}`}
+            aria-label={`Remove ${file.name}`}
             onClick={handleRemove}
           >
             <X aria-hidden="true" />
@@ -127,7 +134,7 @@ export function DocumentUploadCard({ id, title, description }: DocumentUploadCar
           onClick={openFilePicker}
         >
           <Upload aria-hidden="true" />
-          {selectedFile ? "Replace file" : "Upload file"}
+          {file ? "Replace file" : "Upload file"}
         </Button>
       </div>
     </div>
