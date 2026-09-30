@@ -4,6 +4,7 @@ import { useForm } from "@tanstack/react-form";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Callout } from "@/components/ui/callout";
 
 import { useLoginMutation } from "@/hooks/use-auth-mutations";
 import { getApiErrorMessage } from "@/lib/api";
@@ -25,6 +26,9 @@ function passwordError(value: string): string | undefined {
 
   return undefined;
 }
+
+const LINK_CLASS =
+  "rounded-sm font-medium text-primary underline decoration-primary/35 underline-offset-4 transition-colors hover:text-primary/85 hover:decoration-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 export function LoginForm() {
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -55,7 +59,7 @@ export function LoginForm() {
   return (
     <form
       noValidate
-      className="space-y-6 mt-8"
+      className="flex flex-col gap-5"
       onSubmit={(event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -103,32 +107,28 @@ export function LoginForm() {
         )}
       </form.Field>
 
-      <div className="flex">
-        <button
-          type="button"
-          className="text-sm font-medium text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
-        >
+      <div className="-mt-2 flex">
+        <button type="button" className={LINK_CLASS}>
           Forgot Password?
         </button>
       </div>
 
       {submitError ? (
-        <p
-          role="alert"
-          className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-        >
+        <Callout tone="danger" role="alert">
           {submitError}
-        </p>
+        </Callout>
       ) : null}
 
-      <Button
-        type="submit"
-        size="lg"
-        className="mt-1 h-11 w-full"
-        disabled={loginMutation.isPending}
-      >
-        {loginMutation.isPending ? "Logging in…" : "Log in"}
-      </Button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <Button
+          type="submit"
+          size="xl"
+          className="w-full sm:w-auto sm:min-w-56"
+          disabled={loginMutation.isPending}
+        >
+          {loginMutation.isPending ? "Logging in…" : "Log in"}
+        </Button>
+      </div>
     </form>
   );
 }

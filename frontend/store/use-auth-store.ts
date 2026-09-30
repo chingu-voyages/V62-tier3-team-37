@@ -17,12 +17,20 @@ const EMPTY_SIGNUP: SignupContext = {
 
 type AuthStore = {
   signup: SignupContext;
+  otpVerified: boolean;
   setSignupContext: (context: SignupContext) => void;
-  resetSignupContext: () => void;
+  setOtpVerified: (verified: boolean) => void;
+  clearSignup: () => void;
 };
 
 export const useAuthStore = create<AuthStore>((set) => ({
   signup: EMPTY_SIGNUP,
-  setSignupContext: (signup) => set({ signup }),
-  resetSignupContext: () => set({ signup: EMPTY_SIGNUP }),
+  otpVerified: false,
+  setSignupContext: (signup) => set({ signup, otpVerified: false }),
+  setOtpVerified: (otpVerified) => set({ otpVerified }),
+  clearSignup: () =>
+    set({
+      signup: EMPTY_SIGNUP,
+      otpVerified: false,
+    }),
 }));

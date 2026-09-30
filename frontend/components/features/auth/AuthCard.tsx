@@ -1,16 +1,22 @@
 import type { ReactNode } from "react";
+import type { SignupRole } from "./SignupRoleSwitch";
+import { StepIndicator } from "./StepIndicator";
 
 type AuthCardProps = {
+  /** Renders the step progress marker above the title. */
+  step?: { current: number; total: number; role?: SignupRole };
   eyebrow?: string;
   title: string;
   subtitle: ReactNode;
   tabs?: ReactNode;
   children: ReactNode;
+
   info?: ReactNode;
   footer?: ReactNode;
 };
 
 export function AuthCard({
+  step,
   eyebrow,
   title,
   subtitle,
@@ -20,29 +26,24 @@ export function AuthCard({
   footer,
 }: AuthCardProps) {
   return (
-    <div className="w-full max-w-2xl">
-      {eyebrow ? (
-        <p className="mb-3 text-center text-sm font-medium text-muted-foreground">{eyebrow}</p>
-      ) : null}
-
-      <div className="text-center">
-        <h1 className="text-h1 tracking-tight text-foreground">{title}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
+    <div className="m-auto w-full max-w-xl 2xl:max-w-2xl">
+      <div className="flex flex-col items-center gap-3 text-center">
+        {step ? <StepIndicator current={step.current} total={step.total} role={step.role} /> : null}
+        {eyebrow ? <p className="type-step text-muted-foreground">{eyebrow}</p> : null}
+        <h1 className="type-h1 text-foreground">{title}</h1>
+        <div className="max-w-md type-body text-muted-foreground">{subtitle}</div>
       </div>
 
-      <div className="mt-6 rounded-lg border bg-card p-4 shadow-sm sm:p-6">
+      <div className="mt-6 rounded-2xl border border-border/80 bg-card p-5 shadow-card sm:p-7 lg:p-8">
         {tabs}
-        <div className={tabs ? "mt-4" : undefined}>{children}</div>
+        <div className={tabs ? "mt-5 sm:mt-6" : undefined}>{children}</div>
       </div>
 
-      {info ? (
-        <div className="mt-3 leading-relaxed flex flex-col items-center text-center gap-2.5 rounded-md border bg-muted/50 p-3 text-sm text-muted-foreground">
-          {/* <CircleHelp className="mt-0.5 size-4 shrink-0 " /> */}
-          {info}
-        </div>
-      ) : null}
+      {info ? <div className="mt-4">{info}</div> : null}
 
-      {footer ? <p className="mt-5 text-center text-sm text-muted-foreground">{footer}</p> : null}
+      {footer ? (
+        <div className="mt-6 text-center type-body text-muted-foreground">{footer}</div>
+      ) : null}
     </div>
   );
 }

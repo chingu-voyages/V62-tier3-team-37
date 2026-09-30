@@ -54,5 +54,5 @@ Route::post('/email/otp/resend', ResendEmailOtpController::class)
     ->name('verification.otp.resend');
 
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
-        ->middleware('auth:sanctum')
-        ->name('logout');
+    ->middleware('auth:sanctum')
+    ->name('logout');

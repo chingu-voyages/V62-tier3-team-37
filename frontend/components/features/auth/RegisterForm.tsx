@@ -1,11 +1,13 @@
-﻿"use client";
+"use client";
 
 import { useForm } from "@tanstack/react-form";
+import { MailCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type ReactNode, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Callout } from "@/components/ui/callout";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -23,6 +25,7 @@ import { getApiErrorMessage } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/use-auth-store";
 import { AuthCard } from "./AuthCard";
+import { FieldMessage } from "./FieldMessage";
 import { firstTouchedError } from "./field-error";
 import { PasswordField } from "./PasswordField";
 import { PasswordStrength } from "./PasswordStrength";
@@ -71,6 +74,9 @@ const GENDERS: { value: RegisterValues["gender"]; label: string }[] = [
   { value: Gender.Male, label: "Male" },
   { value: Gender.Female, label: "Female" },
 ];
+
+const LINK_CLASS =
+  "rounded-sm font-medium text-primary underline decoration-primary/35 underline-offset-4 transition-colors hover:text-primary/85 hover:decoration-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 type RegisterFormProps = {
   tabs?: ReactNode;
@@ -145,14 +151,14 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
   return (
     <>
       <AuthCard
+        step={{ current: 1, total: 3, role }}
         title="Create your account"
         subtitle={<SignupRoleSwitch role={role} onRoleChange={setRole} />}
         tabs={tabs}
-        info="Are you a Healthcare Professional? You'll verify with Email OTP and upload your professional credentials in a later step."
       >
         <form
           noValidate
-          className="space-y-4"
+          className="flex flex-col gap-6"
           onSubmit={(event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -217,114 +223,133 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
             )}
           </form.Field>
 
-          <form.Field name="dateOfBirth" validators={{ onChange: ({ value }) => dateError(value) }}>
-            {(field) => (
-              <TextField
-                id="dateOfBirth"
-                label="Date of birth"
-                type="date"
-                autoComplete="bday"
-                value={field.state.value}
-                error={firstTouchedError(field.state.meta)}
-                onChange={(value) => field.handleChange(value)}
-                onBlur={field.handleBlur}
-              />
-            )}
-          </form.Field>
-
-          <form.Field
-            name="gender"
-            validators={{
-              onChange: ({ value }) => (value.length === 0 ? "Gender is required" : undefined),
-            }}
-          >
-            {(field) => {
-              const error = firstTouchedError(field.state.meta);
-              return (
-                <div className="space-y-1.5" aria-describedby={error ? "gender-error" : undefined}>
-                  <span className="text-sm font-medium">Gender</span>
-                  <RadioGroup
-                    value={field.state.value}
-                    onValueChange={(value) => field.handleChange(value as RegisterValues["gender"])}
-                    className="grid gap-2 sm:grid-cols-2"
-                  >
-                    {GENDERS.map((option) => (
-                      <div
-                        key={option.value}
-                        className={cn(
-                          "flex items-center gap-2.5 rounded-lg border px-3 py-2.5",
-                          error
-                            ? "border-destructive has-data-[state=checked]:border-destructive"
-                            : "has-data-[state=checked]:border-ring",
-                        )}
-                      >
-                        <RadioGroupItem
-                          id={`gender-${option.value}`}
-                          value={option.value}
-                          aria-invalid={error ? true : undefined}
-                        />
-                        <Label htmlFor={`gender-${option.value}`} className="text-sm font-medium">
-                          {option.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                  {error ? (
-                    <p id="gender-error" className="text-sm text-destructive">
-                      {error}
-                    </p>
-                  ) : null}
-                </div>
-              );
-            }}
-          </form.Field>
-
-          <form.Field
-            name="password"
-            validators={{ onChange: ({ value }) => passwordError(value) }}
-          >
-            {(field) => (
-              <div className="space-y-2">
-                <PasswordField
-                  id="password"
-                  label="Password"
-                  autoComplete="new-password"
-                  placeholder="At least 8 characters"
+          <div className="grid items-start gap-4 sm:grid-cols-2">
+            <form.Field
+              name="dateOfBirth"
+              validators={{ onChange: ({ value }) => dateError(value) }}
+            >
+              {(field) => (
+                <TextField
+                  id="dateOfBirth"
+                  label="Date of birth"
+                  type="date"
+                  autoComplete="bday"
                   value={field.state.value}
                   error={firstTouchedError(field.state.meta)}
                   onChange={(value) => field.handleChange(value)}
                   onBlur={field.handleBlur}
                 />
-                <PasswordStrength value={field.state.value} />
-              </div>
-            )}
-          </form.Field>
+              )}
+            </form.Field>
 
-          <form.Field
-            name="confirmPassword"
-            validators={{
-              onChange: ({ value, fieldApi }) => {
-                const password = fieldApi.form.state.values.password;
-                if (value.length === 0) return "Confirm your password";
-                if (value !== password) return "Passwords do not match";
-                return undefined;
-              },
-              onChangeListenTo: ["password"],
-            }}
-          >
-            {(field) => (
-              <PasswordField
-                id="confirmPassword"
-                label="Confirm password"
-                autoComplete="new-password"
-                placeholder="Re-enter your password"
-                value={field.state.value}
-                error={firstTouchedError(field.state.meta)}
-                onChange={(value) => field.handleChange(value)}
-                onBlur={field.handleBlur}
-              />
-            )}
-          </form.Field>
+            <form.Field
+              name="gender"
+              validators={{
+                onChange: ({ value }) => (value.length === 0 ? "Gender is required" : undefined),
+              }}
+            >
+              {(field) => {
+                const error = firstTouchedError(field.state.meta);
+                return (
+                  <div
+                    className="flex min-w-0 flex-col gap-1.5"
+                    aria-describedby={error ? "gender-error" : undefined}
+                  >
+                    <span id="gender-label" className="type-label text-foreground">
+                      Gender
+                    </span>
+                    <RadioGroup
+                      value={field.state.value}
+                      onValueChange={(value) =>
+                        field.handleChange(value as RegisterValues["gender"])
+                      }
+                      aria-labelledby="gender-label"
+                      aria-invalid={error ? true : undefined}
+                      className="grid gap-2 sm:grid-cols-2"
+                    >
+                      {GENDERS.map((option) => (
+                        <div
+                          key={option.value}
+                          className={cn(
+                            "flex items-center gap-2.5 rounded-lg border px-3.5 py-2.5 transition-colors",
+                            "has-data-[state=checked]:border-primary has-data-[state=checked]:bg-accent",
+                            error ? "border-destructive" : "border-input hover:border-primary/40",
+                          )}
+                        >
+                          <RadioGroupItem
+                            id={`gender-${option.value}`}
+                            value={option.value}
+                            aria-invalid={error ? true : undefined}
+                          />
+                          <Label
+                            htmlFor={`gender-${option.value}`}
+                            className="cursor-pointer type-label"
+                          >
+                            {option.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                    <FieldMessage id="gender-error">{error}</FieldMessage>
+                  </div>
+                );
+              }}
+            </form.Field>
+          </div>
+
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            <form.Field
+              name="password"
+              validators={{ onChange: ({ value }) => passwordError(value) }}
+            >
+              {(field) => (
+                <div className="flex min-w-0 flex-col gap-2">
+                  <PasswordField
+                    id="password"
+                    label="Password"
+                    autoComplete="new-password"
+                    placeholder="At least 8 characters"
+                    value={field.state.value}
+                    error={firstTouchedError(field.state.meta)}
+                    onChange={(value) => field.handleChange(value)}
+                    onBlur={field.handleBlur}
+                  />
+                  <PasswordStrength value={field.state.value} />
+                </div>
+              )}
+            </form.Field>
+
+            <form.Field
+              name="confirmPassword"
+              validators={{
+                onChange: ({ value, fieldApi }) => {
+                  const password = fieldApi.form.state.values.password;
+                  if (value.length === 0) return "Confirm your password";
+                  if (value !== password) return "Passwords do not match";
+                  return undefined;
+                },
+                onChangeListenTo: ["password"],
+              }}
+            >
+              {(field) => (
+                <PasswordField
+                  id="confirmPassword"
+                  label="Confirm password"
+                  autoComplete="new-password"
+                  placeholder="Re-enter your password"
+                  value={field.state.value}
+                  error={firstTouchedError(field.state.meta)}
+                  onChange={(value) => field.handleChange(value)}
+                  onBlur={field.handleBlur}
+                />
+              )}
+            </form.Field>
+          </div>
+
+          <Callout icon={MailCheck} title="Verify your email to continue">
+            Are you a Healthcare Professional? You&apos;ll verify with Email OTP and upload your
+            professional credentials in a later step.
+          </Callout>
 
           <form.Field
             name="terms"
@@ -335,57 +360,52 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
             {(field) => {
               const error = firstTouchedError(field.state.meta);
               return (
-                <div className="space-y-1.5" aria-describedby={error ? "terms-error" : undefined}>
-                  <div className="flex items-center gap-2.5">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-start gap-3">
                     <Checkbox
                       id="terms"
                       checked={field.state.value}
                       onCheckedChange={(checked) => field.handleChange(checked === true)}
                       aria-invalid={error ? true : undefined}
+                      aria-describedby={error ? "terms-error" : undefined}
+                      className="mt-0.5"
                     />
                     <Label
                       htmlFor="terms"
-                      className="pt-0.5 text-sm font-normal leading-5 text-muted-foreground"
+                      className="cursor-pointer items-start font-normal type-helper text-muted-foreground"
                     >
-                      I have read and agree to the{" "}
-                      <Link
-                        href="/terms"
-                        className="font-medium text-foreground underline-offset-4 hover:underline"
-                      >
-                        Terms of Service
-                      </Link>{" "}
-                      and{" "}
-                      <Link
-                        href="/privacy"
-                        className="font-medium text-foreground underline-offset-4 hover:underline"
-                      >
-                        Privacy Policy
-                      </Link>
-                      .
+                      <span>
+                        I have read and agree to the{" "}
+                        <Link href="/terms" className={LINK_CLASS}>
+                          Terms of Service
+                        </Link>{" "}
+                        and{" "}
+                        <Link href="/privacy" className={LINK_CLASS}>
+                          Privacy Policy
+                        </Link>
+                        .
+                      </span>
                     </Label>
                   </div>
-                  {error ? (
-                    <p id="terms-error" className="text-sm text-destructive">
-                      {error}
-                    </p>
-                  ) : null}
+                  <FieldMessage id="terms-error" className="pl-8">
+                    {error}
+                  </FieldMessage>
                 </div>
               );
             }}
           </form.Field>
 
           {submitError ? (
-            <p
-              role="alert"
-              className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
+            <Callout tone="danger" role="alert">
               {submitError}
-            </p>
+            </Callout>
           ) : null}
 
-          <Button type="submit" size="lg" className="mt-1 h-11 w-full">
-            Create account
-          </Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+            <Button type="submit" size="xl" className="w-full sm:w-auto sm:min-w-56">
+              Create account
+            </Button>
+          </div>
         </form>
       </AuthCard>
 
@@ -399,17 +419,22 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
           <DialogHeader>
             <DialogTitle>Confirm registration</DialogTitle>
             <DialogDescription>
-              Are you sure you want to sign up as a
-              <span className="ml-1 text-blue-400 mr-1">{SIGNUP_ROLE_LABELS[role]}</span>?
+              Are you sure you want to sign up as a{" "}
+              <span className="font-medium text-primary">{SIGNUP_ROLE_LABELS[role]}</span>?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline" className="p-4 w-[40%]">
+              <Button variant="outline" size="lg" className="w-full sm:w-auto">
                 Cancel
               </Button>
             </DialogClose>
-            <Button onClick={handleConfirm} className="p-4 w-[60%]" disabled={isRegistering}>
+            <Button
+              onClick={handleConfirm}
+              size="lg"
+              className="w-full sm:w-auto"
+              disabled={isRegistering}
+            >
               {isRegistering ? "Creating account…" : "Confirm"}
             </Button>
           </DialogFooter>

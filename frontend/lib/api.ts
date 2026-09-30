@@ -95,11 +95,15 @@ type RequestOptions = Omit<RequestInit, "body"> & {
 };
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const hasBody = options.body !== undefined;
+  const body = options.body;
+  const isFormData = body instanceof FormData;
+  const hasBody = body !== undefined;
 
   const send = async (token: string | undefined): Promise<Response> => {
     const headers = new Headers(options.headers);
-    if (hasBody) {
+    // For multipart/form-data we must NOT set a Content-Type: the browser
+    // generates the multipart boundary automatically.
+    if (hasBody && !isFormData) {
       headers.set("Content-Type", "application/json");
     }
     if (token) {
@@ -112,7 +116,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       method: options.method ?? "GET",
       credentials: "include",
       headers,
-      body: hasBody ? JSON.stringify(options.body) : undefined,
+      body: hasBody ? (isFormData ? (body as FormData) : JSON.stringify(body)) : undefined,
     });
   };
 
