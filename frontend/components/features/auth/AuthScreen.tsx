@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { AuthCard } from "./AuthCard";
 import { LoginForm } from "./LoginForm";
 import { RegisterForm } from "./RegisterForm";
@@ -19,27 +19,26 @@ export function AuthScreen() {
   const isLogin = tab === "login";
 
   const tabs = (
-    <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+    <fieldset
+      aria-label="Sign up or log in"
+      className="grid grid-cols-2 gap-1 rounded-xl bg-accent p-1"
+    >
       {TABS.map((t) => {
         const active = tab === t.value;
         return (
-          <button
+          <Button
             key={t.value}
             type="button"
+            variant={active ? "default" : "ghost"}
             aria-pressed={active}
             onClick={() => setTab(t.value)}
-            className={cn(
-              "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              active
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
+            className="h-10 w-full rounded-lg px-3"
           >
             {t.label}
-          </button>
+          </Button>
         );
       })}
-    </div>
+    </fieldset>
   );
 
   if (isLogin) {
@@ -48,7 +47,6 @@ export function AuthScreen() {
         title="Welcome back"
         subtitle="Log in to access your patient portal and continue your health journey."
         tabs={tabs}
-        info=""
       >
         <LoginForm />
       </AuthCard>

@@ -11,7 +11,7 @@
     "check": "biome check ."
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx,mjs,cjs,json,jsonc,css}": "biome check --write --no-errors-on-unmatched",
+    "*.{js,jsx,ts,tsx,mjs,cjs,json,jsonc,css}": "biome check --write --unsafe --no-errors-on-unmatched",
     "*.php": "backend/vendor/bin/pint"
   },
   "devDependencies": {

@@ -234,7 +234,7 @@ function LivenessStatusIcon({ status }: { status: LivenessStatus }) {
   }
 
   if (status === "success") {
-    return <CheckCircle2 className={cn(className, "text-emerald-600")} aria-hidden="true" />;
+    return <CheckCircle2 className={cn(className, "text-primary")} aria-hidden="true" />;
   }
 
   if (status === "error") {
@@ -560,7 +560,7 @@ export const LivenessCheck = forwardRef<LivenessCheckHandle, LivenessCheckProps>
               isActive
                 ? "border-ring bg-foreground"
                 : "border-dashed border-muted-foreground/40 bg-muted/30",
-              status === "success" && "border-emerald-600/40 bg-emerald-600/10",
+              status === "success" && "border-secondary/40 bg-accent",
               status === "error" && "border-destructive/40 bg-destructive/10",
             )}
           >
@@ -602,7 +602,7 @@ export const LivenessCheck = forwardRef<LivenessCheckHandle, LivenessCheckProps>
                   </div>
                 </div>
                 <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-foreground/60 px-2.5 py-1 text-xs text-background">
-                  <span className="size-1.5 rounded-full bg-emerald-300" aria-hidden="true" />
+                  <span className="size-1.5 rounded-full bg-secondary" aria-hidden="true" />
                   Camera active
                 </div>
               </>

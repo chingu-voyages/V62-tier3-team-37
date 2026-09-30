@@ -5,6 +5,7 @@ import EyeIcon from "@/components/ui/eye-icon";
 import EyeOffIcon from "@/components/ui/eye-off-icon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldMessage } from "./FieldMessage";
 
 type PasswordFieldProps = {
   id: string;
@@ -40,7 +41,7 @@ export function PasswordField({
   const errorId = `${id}-error`;
 
   return (
-    <div className="space-y-1.5">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>
 
       <div className="relative">
@@ -60,17 +61,13 @@ export function PasswordField({
           type="button"
           aria-label={visible ? "Hide password" : "Show password"}
           onClick={() => setVisible((previous) => !previous)}
-          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none"
+          className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:text-primary focus-visible:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/20"
         >
           {visible ? <EyeIcon className="size-4" /> : <EyeOffIcon className="size-4" />}
         </button>
       </div>
 
-      {error ? (
-        <p id={errorId} className="text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
+      <FieldMessage id={errorId}>{error}</FieldMessage>
     </div>
   );
 }
