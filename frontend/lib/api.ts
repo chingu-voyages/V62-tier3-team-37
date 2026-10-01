@@ -101,6 +101,8 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   const send = async (token: string | undefined): Promise<Response> => {
     const headers = new Headers(options.headers);
+      // headers.set("Accept", "application/json");
+
     if (hasBody) {
       headers.set("Content-Type", "application/json");
     }

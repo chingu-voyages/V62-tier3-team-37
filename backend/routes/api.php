@@ -2,10 +2,11 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Profile\PatientProfileController;
+use App\Http\Controllers\Patient\PatientProfileController;
 use App\Http\Controllers\Profile\ProfilePhotoController;
-use App\Http\Controllers\Profile\PatientMedicalDocumentController;
-use App\Http\Controllers\Profile\HcpOnboardingController;
+use App\Http\Controllers\Patient\PatientMedicalDocumentController;
+use App\Http\Controllers\Hcp\HcpOnboardingController;
+use App\Http\Controllers\Patient\HcpListingController;
 // Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 //     return $request->user();
 // });
@@ -27,6 +28,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/patient/medical-examinations/{document}',[PatientMedicalDocumentController::class, 'show']);
 
     Route::delete('/patient/medical-examinations/{document}',[PatientMedicalDocumentController::class, 'destroy']);
+
+    Route::get('/patient/hcps', [HcpListingController::class, 'index']);
 
     /**************************HCP************************************** */
 

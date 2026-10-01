@@ -27,10 +27,10 @@ class UpdatePatientProfileRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if ($this->filled('country_code')) {
+        if ($this->filled('country')) {
             $this->merge([
-                'country_code' => strtoupper(
-                    (string) $this->input('country_code')
+                'country' => strtoupper(
+                    (string) $this->input('country')
                 ),
             ]);
         }
@@ -48,25 +48,18 @@ class UpdatePatientProfileRequest extends FormRequest
                     ->ignore($this->user()->id),
             ],
 
-            'country_code' => [
+            'country' => [
                 'sometimes',
                 'nullable',
                 'string',
-                'size:2',
-                'alpha',
+                'max:100',
+            
             ],
 
             'blood_type' => [
                 'sometimes',
                 'nullable',
                 Rule::enum(BloodType::class),
-            ],
-
-            'bio' => [
-                'sometimes',
-                'nullable',
-                'string',
-                'max:2000',
             ],
 
             'height_cm' => [

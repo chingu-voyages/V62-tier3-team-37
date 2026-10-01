@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers\Auth\EmailVerification;
 
 use App\Enums\EmailOtpVerificationResult;
 use App\Http\Controllers\Controller;
