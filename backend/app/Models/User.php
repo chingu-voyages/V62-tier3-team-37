@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -33,6 +34,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone',
         'role',
         'terms_accepted',
+        'profile_photo_path',
+        'country_code',
     ];
 
     /**
@@ -67,4 +70,25 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasOne(EmailVerificationOtp::class);
     }
+
+    public function patientProfile(): HasOne
+    {
+        return $this->hasOne(PatientProfile::class);
+    }
+
+    public function hcpProfile(): HasOne
+    {
+        return $this->hasOne(HcpProfile::class);
+    }
+
+    public function hcpVerification(): HasOne
+    {
+    return $this->hasOne(HcpVerification::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
+    }
+    
 }
