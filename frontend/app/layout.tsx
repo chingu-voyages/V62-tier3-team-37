@@ -4,12 +4,6 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import Providers from "./providers";
 
-/**
- * HealthHub typography.
- *
- * Sora carries every heading (see the `font-heading` / `text-h*` utilities),
- * Outfit carries body copy, labels, buttons and all other UI text.
- */
 const sora = Sora({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],

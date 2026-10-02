@@ -111,7 +111,7 @@ export function OtpForm() {
           if (role === "HCP") {
             router.push("/auth/hcp/verification");
           } else {
-            router.push("/patient/home");
+            router.push("/patient/search");
           }
         },
         onError: (error) => {

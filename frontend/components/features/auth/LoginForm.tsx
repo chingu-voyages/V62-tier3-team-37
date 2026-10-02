@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useForm } from "@tanstack/react-form";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ const LINK_CLASS =
 export function LoginForm() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const loginMutation = useLoginMutation();
+  const router = useRouter();
 
   const form = useForm({
     defaultValues: {
@@ -46,7 +48,7 @@ export function LoginForm() {
         { email: value.email, password: value.password, remember: false },
         {
           onSuccess: () => {
-            console.log("Login succeeded");
+            router.push("/patient/search");
           },
           onError: (error) => {
             setSubmitError(getApiErrorMessage(error));
@@ -108,7 +110,11 @@ export function LoginForm() {
       </form.Field>
 
       <div className="-mt-2 flex">
-        <button type="button" className={LINK_CLASS}>
+        <button
+          type="button"
+          className={LINK_CLASS}
+          onClick={() => router.push("/auth/forgot-password")}
+        >
           Forgot Password?
         </button>
       </div>
