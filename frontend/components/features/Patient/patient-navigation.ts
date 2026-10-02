@@ -10,7 +10,7 @@ export const patientNavigation: PatientNavigationItem[] = [
   },
   {
     label: "Appointments",
-    href: "/patient/appointments",
+    href: "/patient/home",
     icon: Calendar,
     ariaLabel: "Navigate to Appointments",
   },
