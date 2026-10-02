@@ -7,7 +7,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh">
       <PatientAsideLayout />
       <PatientMainLayout>
-        <div className="flex flex-1 items-center justify-center">{children}</div>
+        <div className="flex w-full flex-1 flex-col">{children}</div>
       </PatientMainLayout>
       <PatientAIAssistant />
     </div>
