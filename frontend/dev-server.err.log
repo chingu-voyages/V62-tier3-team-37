@@ -1,0 +1,77 @@
+⨯ Error [ApiError]: The route api/hcp/profile could not be found.
+    at toApiError (lib\api\response.ts:71:10)
+    at async serverRequest (lib\api\server-client.ts:117:11)
+    at async fetchHcpProfile (lib\dal\hcp.ts:30:20)
+  69 |   }
+  70 |
+> 71 |   return new ApiError(message, response.status, errors);
+     |          ^
+  72 | }
+  73 |
+  74 | export function getApiFieldError(error: unknown, field: string): string | undefined { {
+  status: 404,
+  errors: undefined,
+  digest: '3668648925'
+}
+⨯ Error [ApiError]: The route api/hcp/profile could not be found.
+    at toApiError (lib\api\response.ts:71:10)
+    at async serverRequest (lib\api\server-client.ts:117:11)
+    at async fetchHcpProfile (lib\dal\hcp.ts:30:20)
+  69 |   }
+  70 |
+> 71 |   return new ApiError(message, response.status, errors);
+     |          ^
+  72 | }
+  73 |
+  74 | export function getApiFieldError(error: unknown, field: string): string | undefined { {
+  status: 404,
+  errors: undefined,
+  digest: '3668648925'
+}
+⨯ Error [ApiError]: The route api/hcp/profile could not be found.
+    at toApiError (lib\api\response.ts:71:10)
+    at async serverRequest (lib\api\server-client.ts:117:11)
+    at async fetchHcpProfile (lib\dal\hcp.ts:30:20)
+  69 |   }
+  70 |
+> 71 |   return new ApiError(message, response.status, errors);
+     |          ^
+  72 | }
+  73 |
+  74 | export function getApiFieldError(error: unknown, field: string): string | undefined { {
+  status: 404,
+  errors: undefined,
+  digest: '3668648925'
+}
+⨯ Error [ApiError]: The route api/hcp/profile could not be found.
+    at toApiError (lib\api\response.ts:71:10)
+    at async serverRequest (lib\api\server-client.ts:117:11)
+    at async fetchHcpProfile (lib\dal\hcp.ts:30:20)
+  69 |   }
+  70 |
+> 71 |   return new ApiError(message, response.status, errors);
+     |          ^
+  72 | }
+  73 |
+  74 | export function getApiFieldError(error: unknown, field: string): string | undefined { {
+  status: 404,
+  errors: undefined,
+  digest: '3668648925'
+}
+⨯ Error [ApiError]: The route api/hcp/profile could not be found.
+    at toApiError (lib\api\response.ts:71:10)
+    at async serverRequest (lib\api\server-client.ts:117:11)
+    at async fetchHcpProfile (lib\dal\hcp.ts:30:20)
+  69 |   }
+  70 |
+> 71 |   return new ApiError(message, response.status, errors);
+     |          ^
+  72 | }
+  73 |
+  74 | export function getApiFieldError(error: unknown, field: string): string | undefined { {
+  status: 404,
+  errors: undefined,
+  digest: '3668648925'
+}
+⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
+⚠ Found a change in next.config.ts. Restarting the server to apply the changes...
