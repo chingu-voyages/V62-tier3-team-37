@@ -2,10 +2,9 @@
 
 import { useForm } from "@tanstack/react-form";
 import { MailCheck } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useRef, useState } from "react";
-
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { PasswordPolicyHint } from "@/components/features/auth/PasswordPolicyHint";
 import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,65 +17,40 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FieldMessage } from "@/components/ui/field-message";
+import { inlineLinkClassName } from "@/components/ui/inline-link";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { PasswordField, TextField } from "@/components/ui/text-field";
 import { useRegisterMutation } from "@/hooks/use-auth-mutations";
-import { getApiErrorMessage } from "@/lib/api";
+import { getApiErrorMessage, getApiFieldError } from "@/lib/api/client";
+import { signupJourneySteps } from "@/lib/auth/journey";
+import { ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils";
+import { emailError } from "@/lib/validation/email";
+import { firstTouchedError } from "@/lib/validation/field-error";
+import { passwordError } from "@/lib/validation/password";
+import {
+  dateOfBirthSchema,
+  errorFor,
+  fieldErrorsFrom,
+  genderSchema,
+  registerSchema,
+  termsSchema,
+} from "@/lib/validation/schemas";
 import { useAuthStore } from "@/store/use-auth-store";
+import { GENDER_LABELS, type Gender, SIGNUP_ROLE_LABELS, type SignupRole } from "@/types/auth";
 import { AuthCard } from "./AuthCard";
-import { FieldMessage } from "./FieldMessage";
-import { firstTouchedError } from "./field-error";
-import { PasswordField } from "./PasswordField";
 import { PasswordStrength } from "./PasswordStrength";
-import { SIGNUP_ROLE_LABELS, type SignupRole, SignupRoleSwitch } from "./SignupRoleSwitch";
-import { TextField } from "./TextField";
+import { SignupRoleSwitch } from "./SignupRoleSwitch";
 
-enum Gender {
-  Male = "male",
-  Female = "female",
-}
-
-type RegisterValues = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  dateOfBirth: string;
-  gender: Gender;
-  password: string;
-  confirmPassword: string;
-  terms: boolean;
-};
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function requiredError(value: string, message: string): string | undefined {
-  return value.length === 0 ? message : undefined;
-}
-
-function emailError(value: string): string | undefined {
-  if (value.length === 0) return "Email address is required";
-  if (!EMAIL_PATTERN.test(value)) return "Enter a valid email address";
-  return undefined;
-}
-
-function dateError(value: string): string | undefined {
-  return value.length === 0 ? "Date of birth is required" : undefined;
-}
-
-function passwordError(value: string): string | undefined {
-  if (value.length === 0) return "Password is required";
-  if (value.length < 8) return "Password must be at least 8 characters";
-  return undefined;
-}
-
-const GENDERS: { value: RegisterValues["gender"]; label: string }[] = [
-  { value: Gender.Male, label: "Male" },
-  { value: Gender.Female, label: "Female" },
+const GENDERS: { value: Gender; label: string }[] = [
+  { value: "male", label: GENDER_LABELS.male },
+  { value: "female", label: GENDER_LABELS.female },
 ];
 
-const LINK_CLASS =
-  "rounded-sm font-medium text-primary underline decoration-primary/35 underline-offset-4 transition-colors hover:text-primary/85 hover:decoration-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring";
+const MIN_DATE_OF_BIRTH = "1900-01-01";
+const MAX_DATE_OF_BIRTH = new Date().toISOString().slice(0, 10);
 
 type RegisterFormProps = {
   tabs?: ReactNode;
@@ -84,13 +58,22 @@ type RegisterFormProps = {
 
 export function RegisterForm({ tabs }: RegisterFormProps) {
   const [role, setRole] = useState<SignupRole>("PATIENT");
-  const [pendingSignup, setPendingSignup] = useState<RegisterValues | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const submittingRef = useRef(false);
+  const [serverFieldErrors, setServerFieldErrors] = useState<Record<string, string>>({});
+
   const router = useRouter();
   const setSignupContext = useAuthStore((state) => state.setSignupContext);
   const registerMutation = useRegisterMutation();
   const isRegistering = registerMutation.isPending;
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const form = useForm({
     defaultValues: {
@@ -98,51 +81,76 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
       lastName: "",
       email: "",
       dateOfBirth: "",
-      gender: "",
+      gender: "" as Gender | "",
       password: "",
       confirmPassword: "",
       terms: false,
     },
-    onSubmit: ({ value }) => {
-      setPendingSignup(value as RegisterValues);
+    validators: {
+      // Submit-time gate. The form previously declared only onChange validators,
+      // so a required field left untouched could be posted empty and rejected
+      // solely by the backend's 422.
+      onSubmit: ({ value }) => {
+        const result = registerSchema.safeParse(value);
+        if (result.success) return undefined;
+        const fields = fieldErrorsFrom(result.error);
+        // Per-field validators already render the individual messages; this
+        // submit-time gate only needs to stop the submit, and surfaces the one
+        // error no field owns (the password confirmation mismatch).
+        const fieldKeys = Object.keys(fields).filter((key) => key !== "confirmPassword");
+        if (fieldKeys.length > 0) return undefined;
+        return fields.confirmPassword;
+      },
+    },
+    onSubmit: () => {
+      // Only reached once every field validates. The confirm dialog reads the
+      // live form state, so no snapshot copy of the values is needed.
+      setSubmitError(null);
+      setServerFieldErrors({});
+      setConfirming(true);
     },
   });
 
   function handleConfirm() {
-    if (!pendingSignup || submittingRef.current || isRegistering) return;
-    submittingRef.current = true;
+    if (isRegistering) return;
     setSubmitError(null);
+
+    const { password, ...rest } = form.state.values;
 
     registerMutation.mutate(
       {
         role,
         payload: {
-          first_name: pendingSignup.firstName,
-          last_name: pendingSignup.lastName,
-          email: pendingSignup.email,
-          date_of_birth: pendingSignup.dateOfBirth,
-          gender: pendingSignup.gender,
-          password: pendingSignup.password,
-          password_confirmation: pendingSignup.confirmPassword,
-          terms: pendingSignup.terms,
+          first_name: rest.firstName.trim(),
+          last_name: rest.lastName.trim(),
+          email: rest.email.trim(),
+          date_of_birth: rest.dateOfBirth,
+          gender: rest.gender as Gender,
+          password,
+          password_confirmation: password,
+          terms: rest.terms,
         },
       },
       {
         onSuccess: () => {
-          submittingRef.current = false;
+          if (!mounted.current) return;
           setSignupContext({
-            email: pendingSignup.email,
-            firstName: pendingSignup.firstName,
-            lastName: pendingSignup.lastName,
+            email: rest.email.trim(),
+            firstName: rest.firstName.trim(),
+            lastName: rest.lastName.trim(),
             role,
           });
-          setPendingSignup(null);
-          router.push("/auth/otp");
+          setConfirming(false);
+          router.push(ROUTES.otp);
         },
         onError: (error) => {
-          submittingRef.current = false;
+          if (!mounted.current) return;
+          setServerFieldErrors({
+            email: getApiFieldError(error, "email") ?? "",
+            password: getApiFieldError(error, "password") ?? "",
+          });
           setSubmitError(getApiErrorMessage(error));
-          setPendingSignup(null);
+          setConfirming(false);
         },
       },
     );
@@ -151,7 +159,7 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
   return (
     <>
       <AuthCard
-        step={{ current: 1, total: 3, role }}
+        step={{ current: 1, total: signupJourneySteps(role) }}
         title="Create your account"
         subtitle={<SignupRoleSwitch role={role} onRoleChange={setRole} />}
         tabs={tabs}
@@ -161,46 +169,39 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
           className="flex flex-col gap-6"
           onSubmit={(event) => {
             event.preventDefault();
-            event.stopPropagation();
-            form.handleSubmit();
+            void form.handleSubmit();
           }}
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <form.Field
-              name="firstName"
-              validators={{
-                onChange: ({ value }) => requiredError(value, "First name is required"),
-              }}
-            >
+            <form.Field name="firstName">
               {(field) => (
                 <TextField
                   id="firstName"
+                  name="firstName"
                   label="First name"
                   autoComplete="given-name"
                   placeholder="First Name"
+                  required
                   value={field.state.value}
                   error={firstTouchedError(field.state.meta)}
-                  onChange={(value) => field.handleChange(value)}
+                  onChange={field.handleChange}
                   onBlur={field.handleBlur}
                 />
               )}
             </form.Field>
 
-            <form.Field
-              name="lastName"
-              validators={{
-                onChange: ({ value }) => requiredError(value, "Last name is required"),
-              }}
-            >
+            <form.Field name="lastName">
               {(field) => (
                 <TextField
                   id="lastName"
+                  name="lastName"
                   label="Last name"
                   autoComplete="family-name"
                   placeholder="Family Name"
+                  required
                   value={field.state.value}
                   error={firstTouchedError(field.state.meta)}
-                  onChange={(value) => field.handleChange(value)}
+                  onChange={field.handleChange}
                   onBlur={field.handleBlur}
                 />
               )}
@@ -211,13 +212,18 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
             {(field) => (
               <TextField
                 id="email"
+                name="email"
                 label="Email address"
                 type="email"
                 autoComplete="email"
                 placeholder="you@example.com"
+                required
                 value={field.state.value}
-                error={firstTouchedError(field.state.meta)}
-                onChange={(value) => field.handleChange(value)}
+                error={serverFieldErrors.email || firstTouchedError(field.state.meta)}
+                onChange={(value) => {
+                  field.handleChange(value);
+                  if (submitError) setSubmitError(null);
+                }}
                 onBlur={field.handleBlur}
               />
             )}
@@ -226,17 +232,21 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
           <div className="grid items-start gap-4 sm:grid-cols-2">
             <form.Field
               name="dateOfBirth"
-              validators={{ onChange: ({ value }) => dateError(value) }}
+              validators={{ onChange: ({ value }) => errorFor(dateOfBirthSchema, value) }}
             >
               {(field) => (
                 <TextField
                   id="dateOfBirth"
+                  name="dateOfBirth"
                   label="Date of birth"
                   type="date"
                   autoComplete="bday"
+                  required
+                  min={MIN_DATE_OF_BIRTH}
+                  max={MAX_DATE_OF_BIRTH}
                   value={field.state.value}
                   error={firstTouchedError(field.state.meta)}
-                  onChange={(value) => field.handleChange(value)}
+                  onChange={field.handleChange}
                   onBlur={field.handleBlur}
                 />
               )}
@@ -244,28 +254,24 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
 
             <form.Field
               name="gender"
-              validators={{
-                onChange: ({ value }) => (value.length === 0 ? "Gender is required" : undefined),
-              }}
+              validators={{ onChange: ({ value }) => errorFor(genderSchema, value) }}
             >
               {(field) => {
                 const error = firstTouchedError(field.state.meta);
                 return (
-                  <div
-                    className="flex min-w-0 flex-col gap-1.5"
-                    aria-describedby={error ? "gender-error" : undefined}
-                  >
+                  <div className="flex min-w-0 flex-col gap-1.5">
                     <span id="gender-label" className="type-label text-foreground">
                       Gender
                     </span>
+                    {/* aria-describedby belongs on the control itself, not on a
+                        wrapper div — on a wrapper it is never announced. */}
                     <RadioGroup
                       value={field.state.value}
-                      onValueChange={(value) =>
-                        field.handleChange(value as RegisterValues["gender"])
-                      }
+                      onValueChange={(value) => field.handleChange(value as Gender)}
                       aria-labelledby="gender-label"
                       aria-invalid={error ? true : undefined}
-                      className="grid gap-2 sm:grid-cols-2"
+                      aria-describedby={error ? "gender-error" : undefined}
+                      className="sm:grid-cols-2"
                     >
                       {GENDERS.map((option) => (
                         <div
@@ -306,15 +312,18 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
                 <div className="flex min-w-0 flex-col gap-2">
                   <PasswordField
                     id="password"
+                    name="password"
                     label="Password"
                     autoComplete="new-password"
-                    placeholder="At least 8 characters"
+                    placeholder="Mixed case, a number and a symbol"
+                    required
                     value={field.state.value}
                     error={firstTouchedError(field.state.meta)}
-                    onChange={(value) => field.handleChange(value)}
+                    onChange={field.handleChange}
                     onBlur={field.handleBlur}
                   />
                   <PasswordStrength value={field.state.value} />
+                  <PasswordPolicyHint value={field.state.value} />
                 </div>
               )}
             </form.Field>
@@ -323,9 +332,9 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
               name="confirmPassword"
               validators={{
                 onChange: ({ value, fieldApi }) => {
-                  const password = fieldApi.form.state.values.password;
                   if (value.length === 0) return "Confirm your password";
-                  if (value !== password) return "Passwords do not match";
+                  if (value !== fieldApi.form.state.values.password)
+                    return "Passwords do not match";
                   return undefined;
                 },
                 onChangeListenTo: ["password"],
@@ -334,12 +343,14 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
               {(field) => (
                 <PasswordField
                   id="confirmPassword"
+                  name="confirmPassword"
                   label="Confirm password"
                   autoComplete="new-password"
                   placeholder="Re-enter your password"
+                  required
                   value={field.state.value}
                   error={firstTouchedError(field.state.meta)}
-                  onChange={(value) => field.handleChange(value)}
+                  onChange={field.handleChange}
                   onBlur={field.handleBlur}
                 />
               )}
@@ -353,9 +364,7 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
 
           <form.Field
             name="terms"
-            validators={{
-              onChange: ({ value }) => (value ? undefined : "Please accept the Terms of Service"),
-            }}
+            validators={{ onChange: ({ value }) => errorFor(termsSchema, value) }}
           >
             {(field) => {
               const error = firstTouchedError(field.state.meta);
@@ -376,13 +385,13 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
                     >
                       <span>
                         I have read and agree to the{" "}
-                        <Link href="/terms" className={LINK_CLASS}>
+                        <a href={ROUTES.terms} className={inlineLinkClassName}>
                           Terms of Service
-                        </Link>{" "}
+                        </a>{" "}
                         and{" "}
-                        <Link href="/privacy" className={LINK_CLASS}>
+                        <a href={ROUTES.privacy} className={inlineLinkClassName}>
                           Privacy Policy
-                        </Link>
+                        </a>
                         .
                       </span>
                     </Label>
@@ -410,9 +419,9 @@ export function RegisterForm({ tabs }: RegisterFormProps) {
       </AuthCard>
 
       <Dialog
-        open={pendingSignup !== null}
+        open={confirming}
         onOpenChange={(open) => {
-          if (!open) setPendingSignup(null);
+          if (!open && !isRegistering) setConfirming(false);
         }}
       >
         <DialogContent>

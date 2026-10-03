@@ -10,7 +10,7 @@ import {
   formatFileSize,
   getFileTypeLabel,
   validateDocumentFile,
-} from "@/lib/file-validation";
+} from "@/lib/validation/files";
 
 type DocumentUploadCardProps = {
   id: string;

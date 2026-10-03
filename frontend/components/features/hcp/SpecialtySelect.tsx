@@ -1,5 +1,6 @@
 "use client";
 
+import { FieldMessage } from "@/components/ui/field-message";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -32,20 +33,40 @@ export const HCP_SPECIALTIES = [
   "Other",
 ] as const;
 
+export type HcpSpecialty = (typeof HCP_SPECIALTIES)[number];
+
 type SpecialtySelectProps = {
+  id?: string;
   value?: string;
+  error?: string;
   onValueChange?: (value: string) => void;
 };
 
-export function SpecialtySelect({ value, onValueChange }: SpecialtySelectProps) {
+export function SpecialtySelect({
+  id = "specialty",
+  value,
+  error,
+  onValueChange,
+}: SpecialtySelectProps) {
+  const errorId = `${id}-error`;
+
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor="specialty">Specialty</Label>
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <Label htmlFor={id}>Specialty</Label>
+
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger id="specialty" aria-label="Select specialty">
+        {/* The trigger carries the accessible name and the invalid/description
+            wiring. It previously set `aria-label="Select specialty"`, which
+            overrode the visible <Label> so AT announced the placeholder instead
+            of the field name, and left nowhere to attach an error. */}
+        <SelectTrigger
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+        >
           <SelectValue placeholder="Select specialty" />
         </SelectTrigger>
-        <SelectContent aria-label="Specialty options">
+        <SelectContent>
           {HCP_SPECIALTIES.map((specialty) => (
             <SelectItem key={specialty} value={specialty}>
               {specialty}
@@ -53,6 +74,8 @@ export function SpecialtySelect({ value, onValueChange }: SpecialtySelectProps) 
           ))}
         </SelectContent>
       </Select>
+
+      <FieldMessage id={error ? errorId : undefined}>{error}</FieldMessage>
     </div>
   );
 }

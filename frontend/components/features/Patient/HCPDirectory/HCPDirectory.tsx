@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { HCP, HCPFilters } from "@/types/hcp";
-import { HCPDirectoryFilters } from "./HCPDirectoryFilters";
+import type { HCP, HCPFilters } from "@/types/hcp-directory";
+import { HCPDirectoryFilters, hasAnyFilter } from "./HCPDirectoryFilters";
 import { HCPDirectoryHeader } from "./HCPDirectoryHeader";
 import { HCPEmptyState } from "./HCPEmptyState";
 import { HCPList } from "./HCPList";
@@ -10,7 +10,6 @@ import { HCPPagination } from "./HCPPagination";
 
 type HCPDirectoryProps = {
   hcps: HCP[];
-  total?: number;
   pagination?: {
     currentPage: number;
     totalPages: number;
@@ -30,6 +29,9 @@ export function HCPDirectory({
   onFavorite,
 }: HCPDirectoryProps) {
   const [appliedFilters, setAppliedFilters] = useState<HCPFilters>({});
+  // Incremented on every external clear so the filter bar can re-seed its draft.
+  // The bar owns draft state, so this is how it learns the parent reset.
+  const [resetToken, setResetToken] = useState(0);
 
   const handleApplyFilters = useCallback(
     (filters: HCPFilters) => {
@@ -41,22 +43,26 @@ export function HCPDirectory({
 
   const handleClearFilters = useCallback(() => {
     setAppliedFilters({});
+    setResetToken((token) => token + 1);
     onFiltersChange?.({});
   }, [onFiltersChange]);
 
-  const hasAppliedFilters = Object.values(appliedFilters).some((v) => v !== undefined && v !== "");
   const isEmpty = hcps.length === 0;
 
   return (
     <div className="flex flex-1 flex-col">
       <HCPDirectoryHeader />
-      <HCPDirectoryFilters filters={appliedFilters} onApply={handleApplyFilters} />
+      <HCPDirectoryFilters
+        filters={appliedFilters}
+        onApply={handleApplyFilters}
+        resetToken={resetToken}
+      />
 
       {isEmpty ? (
         <div className="flex flex-1 items-center justify-center">
           <HCPEmptyState
-            variant={hasAppliedFilters ? "no-results" : "no-data"}
-            onClearFilters={hasAppliedFilters ? handleClearFilters : undefined}
+            variant={hasAnyFilter(appliedFilters) ? "no-results" : "no-data"}
+            onClearFilters={hasAnyFilter(appliedFilters) ? handleClearFilters : undefined}
           />
         </div>
       ) : (
@@ -65,13 +71,13 @@ export function HCPDirectory({
             {hcps.length} doctor{hcps.length !== 1 ? "s" : ""} found
           </p>
           <HCPList hcps={hcps} onBook={onBook} onFavorite={onFavorite} />
-          {pagination && (
+          {pagination ? (
             <HCPPagination
               currentPage={pagination.currentPage}
               totalPages={pagination.totalPages}
               onPageChange={onPageChange ?? (() => {})}
             />
-          )}
+          ) : null}
         </>
       )}
     </div>

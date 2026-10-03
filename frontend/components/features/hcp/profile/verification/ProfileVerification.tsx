@@ -1,4 +1,5 @@
 import { ShieldCheck } from "lucide-react";
+import { formatCalendarDate } from "@/lib/format";
 import type {
   ProfileVerificationRequirementKey,
   ProfileVerificationState,
@@ -22,16 +23,6 @@ type ResolvedRequirementRow = {
   state: ProfileVerificationState;
 };
 
-function formatTimestamp(value: string) {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return undefined;
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(parsed);
-}
-
 export function ProfileVerification({ verification }: ProfileVerificationProps) {
   const statesByKey = new Map(
     verification?.requirements?.map((item) => [item.key, item.state]) ?? [],
@@ -44,7 +35,7 @@ export function ProfileVerification({ verification }: ProfileVerificationProps) 
     : [];
 
   const lastVerified = verification?.lastVerifiedAt
-    ? formatTimestamp(verification.lastVerifiedAt)
+    ? formatCalendarDate(verification.lastVerifiedAt)
     : undefined;
 
   return (

@@ -1,5 +1,3 @@
-"use client";
-
 import { TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -12,8 +10,12 @@ type ProfileSectionErrorProps = {
 };
 
 /**
- * Error presentation for a single profile section. Keeps the failure contained
- * so sibling sections stay visible, and never surfaces the raw error.
+ * Error presentation for a single profile section. Keeps the failure contained so
+ * sibling sections stay visible, and never surfaces the raw error.
+ *
+ * Server Component — it only becomes interactive through the `onRetry` prop, so
+ * the owning `error.tsx` supplies the client directive and this file stays
+ * reusable from anywhere.
  */
 export function ProfileSectionError({
   message,
@@ -40,3 +42,17 @@ export function ProfileSectionError({
     </div>
   );
 }
+
+/**
+ * The five `error.tsx` files were identical apart from one message string, so the
+ * wording lived in five places and could drift. Copy changes now touch one map.
+ */
+export const PROFILE_SECTION_ERROR_MESSAGES = {
+  overview: "We couldn't load your profile information.",
+  verification: "We couldn't load your verification status.",
+  professional: "We couldn't load your professional details.",
+  details: "We couldn't load your professional preferences.",
+  availability: "We couldn't load your availability.",
+} as const satisfies Record<string, string>;
+
+export type ProfileSectionErrorMessages = typeof PROFILE_SECTION_ERROR_MESSAGES;

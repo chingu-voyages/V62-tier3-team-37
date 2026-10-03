@@ -1,16 +1,18 @@
 import type { ReactNode } from "react";
-import type { SignupRole } from "./SignupRoleSwitch";
 import { StepIndicator } from "./StepIndicator";
 
 type AuthCardProps = {
-  /** Renders the step progress marker above the title. */
-  step?: { current: number; total: number; role?: SignupRole };
+  /**
+   * Progress marker. `total` is supplied by the caller because each screen knows
+   * its own journey — deriving it from the role meant the stepper disagreed with
+   * the flow whenever the role was not yet known.
+   */
+  step?: { current: number; total: number };
   eyebrow?: string;
   title: string;
   subtitle: ReactNode;
   tabs?: ReactNode;
   children: ReactNode;
-
   info?: ReactNode;
   footer?: ReactNode;
 };
@@ -28,7 +30,7 @@ export function AuthCard({
   return (
     <div className="m-auto w-full max-w-xl 2xl:max-w-2xl">
       <div className="flex flex-col items-center gap-3 text-center">
-        {step ? <StepIndicator current={step.current} total={step.total} role={step.role} /> : null}
+        {step ? <StepIndicator current={step.current} total={step.total} /> : null}
         {eyebrow ? <p className="type-step text-muted-foreground">{eyebrow}</p> : null}
         <h1 className="type-h1 text-foreground">{title}</h1>
         <div className="max-w-md type-body text-muted-foreground">{subtitle}</div>

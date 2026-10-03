@@ -1,29 +1,17 @@
-import { BadgeCheck, HeartHandshake, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HealthHubLogo } from "./HealthHubLogo";
-
-const _TRUST_POINTS = [
-  {
-    icon: ShieldCheck,
-    title: "Private by design",
-    description: "Encrypted records with consent-driven access controls.",
-  },
-  {
-    icon: BadgeCheck,
-    title: "Verified professionals",
-    description: "Every clinician is credential-checked before they practise.",
-  },
-  {
-    icon: HeartHandshake,
-    title: "Connected care",
-    description: "Appointments, results and follow-up in one shared timeline.",
-  },
-] as const;
 
 type AuthBrandPanelProps = {
   className?: string;
 };
 
+/**
+ * Left-hand brand panel on the auth routes.
+ *
+ * The decorative imagery is a CSS background rather than `next/image`: it is a
+ * single pre-composed asset used as a cover layer behind a text overlay, so it
+ * gains nothing from the image optimizer.
+ */
 export function AuthBrandPanel({ className }: AuthBrandPanelProps) {
   return (
     <aside
@@ -33,8 +21,6 @@ export function AuthBrandPanel({ className }: AuthBrandPanelProps) {
         className,
       )}
     >
-      {/* <Image src="/images/auth/top-shapes.svg" className="absolute opacity-70 right-0" alt="Top shapes" width={300} height={300} /> */}
-      {/* <Image src="/images/auth/bottom-shapes.svg" className="absolute opacity-60 bottom-0 right-5" alt="Bottom shapes" width={150} height={300} />  */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-linear-to-r from-black via-black/50 to-transparent "
@@ -66,44 +52,10 @@ export function AuthBrandPanel({ className }: AuthBrandPanelProps) {
           </div>
         </div>
 
-        {/* <div className="relative min-h-40 max-h-80 flex-1 overflow-hidden rounded-2xl border border-primary-foreground/10 bg-primary-foreground/5">
-           <Image
-            src={HERO_IMAGE.src}
-            alt={HERO_IMAGE.alt}
-            fill
-            priority
-            sizes="(min-width: 1536px) 34rem, (min-width: 1024px) 40vw, 100vw"
-            className="object-cover"
-          /> 
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-linear-to-t from-primary/70 via-primary/10 to-transparent"
-          />
-        </div> */}
-
         <p className="type-helper text-primary-foreground/65">
           © 2026 HealthHub. All rights reserved.
         </p>
       </div>
     </aside>
   );
-}
-
-{
-  /* <ul className="mt-auto flex flex-col gap-4 xl:gap-5">
-          {TRUST_POINTS.map((point) => (
-            <li key={point.title} className="flex items-start gap-3">
-              <span
-                aria-hidden="true"
-                className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/10 text-primary-foreground"
-              >
-                <point.icon className="size-4.5" strokeWidth={1.75} />
-              </span>
-              <div className="min-w-0">
-                <p className="type-label text-primary-foreground">{point.title}</p>
-                <p className="mt-0.5 type-helper text-primary-foreground/65">{point.description}</p>
-              </div>
-            </li>
-          ))}
-        </ul> */
 }

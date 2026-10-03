@@ -1,12 +1,16 @@
 import { CalendarDays } from "lucide-react";
-import type { HcpAvailability, WorkingDayKey } from "@/types/hcp-profile";
-import { ProfileCard, SectionEmptyState, StaticEditButton } from "../shared";
+import { EditAvailabilityForm } from "@/components/features/hcp/profile/shared/EditAvailabilityForm";
+import type { HcpAvailability } from "@/types/hcp-profile";
+import { ProfileCard, ProfilePill, SectionEmptyState } from "../shared";
 
 type ProfileAvailabilitySectionProps = {
   availability?: HcpAvailability;
 };
 
-const DAY_PILL_LABELS: { key: WorkingDayKey; label: string }[] = [
+const DAY_PILL_LABELS: {
+  key: NonNullable<HcpAvailability["workingDays"]>[number];
+  label: string;
+}[] = [
   { key: "MON", label: "Mon" },
   { key: "TUE", label: "Tue" },
   { key: "WED", label: "Wed" },
@@ -19,15 +23,17 @@ const DAY_PILL_LABELS: { key: WorkingDayKey; label: string }[] = [
 const DAY_LABELS_BY_KEY = new Map(DAY_PILL_LABELS.map((day) => [day.key, day.label]));
 
 export function ProfileAvailabilitySection({ availability }: ProfileAvailabilitySectionProps) {
-  const workingDays = new Set(availability?.workingDays ?? []);
+  const workingDays = availability?.workingDays ?? [];
   const ranges = availability?.ranges ?? [];
-  const hasSchedule = workingDays.size > 0 || ranges.length > 0;
+  const hasSchedule = workingDays.length > 0 || ranges.length > 0;
 
   return (
     <ProfileCard
       title="Availability"
       icon={CalendarDays}
-      action={<StaticEditButton label="Edit availability" />}
+      // The editor needs the raw slots because deleting one addresses the server by
+      // its id, which the grouped range view has lost.
+      action={<EditAvailabilityForm slots={availability?.slots ?? []} />}
       className="h-full"
     >
       <p className="type-helper text-muted-foreground">Set your working days and hours</p>
@@ -36,22 +42,16 @@ export function ProfileAvailabilitySection({ availability }: ProfileAvailability
         <>
           <ul className="mt-4 flex flex-wrap gap-1.5">
             {DAY_PILL_LABELS.map((day) => {
-              const isAvailable = workingDays.has(day.key);
+              const isAvailable = workingDays.includes(day.key);
 
               return (
                 <li key={day.key}>
-                  <span
-                    className={
-                      isAvailable
-                        ? "inline-flex items-center rounded-lg border border-secondary/30 bg-accent px-2.5 py-1 type-helper font-medium text-primary"
-                        : "inline-flex items-center rounded-lg border border-border bg-muted px-2.5 py-1 type-helper text-muted-foreground"
-                    }
-                  >
+                  <ProfilePill tone={isAvailable ? "accent" : "neutral"}>
                     {day.label}
                     <span className="sr-only">
                       {isAvailable ? " — available" : " — not available"}
                     </span>
-                  </span>
+                  </ProfilePill>
                 </li>
               );
             })}
@@ -62,7 +62,10 @@ export function ProfileAvailabilitySection({ availability }: ProfileAvailability
               <ul className="flex flex-col divide-y divide-border/70">
                 {ranges.map((range) => (
                   <li
-                    key={`${range.startTime}-${range.endTime}-${range.days.join("-")}`}
+                    // Days are sorted before joining: `["MON","WED"]` and
+                    // `["WED","MON"]` describe the same range, and the previous key
+                    // treated them as different rows.
+                    key={`${range.startTime}-${range.endTime}-${[...range.days].sort().join("-")}`}
                     className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2.5"
                   >
                     <span className="type-label font-medium text-foreground">

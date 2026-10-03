@@ -1,17 +1,9 @@
-import { ProfileSkeleton, ProfileSkeletonCircle, skeletonKeys } from "../shared";
+import { ProfileCardSkeleton, ProfileSkeleton, skeletonKeys } from "../shared";
 
 export function ProfileAvailabilitySectionSkeleton() {
   return (
-    <section className="flex min-w-0 flex-col rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5">
-      <header className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <ProfileSkeletonCircle className="size-8" />
-          <ProfileSkeleton className="h-4 w-28" />
-        </div>
-        <ProfileSkeletonCircle className="size-8" />
-      </header>
-
-      <ProfileSkeleton className="mt-4 h-3 w-44" />
+    <ProfileCardSkeleton>
+      <ProfileSkeleton className="h-3 w-44" />
 
       <div className="mt-4 flex flex-wrap gap-1.5">
         {skeletonKeys(7).map((dayKey) => (
@@ -27,6 +19,6 @@ export function ProfileAvailabilitySectionSkeleton() {
           </div>
         ))}
       </div>
-    </section>
+    </ProfileCardSkeleton>
   );
 }

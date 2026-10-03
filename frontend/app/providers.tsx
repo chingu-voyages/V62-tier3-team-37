@@ -17,9 +17,10 @@ function makeQueryClient() {
 let browserQueryClient: QueryClient | undefined;
 
 function getQueryClient() {
-  if (!browserQueryClient) {
-    browserQueryClient = makeQueryClient();
-  }
+  // A fresh client per server render, one shared client per browser session.
+  if (typeof window === "undefined") return makeQueryClient();
+
+  browserQueryClient ??= makeQueryClient();
   return browserQueryClient;
 }
 

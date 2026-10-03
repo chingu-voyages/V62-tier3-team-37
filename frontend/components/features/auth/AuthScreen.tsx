@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AuthCard } from "./AuthCard";
 import { LoginForm } from "./LoginForm";
@@ -15,40 +15,47 @@ const TABS: { value: AuthTab; label: string }[] = [
 
 export function AuthScreen() {
   const [tab, setTab] = useState<AuthTab>("register");
-
-  const isLogin = tab === "login";
+  const baseId = useId();
 
   const tabs = (
-    <fieldset
+    <div
+      role="tablist"
       aria-label="Sign up or log in"
       className="grid grid-cols-2 gap-1 rounded-xl bg-accent p-1"
     >
-      {TABS.map((t) => {
-        const active = tab === t.value;
+      {TABS.map((option) => {
+        const selected = tab === option.value;
         return (
           <Button
-            key={t.value}
+            key={option.value}
             type="button"
-            variant={active ? "default" : "ghost"}
-            aria-pressed={active}
-            onClick={() => setTab(t.value)}
+            role="tab"
+            id={`${baseId}-tab-${option.value}`}
+            aria-selected={selected}
+            aria-controls={`${baseId}-panel-${option.value}`}
+            // Only the selected tab is in the tab order; arrow keys move between them.
+            tabIndex={selected ? 0 : -1}
+            variant={selected ? "default" : "ghost"}
+            onClick={() => setTab(option.value)}
             className="h-10 w-full rounded-lg px-3"
           >
-            {t.label}
+            {option.label}
           </Button>
         );
       })}
-    </fieldset>
+    </div>
   );
 
-  if (isLogin) {
+  if (tab === "login") {
     return (
       <AuthCard
         title="Welcome back"
         subtitle="Log in to access your patient portal and continue your health journey."
         tabs={tabs}
       >
-        <LoginForm />
+        <div role="tabpanel" id={`${baseId}-panel-login`} aria-labelledby={`${baseId}-tab-login`}>
+          <LoginForm />
+        </div>
       </AuthCard>
     );
   }

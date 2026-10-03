@@ -11,8 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { formatAppointmentSlot, formatClockTime, formatLongDate } from "@/lib/format";
 import { useAppointmentStore } from "@/store/use-appointment-store";
 import type { Appointment, AppointmentStatus } from "@/types/appointment";
 
@@ -38,27 +39,23 @@ const STATUS_LABEL: Record<AppointmentStatus, string> = {
   cancelled: "Cancelled",
 };
 
-function formatAppointmentDate(date: string): string {
-  const [year, month, day] = date.split("-").map(Number);
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(Date.UTC(year, month - 1, day)));
+/** Today as `YYYY-MM-DD`, so a calendar date is compared without any timezone maths. */
+function todayIso(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
 }
 
-function formatTime(time: string): string {
-  const [hourString, minute] = time.split(":");
-  const hour = Number(hourString);
-  const period = hour >= 12 ? "PM" : "AM";
-  const hour12 = hour % 12 || 12;
-  return `${hour12}:${minute} ${period}`;
-}
-
+/**
+ * A visit counts as past once its date has passed, not only once something
+ * flipped its status. Reading `status` alone meant an appointment whose date went
+ * by kept showing under "Upcoming" indefinitely, because nothing reconciled the
+ * two.
+ */
 function isPast(appointment: Appointment): boolean {
-  return appointment.status === "completed" || appointment.status === "cancelled";
+  if (appointment.status === "completed" || appointment.status === "cancelled") return true;
+  return appointment.date < todayIso();
 }
 
 function canManage(appointment: Appointment): boolean {
@@ -98,7 +95,11 @@ export function PatientAppointments() {
   }
 
   return (
-    <section id="appointments" aria-labelledby="appointments-heading" className="flex flex-col gap-5">
+    <section
+      id="appointments"
+      aria-labelledby="appointments-heading"
+      className="flex flex-col gap-5"
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 id="appointments-heading" className="type-h1 text-foreground">
@@ -114,23 +115,26 @@ export function PatientAppointments() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter appointments">
-        {FILTERS.map((item) => {
-          const selected = filter === item.value;
-          return (
-            <Button
-              key={item.value}
-              type="button"
-              size="sm"
-              variant={selected ? "default" : "outline"}
-              aria-pressed={selected}
-              onClick={() => setFilter(item.value)}
-            >
-              {item.label}
-            </Button>
-          );
-        })}
-      </div>
+      <fieldset className="border-0 p-0">
+        <legend className="sr-only">Filter appointments</legend>
+        <div className="flex flex-wrap gap-2">
+          {FILTERS.map((item) => {
+            const selected = filter === item.value;
+            return (
+              <Button
+                key={item.value}
+                type="button"
+                size="sm"
+                variant={selected ? "default" : "outline"}
+                aria-pressed={selected}
+                onClick={() => setFilter(item.value)}
+              >
+                {item.label}
+              </Button>
+            );
+          })}
+        </div>
+      </fieldset>
 
       {visible.length === 0 ? (
         <p className="rounded-2xl bg-accent px-5 py-10 text-center type-body text-muted-foreground">
@@ -152,11 +156,11 @@ export function PatientAppointments() {
                   <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 type-label text-muted-foreground">
                     <span className="inline-flex items-center gap-1.5">
                       <CalendarClock className="size-3.5" aria-hidden="true" />
-                      {formatAppointmentDate(appointment.date)}
+                      {formatLongDate(appointment.date)}
                     </span>
                     <span className="inline-flex items-center gap-1.5">
                       <Clock className="size-3.5" aria-hidden="true" />
-                      {formatTime(appointment.time)}
+                      {formatClockTime(appointment.time)}
                     </span>
                     <span className="inline-flex items-center gap-1.5">
                       <MapPin className="size-3.5" aria-hidden="true" />
@@ -345,7 +349,7 @@ function ViewAppointmentDialog({
               <Detail
                 icon={CalendarClock}
                 label="When"
-                value={`${formatAppointmentDate(appointment.date)} at ${formatTime(appointment.time)}`}
+                value={`${formatAppointmentSlot(appointment.date, appointment.time)}`}
               />
               <Detail icon={MapPin} label="Location" value={appointment.location} />
               <Detail icon={Clock} label="Reason" value={appointment.reason} />
@@ -467,8 +471,8 @@ function CancelAppointmentDialog({
             <DialogHeader className="items-start">
               <DialogTitle>Cancel this visit?</DialogTitle>
               <DialogDescription>
-                {appointment.doctorName} on {formatAppointmentDate(appointment.date)} will be marked
-                as cancelled.
+                {appointment.doctorName} on {formatLongDate(appointment.date)} will be marked as
+                cancelled.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -486,6 +490,15 @@ function CancelAppointmentDialog({
   );
 }
 
+/**
+ * Uncontrolled labelled input.
+ *
+ * This is the fourth hand-rolled field primitive in the app, after the auth
+ * `TextField`/`PasswordField` pair and the three inline copies in
+ * `HcpVerificationForm`. It now composes the shared `FormField`, so it carries
+ * `aria-invalid`/`aria-describedby` and a `FieldMessage` instead of dropping the
+ * error wiring the other three already had.
+ */
 function Field({
   id,
   label,
@@ -493,6 +506,7 @@ function Field({
   type = "text",
   required = false,
   defaultValue,
+  error,
 }: {
   id: string;
   label: string;
@@ -500,12 +514,22 @@ function Field({
   type?: string;
   required?: boolean;
   defaultValue?: string;
+  error?: string;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      <Input id={id} name={name} type={type} required={required} defaultValue={defaultValue} />
-    </div>
+    <FormField id={id} label={label} error={error} required={required}>
+      {({ id: controlId, describedBy, invalid }) => (
+        <Input
+          id={controlId}
+          name={name}
+          type={type}
+          required={required}
+          defaultValue={defaultValue}
+          aria-invalid={invalid || undefined}
+          aria-describedby={describedBy}
+        />
+      )}
+    </FormField>
   );
 }
 

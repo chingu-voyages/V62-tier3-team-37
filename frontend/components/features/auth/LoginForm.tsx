@@ -1,57 +1,64 @@
-﻿"use client";
+"use client";
 
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
-
+import { PasswordField, TextField } from "@/components/ui/text-field";
 import { useLoginMutation } from "@/hooks/use-auth-mutations";
-import { getApiErrorMessage } from "@/lib/api";
-import { firstTouchedError } from "./field-error";
-import { PasswordField } from "./PasswordField";
-import { TextField } from "./TextField";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function emailError(value: string): string | undefined {
-  if (value.length === 0) return "Email address is required";
-  if (!EMAIL_PATTERN.test(value)) return "Enter a valid email address";
-
-  return undefined;
-}
-
-function passwordError(value: string): string | undefined {
-  if (value.length === 0) return "Password is required";
-
-  return undefined;
-}
-
-const LINK_CLASS =
-  "rounded-sm font-medium text-primary underline decoration-primary/35 underline-offset-4 transition-colors hover:text-primary/85 hover:decoration-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring";
+import { getApiErrorMessage, getApiFieldError } from "@/lib/api/client";
+import { ROUTES } from "@/lib/constants/routes";
+import { emailSchema } from "@/lib/validation/email";
+import { firstTouchedError } from "@/lib/validation/field-error";
+import { errorFor, loginSchema } from "@/lib/validation/schemas";
 
 export function LoginForm() {
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [serverFieldErrors, setServerFieldErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
+
   const loginMutation = useLoginMutation();
   const router = useRouter();
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const form = useForm({
-    defaultValues: {
-      email: "",
-      password: "",
+    defaultValues: { email: "", password: "" },
+    validators: {
+      // Submit-time gate. Without this the form relied entirely on onChange
+      // validators firing, and a field never touched could post empty.
+      onSubmit: ({ value }) => errorFor(loginSchema, value),
     },
-
     onSubmit: ({ value }) => {
       setSubmitError(null);
+      setServerFieldErrors({});
+
       loginMutation.mutate(
-        { email: value.email, password: value.password, remember: false },
+        { email: value.email.trim(), password: value.password, remember: false },
         {
           onSuccess: () => {
-            router.push("/patient/search");
+            if (!mounted.current) return;
+            // Push to the root and let the server route by role. The role is not
+            // known on the client yet, and hardcoding /patient/search sent every
+            // HCP to the patient directory.
+            router.push(ROUTES.home);
           },
           onError: (error) => {
-            setSubmitError(getApiErrorMessage(error));
+            if (!mounted.current) return;
+            setServerFieldErrors({
+              email: getApiFieldError(error, "email"),
+              password: getApiFieldError(error, "password"),
+            });
+            setSubmitError(getApiErrorMessage(error, "Invalid email or password."));
           },
         },
       );
@@ -64,60 +71,52 @@ export function LoginForm() {
       className="flex flex-col gap-5"
       onSubmit={(event) => {
         event.preventDefault();
-        event.stopPropagation();
-        form.handleSubmit();
+        void form.handleSubmit();
       }}
     >
       <form.Field
         name="email"
-        validators={{
-          onChange: ({ value }) => emailError(value),
-        }}
+        validators={{ onChange: ({ value }) => errorFor(emailSchema, value) }}
       >
         {(field) => (
           <TextField
             id="email"
+            name="email"
             label="Email address"
             type="email"
             autoComplete="email"
             placeholder="Enter your email"
+            required
             value={field.state.value}
-            error={firstTouchedError(field.state.meta)}
-            onChange={(value) => field.handleChange(value)}
+            error={serverFieldErrors.email ?? firstTouchedError(field.state.meta)}
+            onChange={(value) => {
+              field.handleChange(value);
+              if (submitError) setSubmitError(null);
+            }}
             onBlur={field.handleBlur}
           />
         )}
       </form.Field>
 
-      <form.Field
-        name="password"
-        validators={{
-          onChange: ({ value }) => passwordError(value),
-        }}
-      >
+      <form.Field name="password">
         {(field) => (
           <PasswordField
             id="password"
+            name="password"
             label="Password"
             autoComplete="current-password"
             placeholder="Enter your password"
+            required
             value={field.state.value}
-            error={firstTouchedError(field.state.meta)}
-            onChange={(value) => field.handleChange(value)}
+            error={serverFieldErrors.password ?? firstTouchedError(field.state.meta)}
+            onChange={(value) => {
+              field.handleChange(value);
+              if (submitError) setSubmitError(null);
+            }}
             onBlur={field.handleBlur}
           />
         )}
       </form.Field>
-
-      <div className="-mt-2 flex">
-        <button
-          type="button"
-          className={LINK_CLASS}
-          onClick={() => router.push("/auth/forgot-password")}
-        >
-          Forgot Password?
-        </button>
-      </div>
 
       {submitError ? (
         <Callout tone="danger" role="alert">

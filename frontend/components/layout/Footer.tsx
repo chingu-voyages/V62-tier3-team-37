@@ -1,18 +1,24 @@
 import Link from "next/link";
+import { ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils";
 
 const FOOTER_LINKS = [
-  { href: "/privacy-policy", label: "Privacy Policy" },
-  { href: "/terms-of-service", label: "Terms of Service" },
-  { href: "/support", label: "Support" },
+  { href: ROUTES.privacy, label: "Privacy Policy" },
+  { href: ROUTES.terms, label: "Terms of Service" },
+  { href: ROUTES.support, label: "Support" },
 ] as const;
 
 /**
- * Global footer shown on every page.
+ * Compact site footer.
  *
- * Deliberately compact: it sits at the bottom of the fixed-height auth
- * column, so it must never compete with the form for vertical space.
+ * Deliberately small: it is designed to sit at the bottom of the fixed-height
+ * auth column, so it must never compete with the form for vertical space.
  * Copyright line stacks above the navigation links on small screens.
+ *
+ * Paths come from `ROUTES` so they cannot drift from the ones the signup form
+ * links to — the two previously pointed at different URLs for the same two pages.
+ *
+ * Not currently mounted by any route; the auth layout reserves the space for it.
  */
 export function Footer({ className }: { className?: string }) {
   return (

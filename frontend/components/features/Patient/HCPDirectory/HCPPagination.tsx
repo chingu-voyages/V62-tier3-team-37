@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { HCPPagination as HCPPaginationModel } from "@/types/hcp";
+import type { HCPPagination as HCPPaginationModel } from "@/types/hcp-directory";
 
 type HCPPaginationProps = HCPPaginationModel & {
   onPageChange: (page: number) => void;
@@ -44,9 +44,11 @@ export function HCPPagination({
   onPageChange,
   disabled,
 }: HCPPaginationProps) {
-  if (totalPages <= 1) return null;
-
+  // `getPageNumbers` is pure and cheap, and the early return stays above any
+  // future hook — a `useMemo` here would violate the rules of hooks.
   const pageNumbers = getPageNumbers(currentPage, totalPages);
+
+  if (totalPages <= 1) return null;
 
   return (
     <nav aria-label="Pagination" className="mt-8 flex items-center justify-center gap-1.5">

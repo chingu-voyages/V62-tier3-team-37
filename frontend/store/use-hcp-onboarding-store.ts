@@ -2,30 +2,21 @@ import { create } from "zustand";
 
 export type LivenessResult = "idle" | "passed" | "failed";
 
-export type HcpOnboardingFiles = {
-  governmentIdFront: File | null;
-  governmentIdBack: File | null;
-  medicalLicense: File | null;
-  qualification: File | null;
-};
+export type HcpOnboardingFileKey =
+  | "governmentIdFront"
+  | "governmentIdBack"
+  | "medicalLicense"
+  | "qualification";
+
+export type HcpOnboardingFiles = Record<HcpOnboardingFileKey, File | null>;
 
 export type HcpOnboardingState = {
   files: HcpOnboardingFiles;
   livenessStatus: LivenessResult;
-  medicalLicenseNumber: string;
-  licenseIssuingAuthority: string;
-  specialty: string;
-  yearsOfExperience: string;
-  consent: boolean;
 
-  setFile: (key: keyof HcpOnboardingFiles, file: File | null) => void;
-  clearFile: (key: keyof HcpOnboardingFiles) => void;
+  setFile: (key: HcpOnboardingFileKey, file: File | null) => void;
+  clearFile: (key: HcpOnboardingFileKey) => void;
   setLivenessStatus: (status: LivenessResult) => void;
-  setField: (
-    field: "medicalLicenseNumber" | "licenseIssuingAuthority" | "specialty" | "yearsOfExperience",
-    value: string,
-  ) => void;
-  setConsent: (consent: boolean) => void;
   reset: () => void;
 };
 
@@ -36,28 +27,16 @@ const INITIAL_FILES: HcpOnboardingFiles = {
   qualification: null,
 };
 
-export const useHcpOnboardingStore = create<HcpOnboardingState>((set) => ({
+const INITIAL_STATE = {
   files: INITIAL_FILES,
   livenessStatus: "idle",
-  medicalLicenseNumber: "",
-  licenseIssuingAuthority: "",
-  specialty: "",
-  yearsOfExperience: "",
-  consent: false,
+} as const satisfies Pick<HcpOnboardingState, "files" | "livenessStatus">;
+
+export const useHcpOnboardingStore = create<HcpOnboardingState>((set) => ({
+  ...INITIAL_STATE,
 
   setFile: (key, file) => set((state) => ({ files: { ...state.files, [key]: file } })),
   clearFile: (key) => set((state) => ({ files: { ...state.files, [key]: null } })),
   setLivenessStatus: (livenessStatus) => set({ livenessStatus }),
-  setField: (field, value) => set({ [field]: value } as Pick<HcpOnboardingState, typeof field>),
-  setConsent: (consent) => set({ consent }),
-  reset: () =>
-    set({
-      files: INITIAL_FILES,
-      livenessStatus: "idle",
-      medicalLicenseNumber: "",
-      licenseIssuingAuthority: "",
-      specialty: "",
-      yearsOfExperience: "",
-      consent: false,
-    }),
+  reset: () => set({ ...INITIAL_STATE }),
 }));

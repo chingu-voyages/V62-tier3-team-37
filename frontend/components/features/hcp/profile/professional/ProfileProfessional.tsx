@@ -1,9 +1,13 @@
 import { UserRound } from "lucide-react";
-import type { HcpProfessionalInformation } from "@/types/hcp-profile";
-import { ProfileCard, SectionEmptyState, StaticEditButton } from "../shared";
+import { EditProfileForm } from "@/components/features/hcp/profile/shared/EditProfileForm";
+import { formatCalendarDate } from "@/lib/format";
+import type { HcpEditableProfile, HcpProfessionalInformation } from "@/types/hcp-profile";
+import { hasProfileField, ProfileCard, ProfileFieldRow, SectionEmptyState } from "../shared";
 
 type ProfileProfessionalProps = {
   information?: HcpProfessionalInformation;
+  /** Raw form values for the fields the API accepts. */
+  editable: HcpEditableProfile;
 };
 
 type ProfessionalField = {
@@ -12,43 +16,25 @@ type ProfessionalField = {
   subValue?: string;
 };
 
-function formatDate(value?: string) {
-  if (!value) return undefined;
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return undefined;
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(parsed);
+/** Drop rows with nothing to show, counting the secondary line as content. */
+function presentFields(fields: ProfessionalField[]): ProfessionalField[] {
+  return fields.filter((field) => hasProfileField(field.value, field.subValue));
 }
 
-function isPresent(field: ProfessionalField) {
-  return Boolean(field.value);
+function pluraliseYears(count: number): string {
+  return `${count} ${count === 1 ? "year" : "years"}`;
 }
 
-function Field({ label, value, subValue }: ProfessionalField) {
-  return (
-    <div className="min-w-0">
-      <dt className="type-helper text-muted-foreground">{label}</dt>
-      <dd className="mt-0.5 type-body break-words text-foreground">{value}</dd>
-      {subValue ? (
-        <p className="mt-0.5 type-helper break-words text-muted-foreground">{subValue}</p>
-      ) : null}
-    </div>
-  );
-}
-
-export function ProfileProfessional({ information }: ProfileProfessionalProps) {
-  const identityFields: ProfessionalField[] = [
+export function ProfileProfessional({ information, editable }: ProfileProfessionalProps) {
+  const identityFields = presentFields([
     { label: "Full Name", value: information?.fullName },
-    { label: "Date of Birth", value: formatDate(information?.dateOfBirth) },
+    { label: "Date of Birth", value: formatCalendarDate(information?.dateOfBirth) },
     { label: "Gender", value: information?.gender },
     { label: "Phone Number", value: information?.phone },
     { label: "Email", value: information?.email },
-  ].filter(isPresent);
+  ]);
 
-  const practiceFields: ProfessionalField[] = [
+  const practiceFields = presentFields([
     { label: "Specialty", value: information?.specialty },
     { label: "Sub-specialty", value: information?.subSpecialty },
     {
@@ -56,7 +42,7 @@ export function ProfileProfessional({ information }: ProfileProfessionalProps) {
       value:
         information?.yearsOfExperience === undefined
           ? undefined
-          : `${information.yearsOfExperience} ${information.yearsOfExperience === 1 ? "year" : "years"}`,
+          : pluraliseYears(information.yearsOfExperience),
     },
     {
       label: "Workplace / Clinic",
@@ -64,7 +50,9 @@ export function ProfileProfessional({ information }: ProfileProfessionalProps) {
       subValue: information?.workplaceAddress,
     },
     { label: "Location", value: information?.location },
-  ].filter(isPresent);
+    { label: "Medical License", value: information?.medicalLicenseNumber },
+    { label: "Issuing Authority", value: information?.licenseIssuingAuthority },
+  ]);
 
   const hasAnyField = identityFields.length > 0 || practiceFields.length > 0;
 
@@ -72,7 +60,10 @@ export function ProfileProfessional({ information }: ProfileProfessionalProps) {
     <ProfileCard
       title="Professional Information"
       icon={UserRound}
-      action={<StaticEditButton label="Edit professional information" />}
+      // Specialty, years of experience and the license fields are set during
+      // verification and rejected by the API, so the editor deliberately omits them
+      // rather than offering inputs that could only ever 422.
+      action={<EditProfileForm values={editable} />}
       className="h-full"
     >
       {hasAnyField ? (
@@ -80,7 +71,7 @@ export function ProfileProfessional({ information }: ProfileProfessionalProps) {
           {identityFields.length > 0 ? (
             <div className="flex min-w-0 flex-col gap-4">
               {identityFields.map((field) => (
-                <Field key={field.label} {...field} />
+                <ProfileFieldRow key={field.label} {...field} />
               ))}
             </div>
           ) : null}
@@ -88,7 +79,7 @@ export function ProfileProfessional({ information }: ProfileProfessionalProps) {
           {practiceFields.length > 0 ? (
             <div className="flex min-w-0 flex-col gap-4">
               {practiceFields.map((field) => (
-                <Field key={field.label} {...field} />
+                <ProfileFieldRow key={field.label} {...field} />
               ))}
             </div>
           ) : null}

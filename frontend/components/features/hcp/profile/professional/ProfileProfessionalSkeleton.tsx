@@ -1,4 +1,4 @@
-import { ProfileSkeleton, ProfileSkeletonCircle, skeletonKeys } from "../shared";
+import { ProfileCardSkeleton, ProfileSkeleton, skeletonKeys } from "../shared";
 
 function SkeletonColumn({ rows }: { rows: number }) {
   return (
@@ -15,19 +15,15 @@ function SkeletonColumn({ rows }: { rows: number }) {
 
 export function ProfileProfessionalSkeleton() {
   return (
-    <section className="flex min-w-0 flex-col rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5">
-      <header className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <ProfileSkeletonCircle className="size-8" />
-          <ProfileSkeleton className="h-4 w-40" />
-        </div>
-        <ProfileSkeletonCircle className="size-8" />
-      </header>
-
-      <div className="mt-4 grid grid-cols-1 gap-6 @lg:grid-cols-2">
+    // `@lg:` below resolves against the card's own `@container`. The skeleton
+    // used to hardcode the shell class without `@container`, so the two-column
+    // breakpoint never matched and the loading state had a different layout from
+    // the loaded content it stood in for.
+    <ProfileCardSkeleton titleWidthClass="w-40">
+      <div className="grid grid-cols-1 gap-6 @lg:grid-cols-2">
         <SkeletonColumn rows={5} />
         <SkeletonColumn rows={5} />
       </div>
-    </section>
+    </ProfileCardSkeleton>
   );
 }

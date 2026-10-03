@@ -1,6 +1,14 @@
-export { ProfileCard } from "./ProfileCard";
+export { EditAvailabilityForm } from "./EditAvailabilityForm";
+export { EditDetailsForm } from "./EditDetailsForm";
+export { EditProfileForm } from "./EditProfileForm";
+export { PROFILE_CARD_SHELL_CLASS, ProfileCard } from "./ProfileCard";
+export { ProfileCardSkeleton } from "./ProfileCardSkeleton";
+export { EditTrigger, ProfileEditDialog } from "./ProfileEditDialog";
+export { hasProfileField, ProfileFieldRow } from "./ProfileFieldRow";
+export { ProfilePhotoControl } from "./ProfilePhotoControl";
 export { ProfilePill } from "./ProfilePill";
-export { ProfileSectionError } from "./ProfileSectionError";
+export { PROFILE_SECTION_ERROR_MESSAGES, ProfileSectionError } from "./ProfileSectionError";
+export { ProfileSectionErrorBoundary } from "./ProfileSectionErrorBoundary";
 export {
   ProfileSkeleton,
   ProfileSkeletonCircle,
@@ -8,7 +16,6 @@ export {
   skeletonKeys,
 } from "./ProfileSkeleton";
 export { SectionEmptyState } from "./SectionEmptyState";
-export { StaticEditButton } from "./StaticEditButton";
 export { StatusBadge } from "./StatusBadge";
 export {
   VERIFICATION_REQUIREMENT_KEYS,

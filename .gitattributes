@@ -1,0 +1,22 @@
+# Normalise line endings in the repository.
+#
+# Without this, `core.autocrlf=true` on Windows checks files out as CRLF while the
+# index and every other platform use LF. Biome then reports the whole file as a
+# formatting error, which is why the frontend appeared to have ~157 format
+# violations that were really just line-ending churn.
+* text=auto eol=lf
+
+# Files that must stay byte-exact.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.mp4 binary
+
+# Lockfiles: keep LF so diffs stay reviewable.
+package-lock.json -text

@@ -48,6 +48,9 @@ function Callout({ tone = "info", icon, title, className, children, ...props }: 
     <div
       data-slot="callout"
       data-tone={tone}
+      // A danger callout is always a submission error, so it announces itself by
+      // default. Previously every call site had to remember `role="alert"`.
+      role={props.role ?? (tone === "danger" ? "alert" : undefined)}
       className={cn(
         "flex gap-3 rounded-lg border px-3.5 py-3 sm:px-4 sm:py-3.5",
         config.container,

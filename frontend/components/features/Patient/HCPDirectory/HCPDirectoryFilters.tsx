@@ -3,38 +3,108 @@
 import { RotateCcw, Search } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import type { HCPFilters } from "@/types/hcp";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { TextField } from "@/components/ui/text-field";
+import type { HCPFilters } from "@/types/hcp-directory";
 
-const SPECIALTIES = [
-  "All Specialties",
-  "Cardiology",
-  "Dermatology",
-  "Neurology",
-  "Pediatrics",
-  "Orthopedics",
-  "Ophthalmology",
-  "Psychiatry",
-  "Radiology",
-  "General Medicine",
+type FilterKey = keyof HCPFilters;
+
+/**
+ * Option lists carry their own "all" sentinel, so the handler and the rendered
+ * option can never disagree about which value means "no filter".
+ */
+type FilterOptions = {
+  key: FilterKey;
+  id: string;
+  label: string;
+  allLabel: string;
+  options: readonly string[];
+};
+
+const FILTER_OPTIONS: readonly FilterOptions[] = [
+  {
+    key: "specialty",
+    id: "filter-specialty",
+    label: "Specialty",
+    allLabel: "All Specialties",
+    options: [
+      "Cardiology",
+      "Dermatology",
+      "Neurology",
+      "Pediatrics",
+      "Orthopedics",
+      "Ophthalmology",
+      "Psychiatry",
+      "Radiology",
+      "General Medicine",
+    ],
+  },
+  {
+    key: "city",
+    id: "filter-city",
+    label: "City",
+    allLabel: "All Cities",
+    options: ["Cairo", "Alexandria", "Giza", "Luxor", "Aswan"],
+  },
+  {
+    key: "area",
+    id: "filter-area",
+    label: "Area",
+    allLabel: "All Areas",
+    options: ["Downtown", "Heliopolis", "Maadi", "Zamalek", "Mohandeseen"],
+  },
+  {
+    key: "insurance",
+    id: "filter-insurance",
+    label: "Insurance",
+    allLabel: "All Insurance",
+    options: ["Medicare", "AXA", "Allianz", "Cigna", "BUPA"],
+  },
 ];
 
-const CITIES = ["All Cities", "Cairo", "Alexandria", "Giza", "Luxor", "Aswan"];
+const ALL_FILTER_KEYS = FILTER_OPTIONS.map((option) => option.key);
 
-const AREAS = ["All Areas", "Downtown", "Heliopolis", "Maadi", "Zamalek", "Mohandeseen"];
-
-const INSURANCES = ["All Insurance", "Medicare", "AXA", "Allianz", "Cigna", "BUPA"];
+/** Whether any filter is set. Shared with the directory, which needs the same answer. */
+export function hasAnyFilter(filters: HCPFilters): boolean {
+  return ALL_FILTER_KEYS.some((key) => {
+    const value = filters[key];
+    return value !== undefined && value !== "";
+  });
+}
 
 type HCPDirectoryFiltersProps = {
   filters: HCPFilters;
   onApply: (filters: HCPFilters) => void;
+  /**
+   * Bumped by the parent whenever the applied filters change from outside this
+   * component (the empty state's "Clear filters"). Without it the draft below
+   * went stale and the inputs kept showing a filter that was no longer applied.
+   */
+  resetToken?: number;
 };
 
-export function HCPDirectoryFilters({ filters, onApply }: HCPDirectoryFiltersProps) {
+export function HCPDirectoryFilters({ filters, onApply, resetToken }: HCPDirectoryFiltersProps) {
+  // Keyed on the parent's applied filters so an external reset re-seeds the
+  // draft. Previously `useState(filters)` captured the prop once, forever, and the
+  // "Clear filters" button in the empty state left the inputs showing the old
+  // selection while the applied filter was already empty.
   const [draft, setDraft] = useState<HCPFilters>(filters);
+  const [seenToken, setSeenToken] = useState(resetToken);
 
-  const update = useCallback((key: keyof HCPFilters, value: string) => {
-    setDraft((prev) => ({ ...prev, [key]: value || undefined }));
+  if (resetToken !== undefined && resetToken !== seenToken) {
+    setSeenToken(resetToken);
+    setDraft(filters);
+  }
+
+  const update = useCallback((key: FilterKey, value: string) => {
+    setDraft((previous) => ({ ...previous, [key]: value || undefined }));
   }, []);
 
   const handleApply = useCallback(() => {
@@ -47,115 +117,59 @@ export function HCPDirectoryFilters({ filters, onApply }: HCPDirectoryFiltersPro
     onApply(cleared);
   }, [onApply]);
 
-  const hasFilters = Object.values(draft).some((v) => v !== undefined && v !== "");
-
   return (
     <div className="mb-6 rounded-2xl bg-accent/50 p-5">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <div>
-          <label htmlFor="filter-specialty" className="mb-1 block type-label text-foreground">
-            Specialty
-          </label>
-          <select
-            id="filter-specialty"
-            value={draft.specialty ?? ""}
-            onChange={(e) =>
-              update("specialty", e.target.value === "All Specialties" ? "" : e.target.value)
-            }
-            className="h-11 w-full rounded-md border border-input bg-background px-3.5 type-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {SPECIALTIES.map((s) => (
-              <option key={s} value={s === "All Specialties" ? "" : s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="filter-city" className="mb-1 block type-label text-foreground">
-            City
-          </label>
-          <select
-            id="filter-city"
-            value={draft.city ?? ""}
-            onChange={(e) => update("city", e.target.value === "All Cities" ? "" : e.target.value)}
-            className="h-11 w-full rounded-md border border-input bg-background px-3.5 type-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {CITIES.map((c) => (
-              <option key={c} value={c === "All Cities" ? "" : c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="filter-area" className="mb-1 block type-label text-foreground">
-            Area
-          </label>
-          <select
-            id="filter-area"
-            value={draft.area ?? ""}
-            onChange={(e) => update("area", e.target.value === "All Areas" ? "" : e.target.value)}
-            className="h-11 w-full rounded-md border border-input bg-background px-3.5 type-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {AREAS.map((a) => (
-              <option key={a} value={a === "All Areas" ? "" : a}>
-                {a}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="filter-insurance" className="mb-1 block type-label text-foreground">
-            Insurance
-          </label>
-          <select
-            id="filter-insurance"
-            value={draft.insurance ?? ""}
-            onChange={(e) =>
-              update("insurance", e.target.value === "All Insurance" ? "" : e.target.value)
-            }
-            className="h-11 w-full rounded-md border border-input bg-background px-3.5 type-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {INSURANCES.map((i) => (
-              <option key={i} value={i === "All Insurance" ? "" : i}>
-                {i}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="filter-name" className="mb-1 block type-label text-foreground">
-            Search by name
-          </label>
-          <div className="relative">
-            <Input
-              id="filter-name"
-              placeholder="Doctor name..."
-              value={draft.search ?? ""}
-              onChange={(e) => update("search", e.target.value)}
-              className="pr-10"
-            />
-            <Search className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        {FILTER_OPTIONS.map((option) => (
+          <div key={option.key}>
+            <Label htmlFor={option.id} className="mb-1">
+              {option.label}
+            </Label>
+            {/* Radix-backed Select: keyboard navigation, combobox semantics and a
+                hidden native select for form submission. The four hand-rolled
+                <select> elements this replaced shipped none of that. */}
+            <Select
+              value={draft[option.key] ?? ""}
+              onValueChange={(value) => update(option.key, value)}
+            >
+              <SelectTrigger id={option.id}>
+                <SelectValue placeholder={option.allLabel} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">{option.allLabel}</SelectItem>
+                {option.options.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+        ))}
+
+        <div>
+          <TextField
+            id="filter-name"
+            name="search"
+            label="Search by name"
+            placeholder="Doctor name..."
+            value={draft.search ?? ""}
+            onChange={(value) => update("search", value)}
+          />
         </div>
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <Button onClick={handleApply} size="lg">
-          <Search className="mr-2 size-4" />
+        <Button type="button" onClick={handleApply} size="lg">
+          <Search className="mr-2 size-4" aria-hidden="true" />
           Search
         </Button>
-        {hasFilters && (
-          <Button variant="ghost" size="sm" onClick={handleClear}>
-            <RotateCcw className="mr-1.5 size-3.5" />
+        {hasAnyFilter(draft) ? (
+          <Button type="button" variant="ghost" size="sm" onClick={handleClear}>
+            <RotateCcw className="mr-1.5 size-3.5" aria-hidden="true" />
             Clear filters
           </Button>
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -19,8 +19,16 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "HealthHub",
+  // Required for absolute OG/canonical URLs to resolve.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  title: { default: "HealthHub", template: "%s | HealthHub" },
   description: "One connected care journey for every patient and healthcare professional.",
+  openGraph: {
+    type: "website",
+    siteName: "HealthHub",
+    title: "HealthHub",
+    description: "One connected care journey for every patient and healthcare professional.",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

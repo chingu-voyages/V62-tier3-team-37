@@ -2,6 +2,15 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * Card chrome, exported so loading skeletons render the exact same box as the
+ * loaded content. It used to be copy-pasted into four skeleton files as a literal
+ * string, so a change to the card's padding silently desynced the skeleton from
+ * the component it stands in for.
+ */
+export const PROFILE_CARD_SHELL_CLASS =
+  "@container flex min-w-0 flex-col rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5";
+
 type ProfileCardProps = {
   title: string;
   icon: LucideIcon;
@@ -22,12 +31,7 @@ export function ProfileCard({
   children,
 }: ProfileCardProps) {
   return (
-    <section
-      className={cn(
-        "@container flex min-w-0 flex-col rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5",
-        className,
-      )}
-    >
+    <section className={cn(PROFILE_CARD_SHELL_CLASS, className)}>
       <header className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span

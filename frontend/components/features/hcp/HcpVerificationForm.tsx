@@ -1,39 +1,56 @@
 "use client";
 
 import { useForm } from "@tanstack/react-form";
-import type { LucideIcon } from "lucide-react";
 import { ArrowLeft, BadgeCheck, Camera, CircleCheck, Clock3, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-
+import { useShallow } from "zustand/react/shallow";
 import { AuthCard } from "@/components/features/auth/AuthCard";
 import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
+import { FieldMessage } from "@/components/ui/field-message";
+import { inlineLinkClassName } from "@/components/ui/inline-link";
 import { Label } from "@/components/ui/label";
+import { TextField } from "@/components/ui/text-field";
 import { useHcpOnboardingMutation } from "@/hooks/use-hcp-onboarding-mutation";
-import { ApiError, getApiErrorMessage } from "@/lib/api";
+import { ApiError, getApiErrorMessage } from "@/lib/api/client";
+import { SIGNUP_JOURNEY_STEPS } from "@/lib/auth/journey";
+import { ROUTES } from "@/lib/constants/routes";
+import { formatDateTime } from "@/lib/format";
+import { firstTouchedError } from "@/lib/validation/field-error";
+import {
+  consentSchema,
+  errorFor,
+  fieldErrorsFrom,
+  LICENSE_AUTHORITY_MAX,
+  licenseAuthoritySchema,
+  MEDICAL_LICENSE_NUMBER_MAX,
+  medicalLicenseNumberSchema,
+  onboardingSchema,
+  specialtySchema,
+  YEARS_MAX,
+  YEARS_MIN,
+  yearsOfExperienceSchema,
+} from "@/lib/validation/schemas";
 import { useHcpOnboardingStore } from "@/store/use-hcp-onboarding-store";
 import { DocumentUploadCard } from "./DocumentUploadCard";
 import { LivenessCheck } from "./LivenessCheck";
 import { SpecialtySelect } from "./SpecialtySelect";
-
-type VerificationSectionProps = {
-  title: string;
-  description: ReactNode;
-  icon: LucideIcon;
-  children: ReactNode;
-};
 
 function VerificationSection({
   title,
   description,
   icon: Icon,
   children,
-}: VerificationSectionProps) {
+}: {
+  title: string;
+  description: ReactNode;
+  icon: typeof ShieldCheck;
+  children: ReactNode;
+}) {
   return (
     <section className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6">
       <div className="flex items-start gap-3">
@@ -50,70 +67,45 @@ function VerificationSection({
   );
 }
 
-const MEDICAL_LICENSE_NUMBER_MAX = 100;
-const LICENSE_AUTHORITY_MAX = 255;
-const YEARS_MIN = 0;
-const YEARS_MAX = 80;
-
-function medicalLicenseNumberError(value: string): string | undefined {
-  if (value.length === 0) return "Medical license number is required";
-  if (value.length > MEDICAL_LICENSE_NUMBER_MAX) {
-    return `Medical license number must be ${MEDICAL_LICENSE_NUMBER_MAX} characters or fewer`;
-  }
-  return undefined;
-}
-
-function licenseAuthorityError(value: string): string | undefined {
-  if (value.length === 0) return "Issuing authority is required";
-  if (value.length > LICENSE_AUTHORITY_MAX) {
-    return `Issuing authority must be ${LICENSE_AUTHORITY_MAX} characters or fewer`;
-  }
-  return undefined;
-}
-
-function yearsOfExperienceError(value: string): string | undefined {
-  if (value.length === 0) return "Years of experience is required";
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return "Enter a valid number";
-  if (parsed < YEARS_MIN || parsed > YEARS_MAX) {
-    return `Years of experience must be between ${YEARS_MIN} and ${YEARS_MAX}`;
-  }
-  return undefined;
-}
-
-function consentError(value: boolean): string | undefined {
-  return value ? undefined : "You must accept to continue";
-}
-
 export function HcpVerificationForm() {
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
   const onboardingMutation = useHcpOnboardingMutation();
-
-  const files = useHcpOnboardingStore((state) => state.files);
-  const livenessStatus = useHcpOnboardingStore((state) => state.livenessStatus);
+  const { files, livenessStatus } = useHcpOnboardingStore(
+    useShallow((state) => ({ files: state.files, livenessStatus: state.livenessStatus })),
+  );
   const setFile = useHcpOnboardingStore((state) => state.setFile);
   const setLivenessStatus = useHcpOnboardingStore((state) => state.setLivenessStatus);
-  const setField = useHcpOnboardingStore((state) => state.setField);
-  const setConsent = useHcpOnboardingStore((state) => state.setConsent);
-  const medicalLicenseNumber = useHcpOnboardingStore((state) => state.medicalLicenseNumber);
-  const licenseIssuingAuthority = useHcpOnboardingStore((state) => state.licenseIssuingAuthority);
-  const specialty = useHcpOnboardingStore((state) => state.specialty);
-  const yearsOfExperience = useHcpOnboardingStore((state) => state.yearsOfExperience);
-  const consent = useHcpOnboardingStore((state) => state.consent);
+  const reset = useHcpOnboardingStore((state) => state.reset);
+
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  const isSubmitting = onboardingMutation.isPending;
 
   const form = useForm({
     defaultValues: {
-      medicalLicenseNumber,
-      licenseIssuingAuthority,
-      specialty,
-      yearsOfExperience,
-      consent,
+      medicalLicenseNumber: "",
+      licenseIssuingAuthority: "",
+      specialty: "",
+      yearsOfExperience: "",
+      consent: false,
+    },
+    validators: {
+      onSubmit: ({ value }) => {
+        const result = onboardingSchema.safeParse(value);
+        if (result.success) return undefined;
+        const fields = fieldErrorsFrom(result.error);
+        const first = Object.values(fields)[0];
+        return first;
+      },
     },
     onSubmit: ({ value }) => {
-      const parsedYears = Number(value.yearsOfExperience);
-
       if (!files.governmentIdFront || !files.governmentIdBack) {
         setSubmitError("Please upload both the front and back of your government-issued ID.");
         return;
@@ -122,18 +114,12 @@ export function HcpVerificationForm() {
         setSubmitError("Please upload your professional license and qualification documents.");
         return;
       }
-
-      setSubmitError(null);
-      setField("medicalLicenseNumber", value.medicalLicenseNumber);
-      setField("licenseIssuingAuthority", value.licenseIssuingAuthority);
-      setField("specialty", value.specialty);
-      setField("yearsOfExperience", value.yearsOfExperience);
-      setConsent(value.consent);
-
       if (livenessStatus !== "passed") {
         setSubmitError("Please complete the liveness check before submitting.");
         return;
       }
+
+      setSubmitError(null);
 
       onboardingMutation.mutate(
         {
@@ -142,16 +128,18 @@ export function HcpVerificationForm() {
           medicalLicense: files.medicalLicense,
           qualification: files.qualification,
           livenessStatus: "PASSED",
-          medicalLicenseNumber: value.medicalLicenseNumber,
-          licenseIssuingAuthority: value.licenseIssuingAuthority,
+          medicalLicenseNumber: value.medicalLicenseNumber.trim(),
+          licenseIssuingAuthority: value.licenseIssuingAuthority.trim(),
           specialty: value.specialty,
-          yearsOfExperience: parsedYears,
+          yearsOfExperience: Number(value.yearsOfExperience),
           consent: value.consent,
         },
         {
           onSuccess: (response) => {
+            if (!mounted.current) return;
             setSubmittedAt(response.data.submitted_at);
-            setSubmitted(true);
+            // Release the four retained File handles.
+            reset();
             toast.success("Your HCP verification application has been submitted successfully.", {
               position: "bottom-center",
             });
@@ -163,6 +151,8 @@ export function HcpVerificationForm() {
   });
 
   function handleSubmitError(error: unknown) {
+    if (!mounted.current) return;
+
     if (error instanceof ApiError && error.status === 401) {
       setSubmitError("Your session has expired. Please sign in again.");
       return;
@@ -180,45 +170,40 @@ export function HcpVerificationForm() {
     setSubmitError(getApiErrorMessage(error));
   }
 
+  const submitted = submittedAt !== null;
+
   if (submitted) {
     return (
       <AuthCard
-        step={{ current: 3, total: 3, role: "HCP" }}
+        step={{ current: 3, total: SIGNUP_JOURNEY_STEPS.HCP }}
         eyebrow="Healthcare professional onboarding"
         title="Application submitted"
         subtitle="Your HCP verification is now under review."
       >
-        <div className="flex flex-col gap-5">
-          <Callout icon={CircleCheck} title="Under review">
-            <p>
-              Your verification application has been submitted successfully. Our team typically
-              reviews applications within 1-2 business days.
-            </p>
-            {submittedAt ? (
-              <p className="mt-1 text-sm text-muted-foreground">
-                Submitted {new Date(submittedAt).toLocaleString()}
-              </p>
-            ) : null}
-          </Callout>
-        </div>
+        <Callout icon={CircleCheck} title="Under review">
+          <p>
+            Your verification application has been submitted successfully. Our team typically
+            reviews applications within 1-2 business days.
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Submitted {formatDateTime(submittedAt)}
+          </p>
+        </Callout>
       </AuthCard>
     );
   }
 
   return (
     <AuthCard
-      step={{ current: 3, total: 3, role: "HCP" }}
+      step={{ current: 3, total: SIGNUP_JOURNEY_STEPS.HCP }}
       eyebrow="Healthcare professional onboarding"
       title="HCP verification"
       subtitle="Complete the steps below to verify your identity and professional credentials."
       footer={
         <span>
-          Do you Have Already An Account?{" "}
-          <Link
-            href="/auth"
-            className="rounded-sm font-medium text-primary underline decoration-primary/35 underline-offset-4 transition-colors hover:text-primary/85 hover:decoration-primary"
-          >
-            Login
+          Already have an account?{" "}
+          <Link href={ROUTES.auth} className={inlineLinkClassName}>
+            Log in
           </Link>
         </span>
       }
@@ -228,7 +213,6 @@ export function HcpVerificationForm() {
         className="flex flex-col gap-5 sm:gap-6"
         onSubmit={(event) => {
           event.preventDefault();
-          event.stopPropagation();
           void form.handleSubmit();
         }}
       >
@@ -267,10 +251,7 @@ export function HcpVerificationForm() {
           icon={Camera}
           description="KYC Level 1 · Quick selfie"
         >
-          <LivenessCheck
-            onResult={(result) => setLivenessStatus(result)}
-            disabled={onboardingMutation.isPending}
-          />
+          <LivenessCheck onResult={setLivenessStatus} disabled={isSubmitting} />
         </VerificationSection>
 
         <VerificationSection
@@ -298,93 +279,78 @@ export function HcpVerificationForm() {
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <form.Field
               name="medicalLicenseNumber"
-              validators={{ onChange: ({ value }) => medicalLicenseNumberError(value) }}
+              validators={{ onChange: ({ value }) => errorFor(medicalLicenseNumberSchema, value) }}
             >
               {(field) => (
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="medical-license-number">Medical license number</Label>
-                  <Input
-                    id="medical-license-number"
-                    placeholder="e.g. ML-2026-004521"
-                    maxLength={MEDICAL_LICENSE_NUMBER_MAX}
-                    value={field.state.value}
-                    aria-invalid={
-                      field.state.meta.isTouched && field.state.meta.errors[0] ? true : undefined
-                    }
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    onBlur={field.handleBlur}
-                  />
-                  {field.state.meta.isTouched && field.state.meta.errors[0] ? (
-                    <p className="text-xs leading-5 text-destructive">
-                      {field.state.meta.errors[0]}
-                    </p>
-                  ) : null}
-                </div>
-              )}
-            </form.Field>
-            <form.Field
-              name="licenseIssuingAuthority"
-              validators={{ onChange: ({ value }) => licenseAuthorityError(value) }}
-            >
-              {(field) => (
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="issuing-authority">Issuing authority / board</Label>
-                  <Input
-                    id="issuing-authority"
-                    placeholder="e.g. State Medical Board"
-                    maxLength={LICENSE_AUTHORITY_MAX}
-                    value={field.state.value}
-                    aria-invalid={
-                      field.state.meta.isTouched && field.state.meta.errors[0] ? true : undefined
-                    }
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    onBlur={field.handleBlur}
-                  />
-                  {field.state.meta.isTouched && field.state.meta.errors[0] ? (
-                    <p className="text-xs leading-5 text-destructive">
-                      {field.state.meta.errors[0]}
-                    </p>
-                  ) : null}
-                </div>
-              )}
-            </form.Field>
-            <form.Field
-              name="specialty"
-              validators={{ onChange: ({ value }) => (value ? undefined : "Select a specialty") }}
-            >
-              {(field) => (
-                <SpecialtySelect
+                <TextField
+                  id="medical-license-number"
+                  name="medicalLicenseNumber"
+                  label="Medical license number"
+                  placeholder="e.g. ML-2026-004521"
+                  required
+                  maxLength={MEDICAL_LICENSE_NUMBER_MAX}
                   value={field.state.value}
-                  onValueChange={(value) => field.handleChange(value)}
+                  error={firstTouchedError(field.state.meta)}
+                  onChange={field.handleChange}
+                  onBlur={field.handleBlur}
                 />
               )}
             </form.Field>
+
             <form.Field
-              name="yearsOfExperience"
-              validators={{ onChange: ({ value }) => yearsOfExperienceError(value) }}
+              name="licenseIssuingAuthority"
+              validators={{ onChange: ({ value }) => errorFor(licenseAuthoritySchema, value) }}
             >
               {(field) => (
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="years-of-experience">Years of experience</Label>
-                  <Input
-                    id="years-of-experience"
-                    type="number"
-                    min={YEARS_MIN}
-                    max={YEARS_MAX}
-                    placeholder="e.g. 8"
-                    value={field.state.value}
-                    aria-invalid={
-                      field.state.meta.isTouched && field.state.meta.errors[0] ? true : undefined
-                    }
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    onBlur={field.handleBlur}
-                  />
-                  {field.state.meta.isTouched && field.state.meta.errors[0] ? (
-                    <p className="text-xs leading-5 text-destructive">
-                      {field.state.meta.errors[0]}
-                    </p>
-                  ) : null}
-                </div>
+                <TextField
+                  id="issuing-authority"
+                  name="licenseIssuingAuthority"
+                  label="Issuing authority / board"
+                  placeholder="e.g. State Medical Board"
+                  required
+                  maxLength={LICENSE_AUTHORITY_MAX}
+                  value={field.state.value}
+                  error={firstTouchedError(field.state.meta)}
+                  onChange={field.handleChange}
+                  onBlur={field.handleBlur}
+                />
+              )}
+            </form.Field>
+
+            <form.Field
+              name="specialty"
+              validators={{ onChange: ({ value }) => errorFor(specialtySchema, value) }}
+            >
+              {(field) => (
+                <SpecialtySelect
+                  // The validator ran but its message was never rendered, so an
+                  // empty specialty silently passed and posted "".
+                  value={field.state.value}
+                  error={firstTouchedError(field.state.meta)}
+                  onValueChange={field.handleChange}
+                />
+              )}
+            </form.Field>
+
+            <form.Field
+              name="yearsOfExperience"
+              validators={{ onChange: ({ value }) => errorFor(yearsOfExperienceSchema, value) }}
+            >
+              {(field) => (
+                <TextField
+                  id="years-of-experience"
+                  name="yearsOfExperience"
+                  label="Years of experience"
+                  type="number"
+                  required
+                  min={YEARS_MIN}
+                  max={YEARS_MAX}
+                  placeholder="e.g. 8"
+                  value={field.state.value}
+                  error={firstTouchedError(field.state.meta)}
+                  onChange={field.handleChange}
+                  onBlur={field.handleBlur}
+                />
               )}
             </form.Field>
           </div>
@@ -411,59 +377,56 @@ export function HcpVerificationForm() {
           </div>
         </div>
 
-        <form.Field name="consent" validators={{ onChange: ({ value }) => consentError(value) }}>
-          {(field) => (
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="hcp-verification-consent"
-                  className="mt-0.5"
-                  checked={field.state.value}
-                  disabled={onboardingMutation.isPending}
-                  onCheckedChange={(checked) => field.handleChange(checked === true)}
-                  aria-invalid={
-                    field.state.meta.isTouched && field.state.meta.errors[0] ? true : undefined
-                  }
-                />
-                <Label
-                  htmlFor="hcp-verification-consent"
-                  className="items-start font-normal type-helper text-muted-foreground"
-                >
-                  I confirm that the information and documents provided are accurate and I consent
-                  to identity and credential verification checks in accordance with the{" "}
-                  <span className="font-medium text-primary underline decoration-primary/35 underline-offset-4">
-                    Privacy Policy
-                  </span>
-                  .
-                </Label>
+        <form.Field
+          name="consent"
+          validators={{ onChange: ({ value }) => errorFor(consentSchema, value) }}
+        >
+          {(field) => {
+            const error = firstTouchedError(field.state.meta);
+            return (
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="hcp-verification-consent"
+                    className="mt-0.5"
+                    checked={field.state.value}
+                    disabled={isSubmitting}
+                    onCheckedChange={(checked) => field.handleChange(checked === true)}
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? "consent-error" : undefined}
+                  />
+                  <Label
+                    htmlFor="hcp-verification-consent"
+                    className="items-start font-normal type-helper text-muted-foreground"
+                  >
+                    I confirm that the information and documents provided are accurate and I consent
+                    to identity and credential verification checks in accordance with the{" "}
+                    <Link
+                      href={ROUTES.privacy}
+                      className="font-medium text-primary underline decoration-primary/35 underline-offset-4"
+                    >
+                      Privacy Policy
+                    </Link>
+                    .
+                  </Label>
+                </div>
+                <FieldMessage id={error ? "consent-error" : undefined} className="pl-8">
+                  {error}
+                </FieldMessage>
               </div>
-              {field.state.meta.isTouched && field.state.meta.errors[0] ? (
-                <p className="pl-8 text-xs leading-5 text-destructive">
-                  {field.state.meta.errors[0]}
-                </p>
-              ) : null}
-            </div>
-          )}
+            );
+          }}
         </form.Field>
 
-        {submitError ? (
-          <Callout tone="danger" role="alert">
-            {submitError}
-          </Callout>
-        ) : null}
+        {submitError ? <Callout tone="danger">{submitError}</Callout> : null}
 
         <div className="flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
           <Button type="button" variant="outline" size="lg" className="w-full sm:w-auto">
             <ArrowLeft aria-hidden="true" />
             Back
           </Button>
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full sm:w-auto"
-            disabled={onboardingMutation.isPending}
-          >
-            {onboardingMutation.isPending ? "Submitting…" : "Apply"}
+          <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isSubmitting}>
+            {isSubmitting ? "Submitting…" : "Apply"}
           </Button>
         </div>
       </form>

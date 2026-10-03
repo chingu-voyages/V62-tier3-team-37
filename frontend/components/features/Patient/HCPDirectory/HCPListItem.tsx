@@ -2,7 +2,7 @@ import { BadgeCheck, Clock, MapPin, Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { HCP } from "@/types/hcp";
+import type { HCP } from "@/types/hcp-directory";
 
 type HCPListItemProps = {
   hcp: HCP;

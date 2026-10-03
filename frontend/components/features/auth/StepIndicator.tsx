@@ -1,42 +1,56 @@
 import { cn } from "@/lib/utils";
-import type { SignupRole } from "./SignupRoleSwitch";
 
 type StepIndicatorProps = {
   current: number;
+  /** Total steps in the journey. Supplied by the caller, never derived here. */
   total: number;
-  role?: SignupRole;
-
-  label?: string;
 };
 
-const STEP_COUNT: Record<SignupRole, number> = { HCP: 3, PATIENT: 2 };
-
 /**
- * Compact progress marker shown above the page title on every step of the
- * signup journey.
+ * Progress marker for the signup journey.
  *
- * Presentational only — it reports the step the caller already knows about and
- * never drives navigation. The label carries the meaning for assistive tech,
- * the segment track is decorative.
+ * `total` is authoritative and comes from `signupJourneySteps()`. Deriving it from
+ * the role inside this component was wrong in both directions: it made the
+ * stepper disagree with the flow whenever the role was not yet known (the OTP
+ * screen after a refresh), and it hid the step count from the screen that actually
+ * owns the journey. The step is a `progressbar` with live values plus an ordered
+ * list, so a change is announced.
  */
-export function StepIndicator({ current, total, role, label }: StepIndicatorProps) {
-  const stepCount = role ? STEP_COUNT[role] : total;
+export function StepIndicator({ current, total }: StepIndicatorProps) {
+  const safeTotal = Math.max(total, 1);
+  const label = `Step ${current} of ${safeTotal}`;
+
   return (
     <div className="flex flex-col items-center gap-2">
-      <p className="type-step text-primary/80">{label ?? `Step ${current} of ${stepCount}`}</p>
-      <div aria-hidden="true" className="flex items-center gap-1.5">
-        {Array.from({ length: stepCount }, (_, index) => (
-          <span
-            // biome-ignore lint/suspicious/noArrayIndexKey: segments are positional by nature.
-            key={index}
-            className={cn(
-              "h-1 rounded-full transition-colors",
-              "w-7 sm:w-9",
-              index < current ? "bg-primary" : "bg-secondary/25",
-            )}
-          />
-        ))}
-      </div>
+      <p
+        role="progressbar"
+        aria-valuemin={1}
+        aria-valuemax={safeTotal}
+        aria-valuenow={current}
+        aria-valuetext={label}
+        className="type-step text-primary/80"
+      >
+        {label}
+      </p>
+
+      <ol className="flex items-center gap-1.5">
+        {Array.from({ length: safeTotal }, (_, index) => {
+          const step = index + 1;
+          const complete = step < current;
+          const active = step === current;
+          return (
+            <li
+              key={step}
+              aria-current={active ? "step" : undefined}
+              className={cn(
+                "h-1 rounded-full transition-colors",
+                "w-7 sm:w-9",
+                complete || active ? "bg-primary" : "bg-secondary/25",
+              )}
+            />
+          );
+        })}
+      </ol>
     </div>
   );
 }

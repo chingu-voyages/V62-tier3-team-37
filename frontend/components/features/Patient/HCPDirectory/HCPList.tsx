@@ -1,4 +1,4 @@
-import type { HCP } from "@/types/hcp";
+import type { HCP } from "@/types/hcp-directory";
 import { HCPListItem } from "./HCPListItem";
 
 type HCPListProps = {
