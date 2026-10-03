@@ -22,13 +22,12 @@ class PatientProfileResource extends JsonResource
             'email' => $this->email,
 
             'phone' => $this->phone,
-            'country_code' => $this->country_code,
+            'country' => $this->country,
 
             'profile_photo_path' => $this->profile_photo_path,
 
             'patient_profile' => [
                 'blood_type' => $this->patientProfile?->blood_type,
-                'bio' => $this->patientProfile?->bio,
                 'height_cm' => $this->patientProfile?->height_cm,
                 'weight_kg' => $this->patientProfile?->weight_kg,
                 'allergies' => $this->patientProfile?->allergies,

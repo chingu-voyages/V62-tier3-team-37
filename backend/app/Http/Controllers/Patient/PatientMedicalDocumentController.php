@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Profile;
+namespace App\Http\Controllers\Patient;
 
 use App\Enums\DocumentCategory;
 use App\Enums\DocumentType;

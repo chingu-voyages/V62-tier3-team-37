@@ -1,8 +1,9 @@
 <?php
 
-use App\Http\Controllers\Profile\HcpOnboardingController;
-use App\Http\Controllers\Profile\PatientMedicalDocumentController;
-use App\Http\Controllers\Profile\PatientProfileController;
+use App\Http\Controllers\Hcp\HcpOnboardingController;
+use App\Http\Controllers\Hcp\HcpProfileController;
+use App\Http\Controllers\Patient\PatientMedicalDocumentController;
+use App\Http\Controllers\Patient\PatientProfileController;
 use App\Http\Controllers\Profile\ProfilePhotoController;
 use App\Http\Middleware\EnsureEmailIsVerified;
 use Illuminate\Http\Request;
@@ -31,7 +32,15 @@ Route::middleware(['auth:sanctum', EnsureEmailIsVerified::class])->group(functio
 
     /**************************HCP************************************** */
 
-    Route::post('/hcp/onboarding', [HcpOnboardingController::class, 'store']);
+    Route::post('/hcp/onboarding',[HcpOnboardingController::class, 'store']);
+
+    Route::get('/hcp/profile', [HcpProfileController::class, 'show']);
+
+    Route::patch('/hcp/profile',[HcpProfileController::class, 'update']);
+
+    Route::put('/hcp/profile/availability', [HcpProfileController::class, 'updateAvailability']);
+
+    Route::delete('/hcp/profile/availability/{availabilitySlot}', [HcpProfileController::class, 'destroyAvailability']);
 
     /**************************PROFILE PHOTO************************************** */
     Route::post('/profile/photo', [ProfilePhotoController::class, 'update']);

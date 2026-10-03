@@ -1,14 +1,14 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\EmailVerificationNotificationController;
-use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\RegisterHCPController;
-use App\Http\Controllers\Auth\RegisterPatientController;
-use App\Http\Controllers\Auth\ResendEmailOtpController;
-use App\Http\Controllers\Auth\VerifyEmailController;
-use App\Http\Controllers\Auth\VerifyEmailOtpController;
+use App\Http\Controllers\Auth\EmailVerification\EmailVerificationNotificationController;
+use App\Http\Controllers\Auth\Password\NewPasswordController;
+use App\Http\Controllers\Auth\Password\PasswordResetLinkController;
+use App\Http\Controllers\Auth\Registration\RegisterHCPController;
+use App\Http\Controllers\Auth\Registration\RegisterPatientController;
+use App\Http\Controllers\Auth\EmailVerification\ResendEmailOtpController;
+use App\Http\Controllers\Auth\EmailVerification\VerifyEmailController;
+use App\Http\Controllers\Auth\EmailVerification\VerifyEmailOtpController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register/patient', [RegisterPatientController::class, 'store'])

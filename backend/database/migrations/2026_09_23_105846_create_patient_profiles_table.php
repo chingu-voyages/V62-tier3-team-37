@@ -19,9 +19,6 @@ return new class extends Migration
             $table->string('blood_type', 5)
                 ->nullable();
 
-            $table->text('bio')
-                ->nullable();
-
             $table->unsignedSmallInteger('height_cm')
                 ->nullable();
 
