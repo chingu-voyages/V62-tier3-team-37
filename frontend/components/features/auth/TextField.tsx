@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FieldMessage } from "./FieldMessage";
 
 type TextFieldProps = {
   id: string;
@@ -33,7 +34,7 @@ export function TextField({
   const errorId = `${id}-error`;
 
   return (
-    <div className="space-y-1.5">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>
       <Input
         id={id}
@@ -46,11 +47,7 @@ export function TextField({
         onChange={(event) => onChange(event.target.value)}
         onBlur={onBlur}
       />
-      {error ? (
-        <p id={errorId} className="text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
+      <FieldMessage id={errorId}>{error}</FieldMessage>
     </div>
   );
 }

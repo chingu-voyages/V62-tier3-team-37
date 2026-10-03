@@ -1,10 +1,12 @@
 "use client";
 
+import { CircleCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Callout } from "@/components/ui/callout";
 import {
   useLogoutMutation,
   useResendOtpMutation,
@@ -16,6 +18,9 @@ import { useAuthStore } from "@/store/use-auth-store";
 import { AuthCard } from "./AuthCard";
 
 const OTP_LENGTH = 6;
+
+const LINK_CLASS =
+  "rounded-sm font-medium text-primary underline decoration-primary/35 underline-offset-4 transition-colors hover:text-primary/85 hover:decoration-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 /**
  * Email verification screen at /auth/otp.
@@ -38,7 +43,9 @@ export function OtpForm() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const email = useAuthStore((state) => state.signup.email);
-  const resetSignupContext = useAuthStore((state) => state.resetSignupContext);
+  const role = useAuthStore((state) => state.signup.role);
+  const setOtpVerified = useAuthStore((state) => state.setOtpVerified);
+  const clearSignup = useAuthStore((state) => state.clearSignup);
   const router = useRouter();
 
   const verifyMutation = useVerifyOtpMutation();
@@ -53,7 +60,7 @@ export function OtpForm() {
 
     logoutMutation.mutate(undefined, {
       onSettled: () => {
-        resetSignupContext();
+        clearSignup();
         router.push("/auth");
       },
     });
@@ -64,12 +71,12 @@ export function OtpForm() {
   }, [email, router]);
 
   useEffect(() => {
-    const handlePopState = () => resetSignupContext();
+    const handlePopState = () => clearSignup();
 
     window.addEventListener("popstate", handlePopState);
 
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [resetSignupContext]);
+  }, [clearSignup]);
 
   const code = digits.join("");
   const complete = code.length === OTP_LENGTH;
@@ -99,8 +106,13 @@ export function OtpForm() {
       {
         onSuccess: (response) => {
           const message = response.message ?? "Email verified successfully.";
-          console.log(message);
           setNotice(message);
+          setOtpVerified(true);
+          if (role === "HCP") {
+            router.push("/auth/hcp/verification");
+          } else {
+            router.push("/patient/search");
+          }
         },
         onError: (error) => {
           setFormError(getApiErrorMessage(error));
@@ -126,9 +138,14 @@ export function OtpForm() {
 
   return (
     <AuthCard
+      step={{ current: 2, total: 3, role: role ?? undefined }}
       title="Verify your email"
       subtitle="We sent a 6-digit code to your email. Enter it below to continue."
-      info="Codes are valid for 10 minutes. If you don't see the email, check your spam folder."
+      info={
+        <Callout>
+          Codes are valid for 10 minutes. If you don&apos;t see the email, check your spam folder.
+        </Callout>
+      }
       footer={
         <Link
           href="/auth"
@@ -137,14 +154,14 @@ export function OtpForm() {
             event.preventDefault();
             handleBackToSignIn();
           }}
-          className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-muted-foreground"
+          className={LINK_CLASS}
         >
           {loggingOut ? "Logging out…" : "Back to sign in"}
         </Link>
       }
     >
       <form
-        className="space-y-5"
+        className="flex flex-col gap-5"
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
@@ -152,7 +169,7 @@ export function OtpForm() {
           handleVerify();
         }}
       >
-        <div className="flex justify-center gap-2">
+        <div className="mx-auto grid w-full max-w-sm grid-cols-6 gap-1.5 sm:gap-2.5">
           {digits.map((digit, index) => {
             const inputId = `otp-${index}`;
             return (
@@ -171,39 +188,38 @@ export function OtpForm() {
                 disabled={busy}
                 onChange={(event) => handleChange(index, event.target.value)}
                 onKeyDown={(event) => handleKeyDown(index, event)}
-                className="size-12 rounded-md border bg-background text-center text-h4 tabular-nums outline-none focus:border-ring focus:ring-2 focus:ring-ring/30 disabled:opacity-60"
+                className="aspect-square w-full max-w-12 justify-self-center rounded-md border border-input bg-card text-center font-heading type-h4 tabular-nums transition-[color,box-shadow] outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/20 disabled:opacity-60 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/15"
               />
             );
           })}
         </div>
 
         {formError ? (
-          <p
-            role="alert"
-            className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-center text-sm text-destructive"
-          >
+          <Callout tone="danger" role="alert">
             {formError}
-          </p>
+          </Callout>
         ) : null}
 
         {notice ? (
-          <p className="rounded-md border border-emerald-600/20 bg-emerald-600/10 px-3 py-2 text-center text-sm text-emerald-700 dark:text-emerald-400">
+          <Callout role="status" icon={CircleCheck}>
             {notice}
-          </p>
+          </Callout>
         ) : null}
 
-        <Button type="submit" size="lg" className="h-11 w-full" disabled={!complete || busy}>
-          {verifyMutation.isPending ? "Verifying…" : "Verify"}
-        </Button>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Didn&apos;t receive the code?{" "}
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={busy}
-            className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-muted-foreground disabled:opacity-60"
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+          <Button
+            type="submit"
+            size="xl"
+            className="w-full sm:w-auto sm:min-w-48"
+            disabled={!complete || busy}
           >
+            {verifyMutation.isPending ? "Verifying…" : "Verify"}
+          </Button>
+        </div>
+
+        <p className="text-center type-body text-muted-foreground">
+          Didn&apos;t receive the code?{" "}
+          <button type="button" onClick={handleResend} disabled={busy} className={LINK_CLASS}>
             {resendMutation.isPending ? "Resending…" : "Resend code"}
           </button>
         </p>

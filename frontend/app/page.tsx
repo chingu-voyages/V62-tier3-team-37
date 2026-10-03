@@ -1,22 +1,20 @@
-"use client";
-
-import { useTestStore } from "../store/useTestStore";
+import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 
 export default function HomePage() {
-  const count = useTestStore((state) => state.count);
-  const increment = useTestStore((state) => state.increment);
-  const decrement = useTestStore((state) => state.decrement);
-
   return (
     <main>
-      <h1 className="">Zustand Test</h1>
-      <p>Count: {count}</p>
-      <button type="button" onClick={increment}>
-        +
-      </button>
-      <button type="button" onClick={decrement}>
-        -
-      </button>
+      <div className="flex min-h-dvh">
+        <div className="flex-1 px-4 py-8 sm:px-6">
+          <div className="mb-6 flex justify-end">
+            <Link href="/auth" className={buttonVariants()}>
+              Log in / Sign up
+            </Link>
+          </div>
+          <h1 className="text-3xl font-bold">Welcome to the Home Page</h1>
+          <p className="mt-4 text-lg">This is a sample home page for the application.</p>
+        </div>
+      </div>
     </main>
   );
 }
