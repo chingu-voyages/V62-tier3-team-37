@@ -61,7 +61,7 @@ export function toProfileIdentity(profile: ApiHcpProfile): HcpProfileIdentity {
     specialty: professional.specialty || undefined,
     isVerified: profile.is_verified,
     dateOfBirth: calendarDate(personal.birth_date),
-    age: personal.age,
+    age: personal.age ?? undefined,
     gender: formatGender(personal.gender),
     phone: personal.phone ?? undefined,
     email: personal.email || undefined,
@@ -83,7 +83,7 @@ export function toProfessionalInformation(profile: ApiHcpProfile): HcpProfession
     email: personal.email || undefined,
     specialty: professional.specialty || undefined,
     subSpecialty: professional.sub_specialty ?? undefined,
-    yearsOfExperience: professional.years_of_experience,
+    yearsOfExperience: professional.years_of_experience ?? undefined,
     medicalLicenseNumber: professional.medical_license_number || undefined,
     licenseIssuingAuthority: professional.license_issuing_authority || undefined,
     workplaceName: professional.workplace_name ?? undefined,
@@ -118,16 +118,21 @@ function compareDays(left: WorkingDayKey, right: WorkingDayKey): number {
  * parsing a rendered string. Splitting `full_name` back into first/last breaks on
  * multi-word surnames, and reformatting `birth_date` into "8 Apr 1993" would send
  * an unparseable value back to a `YYYY-MM-DD` field.
+ *
+ * Nulls collapse to `""` here rather than being carried through. A controlled
+ * `<input value={null}>` renders as an uncontrolled input and warns, and
+ * `draft.birthDate.trim()` would throw outright. The editor already treats `""` as
+ * "not provided" and omits the field from the PATCH, so nothing is lost.
  */
 export function toEditableProfile(profile: ApiHcpProfile): HcpEditableProfile {
   const personal = profile.personal_information;
   const professional = profile.professional_information;
 
   return {
-    firstName: personal.first_name,
-    lastName: personal.last_name,
-    birthDate: personal.birth_date,
-    gender: personal.gender,
+    firstName: personal.first_name ?? "",
+    lastName: personal.last_name ?? "",
+    birthDate: personal.birth_date ?? "",
+    gender: personal.gender ?? "",
     phone: personal.phone ?? "",
     country: personal.country ?? "",
     subSpecialty: professional.sub_specialty ?? "",

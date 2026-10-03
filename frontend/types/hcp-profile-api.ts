@@ -42,23 +42,33 @@ export type ApiVerification = {
   documents: ApiVerificationDocuments;
 };
 
+/**
+ * `HcpProfileResource` builds these with nullsafe operators throughout
+ * (`$user->birth_date ? ... : null`, `$profile?->specialty?->value`), so a provider
+ * who has not finished onboarding - or has no `hcp_profiles` row at all - is
+ * answered with `null` for most of these fields, not `""` and not an omitted key.
+ *
+ * The published spec lists them as required, which is true only for a fully
+ * onboarded provider. Widening them here keeps the types honest; without it a
+ * missing `birth_date` reaches `EditProfileForm` as `null` and `.trim()` throws.
+ */
 export type ApiPersonalInformation = {
-  first_name: string;
-  last_name: string;
-  full_name: string;
-  birth_date: string;
-  age: number;
-  gender: ApiGender;
-  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  full_name: string | null;
+  birth_date: string | null;
+  age: number | null;
+  gender: ApiGender | null;
+  email: string | null;
   phone: string | null;
   country: string | null;
 };
 
 export type ApiProfessionalInformation = {
-  specialty: string;
-  years_of_experience: number;
-  medical_license_number: string;
-  license_issuing_authority: string;
+  specialty: string | null;
+  years_of_experience: number | null;
+  medical_license_number: string | null;
+  license_issuing_authority: string | null;
   sub_specialty: string | null;
   workplace_name: string | null;
   workplace_address: string | null;

@@ -43,8 +43,8 @@ export async function getHcpProfileIdentity() {
 
   return {
     identity: toProfileIdentity(profile),
-    firstName: profile.personal_information.first_name,
-    lastName: profile.personal_information.last_name,
+    firstName: profile.personal_information.first_name ?? undefined,
+    lastName: profile.personal_information.last_name ?? undefined,
   };
 }
 
