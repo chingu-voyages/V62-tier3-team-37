@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, Sora } from "next/font/google";
 import "./globals.css";
+import { InlineScript } from "@/components/motion/InlineScript";
 import { cn } from "@/lib/utils";
 import Providers from "./providers";
 
@@ -18,15 +19,6 @@ const outfit = Outfit({
   display: "swap",
 });
 
-/**
- * Pre-paint motion bootstrap.
- *
- * Adds `motion-enabled` to <html> before the page content is parsed, so the
- * CSS start states in globals.css apply from the first frame instead of after
- * hydration. The motion engine removes the class when it takes over; the
- * timeout reveals everything if hydration never happens. Without JS, or when
- * reduced motion is requested, the class is never added.
- */
 const motionBootstrap = `
 try {
   if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -54,10 +46,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={cn("font-sans", sora.variable, outfit.variable)}>
+    <html
+      lang="en"
+      className={cn("font-sans", sora.variable, outfit.variable)}
+      suppressHydrationWarning
+    >
       <body>
-        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: static constant, no user input */}
-        <script dangerouslySetInnerHTML={{ __html: motionBootstrap }} />
+        <InlineScript html={motionBootstrap} />
         <Providers>{children}</Providers>
       </body>
     </html>

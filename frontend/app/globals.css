@@ -312,22 +312,6 @@ body {
   }
 }
 
-/* ==========================================================================
-   Motion pre-hydration state
-   --------------------------------------------------------------------------
-   `motion-enabled` is added to <html> by a tiny pre-paint script (see
-   app/layout.tsx), so animated elements render in their entrance start state
-   instead of flashing and re-animating once hydration happens. The motion
-   engine removes the class immediately before it builds its first timeline,
-   so these rules can never fight the tween's own inline styles.
-
-   The transforms mirror the desktop steps in AuthPageMotion. Below lg the
-   elements only need to be invisible, which keeps a slow hydration from
-   introducing pre-hydration horizontal overflow on narrow screens. Without
-   JS, or with reduced motion, the class is never added and content is
-   visible in its final state straight away.
-   ========================================================================== */
-
 html.motion-enabled [data-motion="brand-image"] {
   opacity: 0;
   transform: translateX(-28px) scale(1.22);

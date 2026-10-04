@@ -38,7 +38,8 @@ export function AuthBrandMedia({ className }: { className?: string }) {
           alt=""
           fill
           sizes="(min-width: 64rem) 42vw, 100vw"
-          loading="lazy"
+          loading="eager"
+          fetchPriority="high"
           className="object-cover object-center"
         />
         <div

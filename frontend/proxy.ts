@@ -46,7 +46,6 @@ async function getUser(req: NextRequest) {
 
   const cached = userCache.get(cookie);
   if (cached && cached.expiresAt > now) {
-    // Re-insert to mark this entry as most recently used.
     userCache.delete(cookie);
     userCache.set(cookie, cached);
     return cached.user;
@@ -63,10 +62,6 @@ async function getUser(req: NextRequest) {
     if (!oldest.done) userCache.delete(oldest.value);
   }
 
-  // Only successful lookups are cached. Caching a `null` - which is what an
-  // expired session or an unreachable API both produce - meant that signing in
-  // right after a request was still treated as a guest for the rest of the TTL, so
-  // the login form appeared to do nothing until the cache expired.
   if (user) {
     userCache.set(cookie, { user, expiresAt: now + USER_CACHE_TTL_MS });
   } else {

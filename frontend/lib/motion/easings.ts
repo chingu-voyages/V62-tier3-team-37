@@ -20,6 +20,8 @@ export const motionEases = {
   exit: "power2.in",
   /** Restrained overshoot. Use sparingly and only for emphasis. */
   expressive: "back.out(1.2)",
+  /** Balanced in/out for layout-size transitions (grow/shrink, collapse). */
+  layout: "power2.inOut",
 } as const satisfies Record<MotionEaseVariant, string>;
 
 /**

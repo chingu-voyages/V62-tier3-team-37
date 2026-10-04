@@ -10,6 +10,8 @@ export { motionDefaults } from "./presets";
 export {
   directionToTweenVars,
   motionMediaQueries,
+  noPreferenceMotionQuery,
+  reducedMotionQuery,
   resolveBreakpoint,
   resolveMotionTargets,
   resolveResponsiveValue,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { AnimatedSize } from "@/components/motion";
 import { Button } from "@/components/ui/button";
 import { AuthCard } from "./AuthCard";
 import { LoginForm } from "./LoginForm";
@@ -46,19 +47,21 @@ export function AuthScreen() {
     </div>
   );
 
-  if (tab === "login") {
-    return (
-      <AuthCard
-        title="Welcome back"
-        subtitle="Log in to access your patient portal and continue your health journey."
-        tabs={tabs}
-      >
-        <div role="tabpanel" id={`${baseId}-panel-login`} aria-labelledby={`${baseId}-tab-login`}>
-          <LoginForm />
-        </div>
-      </AuthCard>
-    );
-  }
-
-  return <RegisterForm tabs={tabs} />;
+  return (
+    <AnimatedSize axis="height" ease="expressive" className="m-auto w-full max-w-xl 2xl:max-w-2xl">
+      {tab === "login" ? (
+        <AuthCard
+          title="Welcome back"
+          subtitle="Log in to access your patient portal and continue your health journey."
+          tabs={tabs}
+        >
+          <div role="tabpanel" id={`${baseId}-panel-login`} aria-labelledby={`${baseId}-tab-login`}>
+            <LoginForm />
+          </div>
+        </AuthCard>
+      ) : (
+        <RegisterForm tabs={tabs} />
+      )}
+    </AnimatedSize>
+  );
 }

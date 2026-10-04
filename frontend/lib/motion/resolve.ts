@@ -7,6 +7,12 @@ const MOTION_ATTRIBUTE = "data-motion";
 /** Semantic target names only: letters, digits and hyphens. */
 const MOTION_TARGET_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9-]*$/;
 
+/** True when the visitor allows motion. */
+export const noPreferenceMotionQuery = "(prefers-reduced-motion: no-preference)";
+
+/** True when the visitor asks for reduced motion. */
+export const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
+
 /**
  * Media queries the reusable timeline listens to.
  *
@@ -19,9 +25,9 @@ const MOTION_TARGET_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9-]*$/;
  * so the buckets cannot overlap or leave gaps.
  */
 export const motionMediaQueries = {
-  isMobile: "(prefers-reduced-motion: no-preference) and (width < 40rem)",
-  isTablet: "(prefers-reduced-motion: no-preference) and (width >= 40rem) and (width < 64rem)",
-  isDesktop: "(prefers-reduced-motion: no-preference) and (width >= 64rem)",
+  isMobile: `${noPreferenceMotionQuery} and (width < 40rem)`,
+  isTablet: `${noPreferenceMotionQuery} and (width >= 40rem) and (width < 64rem)`,
+  isDesktop: `${noPreferenceMotionQuery} and (width >= 64rem)`,
 } as const;
 
 /** Map GSAP matchMedia conditions to the single breakpoint that matched. */

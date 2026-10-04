@@ -12,7 +12,14 @@ export type MotionDirection = "left" | "right" | "top" | "bottom" | "none";
  * Named easing variants. The concrete GSAP ease for each variant lives in
  * `easings.ts` so the motion language stays consistent across the app.
  */
-export type MotionEaseVariant = "standard" | "entrance" | "smooth" | "move" | "exit" | "expressive";
+export type MotionEaseVariant =
+  | "standard"
+  | "entrance"
+  | "smooth"
+  | "move"
+  | "exit"
+  | "expressive"
+  | "layout";
 
 /**
  * A variant name, or a raw GSAP ease string as an advanced escape hatch
