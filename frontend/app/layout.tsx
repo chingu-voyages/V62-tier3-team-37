@@ -18,6 +18,27 @@ const outfit = Outfit({
   display: "swap",
 });
 
+/**
+ * Pre-paint motion bootstrap.
+ *
+ * Adds `motion-enabled` to <html> before the page content is parsed, so the
+ * CSS start states in globals.css apply from the first frame instead of after
+ * hydration. The motion engine removes the class when it takes over; the
+ * timeout reveals everything if hydration never happens. Without JS, or when
+ * reduced motion is requested, the class is never added.
+ */
+const motionBootstrap = `
+try {
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    var root = document.documentElement;
+    root.classList.add("motion-enabled");
+    setTimeout(function () {
+      root.classList.remove("motion-enabled");
+    }, 4000);
+  }
+} catch (error) {}
+`;
+
 export const metadata: Metadata = {
   // Required for absolute OG/canonical URLs to resolve.
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
@@ -35,6 +56,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={cn("font-sans", sora.variable, outfit.variable)}>
       <body>
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: static constant, no user input */}
+        <script dangerouslySetInnerHTML={{ __html: motionBootstrap }} />
         <Providers>{children}</Providers>
       </body>
     </html>

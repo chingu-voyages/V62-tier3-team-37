@@ -41,7 +41,7 @@ type SignupRoleSwitchProps = {
  */
 export function SignupRoleSwitch({ role, onRoleChange }: SignupRoleSwitchProps) {
   return (
-    <div className="flex flex-col gap-2">
+    <div data-motion="role-switch" className="flex flex-col gap-2">
       <p className="type-body text-muted-foreground">
         You&apos;re signing up as a{" "}
         <span className="font-medium text-foreground">{SIGNUP_ROLE_LABELS[role]}</span>.

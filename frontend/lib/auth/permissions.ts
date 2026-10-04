@@ -42,18 +42,10 @@ function isHcpArea(pathname: string): boolean {
   return pathname.startsWith(`${NAV_BASE_PATHS.hcp}/`);
 }
 
-/** Routes only an unauthenticated visitor may reach. */
 function isGuestOnlyPath(pathname: string): boolean {
   return pathname === ROUTES.auth;
 }
 
-/**
- * Reachable without a session.
- *
- * `/auth/otp` qualifies because the OTP endpoints are authenticated but the
- * account is not verified yet, which is exactly the state the user is in when they
- * land there.
- */
 function isPubliclyReachableWhileGuest(pathname: string): boolean {
   return isGuestOnlyPath(pathname) || pathname === ROUTES.otp;
 }

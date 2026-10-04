@@ -24,9 +24,21 @@ type ProfilePhotoControlProps = {
 /**
  * Upload, replace and remove the profile photo.
  *
- * The file input is validated before the request so a rejected file costs no
- * upload, and the accepted formats mirror the API's JPG/JPEG/PNG/WebP list.
- * `Content-Type` on the multipart body is left to the browser.
+ * Three states, because a picker and a request are different things:
+ *
+ * - **No photo** - one `Upload photo` button.
+ * - **Photo stored** - `Change` and `Remove`. Remove returns to the first state.
+ * - **File chosen, not sent** - the upload button becomes a primary `Update`
+ *   that actually sends the request.
+ *
+ * Selecting a file used to upload it immediately, so the button labelled "Replace
+ * photo" was the only control and there was no way to see what was about to be
+ * sent or to back out of a mis-click. Staging the file first makes the pending
+ * change visible, gives `Remove` somewhere to return to, and leaves `Change`
+ * available so a wrongly picked file can be swapped before anything is sent.
+ *
+ * The file is validated before it is staged, so a rejected file never reaches the
+ * Update button. `Content-Type` on the multipart body is left to the browser.
  */
 export function ProfilePhotoControl({
   photoUrl,
@@ -35,11 +47,18 @@ export function ProfilePhotoControl({
   className,
 }: ProfilePhotoControlProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [stagedFile, setStagedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const upload = useUploadProfilePhotoMutation();
   const remove = useDeleteProfilePhotoMutation();
   const pending = upload.isPending || remove.isPending;
+
+  const hasPhoto = Boolean(photoUrl);
+
+  function openPicker() {
+    inputRef.current?.click();
+  }
 
   function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -54,7 +73,32 @@ export function ProfilePhotoControl({
     }
 
     setError(null);
-    upload.mutate(file, { onError: (cause) => setError(getApiErrorMessage(cause)) });
+    setStagedFile(file);
+  }
+
+  function handleUpdate() {
+    if (!stagedFile || pending) return;
+
+    upload.mutate(stagedFile, {
+      onSuccess: () => {
+        setStagedFile(null);
+        setError(null);
+      },
+      onError: (cause) => setError(getApiErrorMessage(cause)),
+    });
+  }
+
+  function handleRemove() {
+    if (pending) return;
+
+    remove.mutate(undefined, {
+      onSuccess: () => {
+        // Back to the empty state: the upload button returns.
+        setStagedFile(null);
+        setError(null);
+      },
+      onError: (cause) => setError(getApiErrorMessage(cause)),
+    });
   }
 
   return (
@@ -78,37 +122,63 @@ export function ProfilePhotoControl({
           />
 
           <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => inputRef.current?.click()}
-              disabled={pending}
-            >
-              <Camera className="mr-1.5 size-3.5" aria-hidden="true" />
-              {upload.isPending ? "Uploading…" : photoUrl ? "Replace photo" : "Upload photo"}
-            </Button>
+            {stagedFile ? (
+              <Button type="button" size="sm" onClick={handleUpdate} disabled={pending}>
+                <Camera className="mr-1.5 size-3.5" aria-hidden="true" />
+                {upload.isPending ? "Updating…" : "Update"}
+              </Button>
+            ) : null}
 
-            {photoUrl ? (
+            {hasPhoto ? (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={openPicker}
+                disabled={pending}
+              >
+                <Camera className="mr-1.5 size-3.5" aria-hidden="true" />
+                Change
+              </Button>
+            ) : stagedFile ? null : (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={openPicker}
+                disabled={pending}
+              >
+                <Camera className="mr-1.5 size-3.5" aria-hidden="true" />
+                Upload photo
+              </Button>
+            )}
+
+            {hasPhoto ? (
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="text-destructive hover:bg-destructive/10"
-                onClick={() =>
-                  remove.mutate(undefined, { onError: (c) => setError(getApiErrorMessage(c)) })
-                }
+                onClick={handleRemove}
                 disabled={pending}
               >
                 <Trash2 className="mr-1.5 size-3.5" aria-hidden="true" />
-                Remove
+                {remove.isPending ? "Removing…" : "Remove"}
               </Button>
             ) : null}
           </div>
 
-          <p className="type-helper text-muted-foreground">
-            JPG, PNG or WebP up to {formatPhotoSize(PROFILE_LIMITS.photoBytes)}.
-          </p>
+          {stagedFile ? (
+            // Names the file the Update button will send, so the pending change is
+            // legible rather than implied.
+            <p className="type-helper text-muted-foreground">
+              {stagedFile.name} · {formatPhotoSize(stagedFile.size)} — not saved yet
+            </p>
+          ) : (
+            <p className="type-helper text-muted-foreground">
+              JPG, PNG or WebP up to {formatPhotoSize(PROFILE_LIMITS.photoBytes)}.
+            </p>
+          )}
         </div>
       </div>
 

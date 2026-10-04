@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AuthPageMotion } from "@/components/features/auth/AuthPageMotion";
 import { AuthBrandPanel } from "@/components/layout/AuthBrandPanel";
 import { Navbar } from "@/components/layout/Navbar";
 import { getOptionalUser } from "@/lib/dal/auth";
@@ -9,21 +10,26 @@ import { getOptionalUser } from "@/lib/dal/auth";
  * Reads the session so the navbar can show the right state: a signed-out visitor
  * sees only the language control, while someone part-way through signup (the OTP
  * or credential-upload screens) also sees their name and email.
+ *
+ * The shell is wrapped in the auth motion island: the server-rendered markup is
+ * passed through as children, so only the motion layer is client-side.
  */
 export async function AuthSplitShell({ children }: { children: ReactNode }) {
   const user = await getOptionalUser();
 
   return (
-    <div className="fixed inset-x-0 top-0 grid h-dvh grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,42%)_minmax(0,58%)]">
-      <AuthBrandPanel />
+    <AuthPageMotion>
+      <div className="fixed inset-x-0 top-0 grid h-dvh grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,42%)_minmax(0,58%)]">
+        <AuthBrandPanel />
 
-      <div className="flex h-full min-w-0 flex-col overflow-hidden bg-background">
-        <Navbar user={user} variant={user ? "pending" : "guest"} className="shrink-0" />
+        <div className="flex h-full min-w-0 flex-col overflow-hidden bg-background">
+          <Navbar user={user} variant={user ? "pending" : "guest"} className="shrink-0" />
 
-        <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-7 sm:px-6 sm:py-10 lg:px-8 lg:py-12 xl:px-10 2xl:px-14">
-          {children}
-        </main>
+          <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-7 sm:px-6 sm:py-10 lg:px-8 lg:py-12 xl:px-10 2xl:px-14">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </AuthPageMotion>
   );
 }

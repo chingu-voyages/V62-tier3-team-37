@@ -311,3 +311,69 @@ body {
     outline-color: color-mix(in oklab, var(--ring) 55%, transparent);
   }
 }
+
+/* ==========================================================================
+   Motion pre-hydration state
+   --------------------------------------------------------------------------
+   `motion-enabled` is added to <html> by a tiny pre-paint script (see
+   app/layout.tsx), so animated elements render in their entrance start state
+   instead of flashing and re-animating once hydration happens. The motion
+   engine removes the class immediately before it builds its first timeline,
+   so these rules can never fight the tween's own inline styles.
+
+   The transforms mirror the desktop steps in AuthPageMotion. Below lg the
+   elements only need to be invisible, which keeps a slow hydration from
+   introducing pre-hydration horizontal overflow on narrow screens. Without
+   JS, or with reduced motion, the class is never added and content is
+   visible in its final state straight away.
+   ========================================================================== */
+
+html.motion-enabled [data-motion="brand-image"] {
+  opacity: 0;
+  transform: translateX(-28px) scale(1.22);
+  will-change: opacity, transform;
+}
+
+html.motion-enabled [data-motion="brand-content"] {
+  opacity: 0;
+  transform: translateX(-34px);
+}
+
+html.motion-enabled [data-motion="step"],
+html.motion-enabled [data-motion="heading"],
+html.motion-enabled [data-motion="subheading"],
+html.motion-enabled [data-motion="role-switch"],
+html.motion-enabled [data-motion="card"] {
+  opacity: 0;
+}
+
+@media (width >= 64rem) {
+  html.motion-enabled [data-motion="heading"] {
+    transform: translateY(28px);
+  }
+
+  html.motion-enabled [data-motion="subheading"] {
+    transform: translateY(18px);
+  }
+
+  html.motion-enabled [data-motion="role-switch"] {
+    transform: translateY(12px);
+  }
+
+  html.motion-enabled [data-motion="card"] {
+    transform: translateY(-30px);
+  }
+}
+
+/* If motion becomes unwelcome mid-session, nothing may stay hidden.
+   These must beat the tween's inline styles, hence !important. */
+@media (prefers-reduced-motion: reduce) {
+  [data-motion] {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion kill switch */
+    opacity: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion kill switch */
+    visibility: visible !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion kill switch */
+    transform: none !important;
+  }
+}

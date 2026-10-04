@@ -1,4 +1,4 @@
-import { FileText, Globe, Stethoscope } from "lucide-react";
+import { InfoIcon } from "lucide-react";
 import { EditDetailsForm } from "@/components/features/hcp/profile/shared/EditDetailsForm";
 import type { HcpProfessionalPreferences } from "@/types/hcp-profile";
 import type { ApiConsultationType } from "@/types/hcp-profile-api";
@@ -21,7 +21,9 @@ function PillList({ values, emptyMessage }: { values?: string[]; emptyMessage: s
     <ul className="flex flex-wrap gap-2">
       {uniqueValues.map((value, position) => (
         <li key={value}>
-          <ProfilePill tone={position === 0 ? "accent" : "neutral"}>{value}</ProfilePill>
+          <ProfilePill className="type-body" tone={position === 0 ? "accent" : "neutral"}>
+            {value}
+          </ProfilePill>
         </li>
       ))}
     </ul>
@@ -47,31 +49,35 @@ export function ProfileDetails({ preferences }: ProfileDetailsProps) {
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
-      <ProfileCard title="Languages" icon={Globe}>
-        <PillList values={preferences?.languages} emptyMessage="No languages added yet." />
-      </ProfileCard>
+    <ProfileCard
+      icon={InfoIcon}
+      title="Additional Details"
+      className="flex  flex-col gap-2"
+      action={<EditDetailsForm values={editableValues} />}
+    >
+      <div className="flex flex-col mb-6 gap-3 px-4">
+        <h1 className="type-helper text-muted-foreground">Languages</h1>
+        <PillList values={preferences?.languages} emptyMessage="No languages configured yet." />
+      </div>
 
-      <ProfileCard title="Consultation Type" icon={Stethoscope}>
+      <div className="flex flex-col mb-6 gap-3 px-4">
+        <h1 className="type-helper text-muted-foreground">Consultation Types</h1>
         <PillList
           values={preferences?.consultationTypes?.map(consultationLabel)}
           emptyMessage="No consultation types configured yet."
         />
-      </ProfileCard>
+      </div>
 
-      <ProfileCard
-        title="Professional Bio"
-        icon={FileText}
-        action={<EditDetailsForm values={editableValues} />}
-      >
+      <div className="flex flex-col gap-2 px-4">
+        <h1 className="type-helper text-muted-foreground">Professional Bio</h1>
         {preferences?.bio ? (
-          <p className="type-body leading-relaxed break-words whitespace-pre-line text-foreground">
+          <p className="type-body leading-relaxed wrap-break-word whitespace-pre-line text-foreground">
             {preferences.bio}
           </p>
         ) : (
           <SectionEmptyState message="No professional bio has been added yet." />
         )}
-      </ProfileCard>
-    </div>
+      </div>
+    </ProfileCard>
   );
 }
