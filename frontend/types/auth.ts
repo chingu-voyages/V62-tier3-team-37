@@ -33,12 +33,11 @@ export const SIGNUP_ROLE_LABELS: Record<SignupRole, string> = {
   HCP: "Healthcare Professional",
 };
 
-export type Gender = "male" | "female" | "prefer_not_to_say";
+export type Gender = "male" | "female";
 
 export const GENDER_LABELS: Record<Gender, string> = {
   male: "Male",
   female: "Female",
-  prefer_not_to_say: "Prefer not to say",
 };
 
 /**

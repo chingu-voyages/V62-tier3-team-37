@@ -38,7 +38,7 @@ export const dateOfBirthSchema = z
     return year >= MIN_DATE_OF_BIRTH_YEAR && year <= MAX_DATE_OF_BIRTH_YEAR;
   }, `Enter a valid date of birth (${MIN_DATE_OF_BIRTH_YEAR}–${MAX_DATE_OF_BIRTH_YEAR})`);
 
-export const genderSchema = z.enum(["male", "female", "prefer_not_to_say"], {
+export const genderSchema = z.enum(["male", "female"], {
   message: "Select your gender",
 });
 

@@ -54,7 +54,6 @@ import { SignupRoleSwitch } from "./SignupRoleSwitch";
 const GENDERS: { value: Gender; label: string }[] = [
   { value: "male", label: GENDER_LABELS.male },
   { value: "female", label: GENDER_LABELS.female },
-  { value: "prefer_not_to_say", label: GENDER_LABELS.prefer_not_to_say },
 ];
 
 const MIN_DATE_OF_BIRTH = "1900-01-01";
