@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
+import { inlineLinkClassName } from "@/components/ui/inline-link";
 import { PasswordField, TextField } from "@/components/ui/text-field";
 import { useLoginMutation } from "@/hooks/use-auth-mutations";
 import { getApiErrorMessage, getApiFieldError } from "@/lib/api/client";
@@ -13,7 +14,12 @@ import { emailSchema } from "@/lib/validation/email";
 import { firstTouchedError } from "@/lib/validation/field-error";
 import { errorFor, loginSchema } from "@/lib/validation/schemas";
 
-export function LoginForm() {
+function revealFirstInvalid(form: HTMLFormElement) {
+  const invalid = form.querySelector<HTMLElement>("[aria-invalid='true']");
+  invalid?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+export function LoginForm({ onCreateAccount }: { onCreateAccount?: () => void }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [serverFieldErrors, setServerFieldErrors] = useState<{
     email?: string;
@@ -71,7 +77,10 @@ export function LoginForm() {
       className="flex flex-col gap-5"
       onSubmit={(event) => {
         event.preventDefault();
-        void form.handleSubmit();
+        const formElement = event.currentTarget;
+        void form.handleSubmit().then(() => {
+          requestAnimationFrame(() => revealFirstInvalid(formElement));
+        });
       }}
     >
       <form.Field
@@ -98,7 +107,12 @@ export function LoginForm() {
         )}
       </form.Field>
 
-      <form.Field name="password">
+      <form.Field
+        name="password"
+        validators={{
+          onChange: ({ value }) => (value.length === 0 ? "Password is required" : undefined),
+        }}
+      >
         {(field) => (
           <PasswordField
             id="password"
@@ -124,15 +138,18 @@ export function LoginForm() {
         </Callout>
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-        <Button
-          type="submit"
-          size="xl"
-          className="w-full sm:w-auto sm:min-w-56"
-          disabled={loginMutation.isPending}
-        >
+      <div className="flex flex-col gap-3">
+        <Button type="submit" size="xl" className="w-full" disabled={loginMutation.isPending}>
           {loginMutation.isPending ? "Logging in…" : "Log in"}
         </Button>
+        {onCreateAccount ? (
+          <p className="text-center type-body text-muted-foreground">
+            New to HealthHub?{" "}
+            <button type="button" onClick={onCreateAccount} className={inlineLinkClassName}>
+              Create an account
+            </button>
+          </p>
+        ) : null}
       </div>
     </form>
   );

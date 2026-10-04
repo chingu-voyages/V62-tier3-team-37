@@ -28,10 +28,13 @@ export function isEmailVerified(user: AuthUser): boolean {
 
 /**
  * Where a user lands immediately after authenticating.
- * Unverified accounts always land on the OTP screen first.
+ *
+ * Patients open their home, which holds visits and the clinician search.
+ * Unverified accounts are sent to the OTP screen by the route guard before
+ * this destination renders.
  */
 export function homePathForRole(role: string | null | undefined): string {
-  return isHcpRole(role) ? ROUTES.hcpProfile : ROUTES.patientSearch;
+  return isHcpRole(role) ? ROUTES.hcpProfile : ROUTES.patientHome;
 }
 
 function isPatientArea(pathname: string): boolean {
@@ -78,7 +81,7 @@ export function decideRouteAccess(pathname: string, user: AuthUser): RouteDecisi
   const onVerification = pathname === ROUTES.hcpVerification;
 
   if (onHcpRoute && !isHcpRole(user.role)) {
-    return { action: "redirect", to: ROUTES.patientSearch };
+    return { action: "redirect", to: homePathForRole(user.role) };
   }
 
   if (onPatientRoute && !isPatientRole(user.role)) {
@@ -91,7 +94,7 @@ export function decideRouteAccess(pathname: string, user: AuthUser): RouteDecisi
   }
 
   if (onVerification && !isHcpRole(user.role)) {
-    return { action: "redirect", to: ROUTES.patientSearch };
+    return { action: "redirect", to: homePathForRole(user.role) };
   }
 
   return { action: "allow" };

@@ -8,7 +8,7 @@
  * backend rename touches one mapper instead of five components.
  */
 
-export type ApiGender = "MALE" | "FEMALE";
+export type ApiGender = "MALE" | "FEMALE" | "PREFER_NOT_TO_SAY";
 
 export type ApiConsultationType = "IN_PERSON" | "VIDEO" | "PHONE";
 

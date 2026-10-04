@@ -7,14 +7,19 @@
 /* ==========================================================================
    HealthHub design system
    --------------------------------------------------------------------------
-   Brand colours are fixed by the HealthHub brand guidelines and must not be
-   duplicated as literal values inside components. Everything else in the UI
-   is expressed through the semantic tokens defined below.
+   Source: docs/HealthHub-Design-System.pdf (Design System & Brand Guidelines v1.0).
 
-     Primary Green   #064E3B  ->  --primary
-     Secondary Green #10B981  ->  --secondary
-     Accent Light    #ECFDF5  ->  --accent
-     Neutral Dark    #334155  ->  --neutral
+   Brand colours are fixed by that document and must not be duplicated as
+   literal values inside components. Everything else in the UI is expressed
+   through the semantic tokens defined below.
+
+     Primary Green   #064E3B  ->  --primary     Primary actions
+     Secondary Green #10B981  ->  --secondary   Active states and success
+     Accent Light    #ECFDF5  ->  --accent      Soft backgrounds
+     Neutral Dark    #334155  ->  --neutral     Type, icons, strong borders
+
+   Primary green is reserved for the primary action. Switches, tabs, and
+   text buttons use neutral or accent surfaces instead.
 
    Component code should only ever reach for the Tailwind utilities these
    tokens generate: bg-primary, text-secondary, ring-ring, rounded-2xl,

@@ -11,9 +11,9 @@ const LEVELS: Record<
   PasswordStrengthLevel,
   { label: string; segment: string; text: string; filled: number }
 > = {
-  weak: { label: "Weak", segment: "bg-rose-500/60", text: "text-rose-600", filled: 1 },
-  fair: { label: "Fair", segment: "bg-amber-500/60", text: "text-amber-600", filled: 2 },
-  strong: { label: "Strong", segment: "bg-emerald-500/60", text: "text-emerald-600", filled: 3 },
+  weak: { label: "Weak", segment: "bg-destructive", text: "text-destructive", filled: 1 },
+  fair: { label: "Fair", segment: "bg-secondary", text: "text-primary", filled: 2 },
+  strong: { label: "Strong", segment: "bg-primary", text: "text-primary", filled: 3 },
 };
 
 const LEVEL_ORDER: PasswordStrengthLevel[] = ["weak", "fair", "strong"];
@@ -38,18 +38,20 @@ export function PasswordStrength({ value }: PasswordStrengthProps) {
         aria-label="Password strength"
       />
 
-      <div className="flex gap-1" aria-hidden="true">
-        {LEVEL_ORDER.map((key, index) => (
-          <span
-            key={key}
-            className={cn(
-              "h-1 flex-1 rounded-sm transition-colors",
-              index < level.filled ? level.segment : "bg-border",
-            )}
-          />
-        ))}
+      <div className="flex items-center gap-3">
+        <div className="flex flex-1 gap-1" aria-hidden="true">
+          {LEVEL_ORDER.map((key, index) => (
+            <span
+              key={key}
+              className={cn(
+                "h-1 flex-1 rounded-full transition-colors",
+                index < level.filled ? level.segment : "bg-border",
+              )}
+            />
+          ))}
+        </div>
+        <p className={cn("type-helper font-medium", level.text)}>{level.label}</p>
       </div>
-      <p className={cn("text-xs", level.text)}>{level.label}</p>
     </div>
   );
 }

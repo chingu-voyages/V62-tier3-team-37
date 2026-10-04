@@ -118,7 +118,7 @@ export function OtpForm() {
         onSuccess: (response) => {
           if (!mounted.current) return;
           setNotice(response.message ?? "Email verified successfully.");
-          router.push(role === "HCP" ? ROUTES.hcpVerification : ROUTES.patientSearch);
+          router.push(role === "HCP" ? ROUTES.hcpVerification : ROUTES.patientHome);
         },
         onError: (error) => {
           if (!mounted.current) return;
@@ -151,16 +151,20 @@ export function OtpForm() {
     logoutMutation.mutate(undefined, {
       onSettled: () => {
         clearSignup();
-        router.push(ROUTES.auth);
+        router.push(`${ROUTES.auth}?tab=login`);
       },
     });
   }
 
   return (
     <AuthCard
-      step={{ current: 2, total: signupJourneySteps(role) }}
+      step={{ current: 2, total: signupJourneySteps(role), detail: "Email code" }}
       title="Verify your email"
-      subtitle={`We sent a ${OTP_LENGTH}-digit code to your email. Enter it below to continue.`}
+      subtitle={
+        email
+          ? `We sent a ${OTP_LENGTH}-digit code to ${email}. Enter it to open your account.`
+          : `We sent a ${OTP_LENGTH}-digit code to your email. Enter it below to continue.`
+      }
       info={
         <Callout>
           Codes are valid for 10 minutes. If you don&apos;t see the email, check your spam folder.

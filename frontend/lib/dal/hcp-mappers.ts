@@ -48,6 +48,7 @@ function joinLocation(city: string | null | undefined, country: string | null | 
 /** `MALE` -> `Male`, for display. The enum stays uppercase on the wire. */
 function formatGender(gender: string | null | undefined): string | undefined {
   if (!gender) return undefined;
+  if (gender === "PREFER_NOT_TO_SAY") return "Prefer not to say";
   return titleCase(gender);
 }
 

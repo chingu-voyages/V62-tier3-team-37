@@ -1,4 +1,5 @@
-import { homePathForRole } from "@/lib/auth/permissions";
+import { HCP_ROLE } from "@/lib/auth/permissions";
+import { ROUTES } from "@/lib/constants/routes";
 import type { AuthUser } from "@/types/auth";
 
 /**
@@ -41,5 +42,5 @@ export function userInitials(user: NamedLike): string {
 
 /** Where the "Profile" item in the account menu should point. */
 export function userProfileHref(user: AuthUser): string {
-  return homePathForRole(user?.role);
+  return user?.role === HCP_ROLE ? ROUTES.hcpProfile : ROUTES.patientSearch;
 }

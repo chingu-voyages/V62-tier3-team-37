@@ -16,6 +16,18 @@ const today = new Date();
 export const MAX_DATE_OF_BIRTH_YEAR = today.getFullYear();
 export const MIN_DATE_OF_BIRTH_YEAR = 1900;
 
+export const firstNameSchema = z
+  .string()
+  .trim()
+  .min(1, "First name is required")
+  .max(80, "First name is too long");
+
+export const lastNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Last name is required")
+  .max(80, "Last name is too long");
+
 export const dateOfBirthSchema = z
   .string()
   .min(1, "Date of birth is required")
@@ -26,7 +38,7 @@ export const dateOfBirthSchema = z
     return year >= MIN_DATE_OF_BIRTH_YEAR && year <= MAX_DATE_OF_BIRTH_YEAR;
   }, `Enter a valid date of birth (${MIN_DATE_OF_BIRTH_YEAR}–${MAX_DATE_OF_BIRTH_YEAR})`);
 
-export const genderSchema = z.enum(["male", "female"], {
+export const genderSchema = z.enum(["male", "female", "prefer_not_to_say"], {
   message: "Select your gender",
 });
 
@@ -46,8 +58,8 @@ export const loginSchema = z.object({
 
 export const registerSchema = z
   .object({
-    firstName: z.string().trim().min(1, "First name is required").max(80),
-    lastName: z.string().trim().min(1, "Last name is required").max(80),
+    firstName: firstNameSchema,
+    lastName: lastNameSchema,
     email: emailSchema,
     dateOfBirth: dateOfBirthSchema,
     gender: genderSchema,

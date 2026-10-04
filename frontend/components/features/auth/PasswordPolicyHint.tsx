@@ -18,7 +18,17 @@ type PasswordPolicyHintProps = {
  * requirement in words.
  */
 export function PasswordPolicyHint({ value }: PasswordPolicyHintProps) {
-  if (value.length === 0) return null;
+  if (value.length === 0) {
+    return (
+      <ul aria-label="Password requirements" className="flex flex-col gap-1">
+        {PASSWORD_RULES.map((rule) => (
+          <li key={rule.message} className="type-helper text-muted-foreground">
+            {rule.message}
+          </li>
+        ))}
+      </ul>
+    );
+  }
 
   const unmet = unmetPasswordRules(value);
   const allMet = unmet.length === 0;

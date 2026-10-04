@@ -20,13 +20,18 @@ import {
 import { FieldMessage } from "@/components/ui/field-message";
 import { inlineLinkClassName } from "@/components/ui/inline-link";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PasswordField, TextField } from "@/components/ui/text-field";
 import { useRegisterMutation } from "@/hooks/use-auth-mutations";
 import { getApiErrorMessage, getApiFieldError } from "@/lib/api/client";
 import { signupJourneySteps } from "@/lib/auth/journey";
 import { ROUTES } from "@/lib/constants/routes";
-import { cn } from "@/lib/utils";
 import { emailError } from "@/lib/validation/email";
 import { firstTouchedError } from "@/lib/validation/field-error";
 import { passwordError } from "@/lib/validation/password";
@@ -34,7 +39,9 @@ import {
   dateOfBirthSchema,
   errorFor,
   fieldErrorsFrom,
+  firstNameSchema,
   genderSchema,
+  lastNameSchema,
   registerSchema,
   termsSchema,
 } from "@/lib/validation/schemas";
@@ -47,6 +54,7 @@ import { SignupRoleSwitch } from "./SignupRoleSwitch";
 const GENDERS: { value: Gender; label: string }[] = [
   { value: "male", label: GENDER_LABELS.male },
   { value: "female", label: GENDER_LABELS.female },
+  { value: "prefer_not_to_say", label: GENDER_LABELS.prefer_not_to_say },
 ];
 
 const MIN_DATE_OF_BIRTH = "1900-01-01";
@@ -54,11 +62,17 @@ const MAX_DATE_OF_BIRTH = new Date().toISOString().slice(0, 10);
 
 type RegisterFormProps = {
   tabs?: ReactNode;
-  initialRole?: SignupRole;
+  role: SignupRole;
+  onRoleChange: (role: SignupRole) => void;
+  onLogIn?: () => void;
 };
 
-export function RegisterForm({ tabs, initialRole = "PATIENT" }: RegisterFormProps) {
-  const [role, setRole] = useState<SignupRole>(initialRole);
+function revealFirstInvalid(form: HTMLFormElement) {
+  const invalid = form.querySelector<HTMLElement>("[aria-invalid='true']");
+  invalid?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+export function RegisterForm({ tabs, role, onRoleChange, onLogIn }: RegisterFormProps) {
   const [confirming, setConfirming] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [serverFieldErrors, setServerFieldErrors] = useState<Record<string, string>>({});
@@ -160,9 +174,9 @@ export function RegisterForm({ tabs, initialRole = "PATIENT" }: RegisterFormProp
   return (
     <>
       <AuthCard
-        step={{ current: 1, total: signupJourneySteps(role) }}
-        title="Create your account"
-        subtitle={<SignupRoleSwitch role={role} onRoleChange={setRole} />}
+        step={{ current: 1, total: signupJourneySteps(role), detail: "Your details" }}
+        title={role === "HCP" ? "Sign up as a clinician" : "Sign up as a patient"}
+        subtitle={<SignupRoleSwitch role={role} onRoleChange={onRoleChange} />}
         tabs={tabs}
       >
         <form
@@ -170,11 +184,17 @@ export function RegisterForm({ tabs, initialRole = "PATIENT" }: RegisterFormProp
           className="flex flex-col gap-6"
           onSubmit={(event) => {
             event.preventDefault();
-            void form.handleSubmit();
+            const formElement = event.currentTarget;
+            void form.handleSubmit().then(() => {
+              requestAnimationFrame(() => revealFirstInvalid(formElement));
+            });
           }}
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <form.Field name="firstName">
+            <form.Field
+              name="firstName"
+              validators={{ onChange: ({ value }) => errorFor(firstNameSchema, value) }}
+            >
               {(field) => (
                 <TextField
                   id="firstName"
@@ -191,7 +211,10 @@ export function RegisterForm({ tabs, initialRole = "PATIENT" }: RegisterFormProp
               )}
             </form.Field>
 
-            <form.Field name="lastName">
+            <form.Field
+              name="lastName"
+              validators={{ onChange: ({ value }) => errorFor(lastNameSchema, value) }}
+            >
               {(field) => (
                 <TextField
                   id="lastName"
@@ -230,7 +253,7 @@ export function RegisterForm({ tabs, initialRole = "PATIENT" }: RegisterFormProp
             )}
           </form.Field>
 
-          <div className="grid items-start gap-4 sm:grid-cols-2">
+          <div className="grid items-start gap-x-4 gap-y-1.5 sm:grid-cols-2">
             <form.Field
               name="dateOfBirth"
               validators={{ onChange: ({ value }) => errorFor(dateOfBirthSchema, value) }}
@@ -261,47 +284,44 @@ export function RegisterForm({ tabs, initialRole = "PATIENT" }: RegisterFormProp
                 const error = firstTouchedError(field.state.meta);
                 return (
                   <div className="flex min-w-0 flex-col gap-1.5">
-                    <span id="gender-label" className="type-label text-foreground">
+                    <Label htmlFor="gender">
                       Gender
-                    </span>
-                    {/* aria-describedby belongs on the control itself, not on a
-                        wrapper div — on a wrapper it is never announced. */}
-                    <RadioGroup
+                      <span aria-hidden="true" className="text-destructive">
+                        {" "}
+                        *
+                      </span>
+                      <span className="sr-only"> (required)</span>
+                    </Label>
+                    <Select
                       value={field.state.value}
                       onValueChange={(value) => field.handleChange(value as Gender)}
-                      aria-labelledby="gender-label"
-                      aria-invalid={error ? true : undefined}
-                      aria-describedby={error ? "gender-error" : undefined}
-                      className="sm:grid-cols-2"
                     >
-                      {GENDERS.map((option) => (
-                        <div
-                          key={option.value}
-                          className={cn(
-                            "flex items-center gap-2.5 rounded-lg border px-3.5 py-2.5 transition-colors",
-                            "has-data-[state=checked]:border-primary has-data-[state=checked]:bg-accent",
-                            error ? "border-destructive" : "border-input hover:border-primary/40",
-                          )}
-                        >
-                          <RadioGroupItem
-                            id={`gender-${option.value}`}
-                            value={option.value}
-                            aria-invalid={error ? true : undefined}
-                          />
-                          <Label
-                            htmlFor={`gender-${option.value}`}
-                            className="cursor-pointer type-label"
-                          >
+                      <SelectTrigger
+                        id="gender"
+                        aria-invalid={error ? true : undefined}
+                        aria-describedby={error ? "gender-error" : undefined}
+                        onBlur={field.handleBlur}
+                        className="h-11 w-full bg-card type-body"
+                      >
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {GENDERS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
                             {option.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FieldMessage id="gender-error">{error}</FieldMessage>
                   </div>
                 );
               }}
             </form.Field>
+
+            <p className="type-helper text-muted-foreground sm:col-span-2">
+              Date of birth and gender stay on your account record.
+            </p>
           </div>
 
           <div className="grid items-start gap-4 lg:grid-cols-2">
@@ -316,7 +336,7 @@ export function RegisterForm({ tabs, initialRole = "PATIENT" }: RegisterFormProp
                     name="password"
                     label="Password"
                     autoComplete="new-password"
-                    placeholder="Mixed case, a number and a symbol"
+                    placeholder="Create a password"
                     required
                     value={field.state.value}
                     error={firstTouchedError(field.state.meta)}
@@ -358,9 +378,13 @@ export function RegisterForm({ tabs, initialRole = "PATIENT" }: RegisterFormProp
             </form.Field>
           </div>
 
-          <Callout icon={MailCheck} title="Verify your email to continue">
-            Are you a Healthcare Professional? You&apos;ll verify with Email OTP and upload your
-            professional credentials in a later step.
+          <Callout
+            icon={MailCheck}
+            title={role === "HCP" ? "Credentials come later" : "A code comes next"}
+          >
+            {role === "HCP"
+              ? "You'll confirm this email with a code, then upload your professional credentials."
+              : "We'll email a 6-digit code to confirm this address. After that, your visits and the clinician search are on your home page."}
           </Callout>
 
           <form.Field
@@ -411,10 +435,18 @@ export function RegisterForm({ tabs, initialRole = "PATIENT" }: RegisterFormProp
             </Callout>
           ) : null}
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-            <Button type="submit" size="xl" className="w-full sm:w-auto sm:min-w-56">
-              Create account
+          <div className="flex flex-col gap-3">
+            <Button type="submit" size="xl" className="w-full">
+              Next
             </Button>
+            {onLogIn ? (
+              <p className="text-center type-body text-muted-foreground">
+                Already have an account?{" "}
+                <button type="button" onClick={onLogIn} className={inlineLinkClassName}>
+                  Log in
+                </button>
+              </p>
+            ) : null}
           </div>
         </form>
       </AuthCard>
@@ -427,16 +459,33 @@ export function RegisterForm({ tabs, initialRole = "PATIENT" }: RegisterFormProp
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm registration</DialogTitle>
+            <DialogTitle>Check these details</DialogTitle>
             <DialogDescription>
-              Are you sure you want to sign up as a{" "}
-              <span className="font-medium text-primary">{SIGNUP_ROLE_LABELS[role]}</span>?
+              {role === "HCP"
+                ? "We'll create the clinician account and email a code to this address. Credentials come after the code."
+                : "We'll create your patient account and email a code to this address."}
             </DialogDescription>
           </DialogHeader>
+          <dl className="grid gap-3">
+            <div>
+              <dt className="type-helper text-muted-foreground">Name</dt>
+              <dd className="type-body text-foreground">
+                {form.state.values.firstName.trim()} {form.state.values.lastName.trim()}
+              </dd>
+            </div>
+            <div>
+              <dt className="type-helper text-muted-foreground">Email</dt>
+              <dd className="type-body text-foreground">{form.state.values.email.trim()}</dd>
+            </div>
+            <div>
+              <dt className="type-helper text-muted-foreground">Account</dt>
+              <dd className="type-body text-foreground">{SIGNUP_ROLE_LABELS[role]}</dd>
+            </div>
+          </dl>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                Cancel
+                Edit details
               </Button>
             </DialogClose>
             <Button

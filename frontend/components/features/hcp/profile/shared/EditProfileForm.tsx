@@ -35,6 +35,7 @@ type EditProfileFormProps = {
 const GENDERS: { value: ApiGender; label: string }[] = [
   { value: "MALE", label: "Male" },
   { value: "FEMALE", label: "Female" },
+  { value: "PREFER_NOT_TO_SAY", label: "Prefer not to say" },
 ];
 
 const MAX_DATE_OF_BIRTH = new Date().toISOString().slice(0, 10);
