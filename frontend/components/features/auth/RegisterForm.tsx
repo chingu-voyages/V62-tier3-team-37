@@ -54,10 +54,11 @@ const MAX_DATE_OF_BIRTH = new Date().toISOString().slice(0, 10);
 
 type RegisterFormProps = {
   tabs?: ReactNode;
+  initialRole?: SignupRole;
 };
 
-export function RegisterForm({ tabs }: RegisterFormProps) {
-  const [role, setRole] = useState<SignupRole>("PATIENT");
+export function RegisterForm({ tabs, initialRole = "PATIENT" }: RegisterFormProps) {
+  const [role, setRole] = useState<SignupRole>(initialRole);
   const [confirming, setConfirming] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [serverFieldErrors, setServerFieldErrors] = useState<Record<string, string>>({});

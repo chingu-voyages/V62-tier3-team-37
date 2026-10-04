@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { buttonVariants } from "@/components/ui/button";
+import { LandingContinue } from "@/components/features/landing/LandingContinue";
+import { LandingHeader } from "@/components/features/landing/LandingHeader";
+import { LandingSearch } from "@/components/features/landing/LandingSearch";
 import { homePathForRole } from "@/lib/auth/permissions";
-import { ROUTES } from "@/lib/constants/routes";
 import { getOptionalUser } from "@/lib/dal/auth";
 
 /**
@@ -21,18 +21,14 @@ export default async function HomePage() {
   }
 
   return (
-    <main>
-      <div className="flex min-h-dvh">
-        <div className="flex-1 px-4 py-8 sm:px-6">
-          <div className="mb-6 flex justify-end">
-            <Link href={ROUTES.auth} className={buttonVariants()}>
-              Log in / Sign up
-            </Link>
-          </div>
-          <h1 className="text-3xl font-bold">Welcome to the Home Page</h1>
-          <p className="mt-4 text-lg">This is a sample home page for the application.</p>
+    <div className="flex min-h-dvh flex-col bg-muted">
+      <LandingHeader />
+      <main className="flex w-full flex-1 flex-col">
+        <div className="mx-auto flex w-full max-w-5xl flex-col px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+          <LandingSearch />
         </div>
-      </div>
-    </main>
+        <LandingContinue />
+      </main>
+    </div>
   );
 }

@@ -2,19 +2,25 @@
 
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
+import type { SignupRole } from "@/types/auth";
 import { AuthCard } from "./AuthCard";
 import { LoginForm } from "./LoginForm";
 import { RegisterForm } from "./RegisterForm";
 
 type AuthTab = "login" | "register";
 
+type AuthScreenProps = {
+  initialTab?: AuthTab;
+  initialRole?: SignupRole;
+};
+
 const TABS: { value: AuthTab; label: string }[] = [
   { value: "register", label: "Sign up" },
   { value: "login", label: "Log in" },
 ];
 
-export function AuthScreen() {
-  const [tab, setTab] = useState<AuthTab>("register");
+export function AuthScreen({ initialTab = "register", initialRole = "PATIENT" }: AuthScreenProps) {
+  const [tab, setTab] = useState<AuthTab>(initialTab);
   const baseId = useId();
 
   const tabs = (
@@ -60,5 +66,5 @@ export function AuthScreen() {
     );
   }
 
-  return <RegisterForm tabs={tabs} />;
+  return <RegisterForm tabs={tabs} initialRole={initialRole} />;
 }

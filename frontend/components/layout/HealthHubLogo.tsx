@@ -15,8 +15,8 @@ type HealthHubLogoProps = {
 /**
  * HealthHub brand lockup: the mark plus an optional wordmark.
  *
- * The mark is a Primary Green rounded square with a white HeartPulse glyph.
- * Sora carries the wordmark so it reads as a heading rather than body copy.
+ * The mark is the HealthHub monogram. Sora carries the wordmark so it reads
+ * as a heading rather than body copy.
  */
 export function HealthHubLogo({
   className,
@@ -31,7 +31,7 @@ export function HealthHubLogo({
       aria-label="HealthHub home"
       className={cn("inline-flex shrink-0 items-center gap-2.5 ", className)}
     >
-      <Image src="/Logo.svg" alt="HealthHub Logo" width={32} height={32} className="size-12" />
+      <Image src="/logo.png" alt="" width={1024} height={759} className="h-12 w-auto" />
       {withWordmark ? (
         <span
           className={cn(
