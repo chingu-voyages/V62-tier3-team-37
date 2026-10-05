@@ -6,6 +6,7 @@ import { LandingSearch } from "@/components/features/landing/LandingSearch";
 import { PatientAIAssistant } from "@/components/features/patient/AIAssistant/PatientAIAssistant";
 import { AppAsideLayout } from "@/components/layout/AppAsideLayout";
 import { Navbar } from "@/components/layout/Navbar";
+import { userFirstName } from "@/lib/auth/display";
 import { HCP_ROLE, PATIENT_ROLE } from "@/lib/auth/permissions";
 import { availableNavItems, patientNavigation } from "@/lib/constants/navigation";
 import { ROUTES } from "@/lib/constants/routes";
@@ -36,7 +37,7 @@ export default async function HomePage() {
         <div className="flex min-w-0 flex-1 flex-col">
           <Navbar user={user} variant="app" className="sticky top-0 z-30 shrink-0" />
           <main className="flex w-full flex-1 flex-col bg-muted pb-24 md:pb-0 md:pl-24">
-            <LandingBody />
+            <LandingBody signedIn patientName={userFirstName(user)} />
           </main>
         </div>
         <PatientAIAssistant />
@@ -54,13 +55,19 @@ export default async function HomePage() {
   );
 }
 
-function LandingBody(): ReactNode {
+function LandingBody({
+  signedIn = false,
+  patientName,
+}: {
+  signedIn?: boolean;
+  patientName?: string;
+}): ReactNode {
   return (
     <>
       <div className="mx-auto flex w-full max-w-5xl flex-col px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
-        <LandingSearch />
+        <LandingSearch signedIn={signedIn} patientName={patientName} />
       </div>
-      <LandingContinue />
+      <LandingContinue signedIn={signedIn} />
     </>
   );
 }

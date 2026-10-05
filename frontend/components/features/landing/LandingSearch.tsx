@@ -151,7 +151,13 @@ function matches(doctor: LandingDoctor, filters: LandingFilters): boolean {
   return true;
 }
 
-export function LandingSearch({ signedIn = false }: { signedIn?: boolean }) {
+export function LandingSearch({
+  signedIn = false,
+  patientName,
+}: {
+  signedIn?: boolean;
+  patientName?: string;
+}) {
   const [query, setQuery] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [city, setCity] = useState("");
@@ -208,13 +214,23 @@ export function LandingSearch({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <section aria-labelledby="landing-heading" className="flex flex-col gap-8">
       <div className="max-w-2xl">
-        <p className="type-step text-primary">{signedIn ? "Find care" : "Guest booking"}</p>
-        <h1 id="landing-heading" className="mt-2 type-h1 text-foreground">
-          {signedIn ? "Find a doctor" : "Find a doctor and book without an account"}
+        {signedIn ? (
+          <p className="inline-flex w-fit items-center rounded-full bg-accent px-3 py-1 type-helper font-medium text-primary">
+            {patientName ? `Signed in as ${patientName}` : "Signed in"}
+          </p>
+        ) : (
+          <p className="type-step text-primary">Guest booking</p>
+        )}
+        <h1 id="landing-heading" className="mt-3 type-h1 text-foreground">
+          {signedIn
+            ? patientName
+              ? `Hello, ${patientName}`
+              : "Hello"
+            : "Find a doctor and book without an account"}
         </h1>
         <p className="mt-3 max-w-xl type-body text-muted-foreground">
           {signedIn
-            ? "Search by name or specialty, then narrow the list."
+            ? "Find a doctor by name or specialty. Any visit you request is booked on your account."
             : "Search by name or specialty, then narrow the list. You can request a visit before you sign up."}
         </p>
       </div>
@@ -410,7 +426,7 @@ export function LandingSearch({ signedIn = false }: { signedIn?: boolean }) {
       ) : (
         <p className="type-body text-muted-foreground">
           {signedIn
-            ? "Results appear after you search."
+            ? "Results appear after you search. Booking uses your account."
             : "Results appear after you search. Booking stays available without an account."}
         </p>
       )}
@@ -581,7 +597,9 @@ function GuestBookingForm({
       </DialogHeader>
       {booked ? (
         <Callout title="Visit requested" role="status">
-          We saved this request under your name. Create an account later if you want to manage it.
+          {signedIn
+            ? "We saved this request on your account."
+            : "We saved this request under your name. Create an account later if you want to manage it."}
         </Callout>
       ) : (
         <form

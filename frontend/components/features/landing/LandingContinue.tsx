@@ -54,27 +54,41 @@ const STEPS = [
  * Sections under the existing landing search.
  * The search itself stays the way to book; these only explain it.
  */
-export function LandingContinue() {
+export function LandingContinue({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <>
       <section aria-labelledby="landing-starts" className="border-t border-border bg-background">
         <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <h2 id="landing-starts" className="type-h2 text-foreground">
-            Three ways people start
+            {signedIn ? "How booking works for you" : "Three ways people start"}
           </h2>
           <p className="mt-2 max-w-2xl type-body text-muted-foreground">
-            The search above is where a visit begins. These are the reasons someone uses it.
+            {signedIn
+              ? "You are signed in. Search above, narrow the list, then request the visit."
+              : "The search above is where a visit begins. These are the reasons someone uses it."}
           </p>
           <ul className="mt-8 divide-y divide-border overflow-hidden rounded-2xl bg-card shadow-soft ring-1 ring-border">
-            {STARTS.map((item) => (
-              <li key={item.title} className="flex gap-4 p-5 sm:p-6">
-                <item.icon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
-                <div>
-                  <h3 className="type-h3 text-foreground">{item.title}</h3>
-                  <p className="mt-1 type-body text-muted-foreground">{item.body}</p>
-                </div>
-              </li>
-            ))}
+            {STARTS.map((item) => {
+              const guestStart = item.title === "A visit before an account";
+              const accountStart = item.title === "The same clinician again";
+              return (
+                <li key={item.title} className="flex gap-4 p-5 sm:p-6">
+                  <item.icon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+                  <div>
+                    <h3 className="type-h3 text-foreground">
+                      {signedIn && guestStart ? "A visit from your account" : item.title}
+                    </h3>
+                    <p className="mt-1 type-body text-muted-foreground">
+                      {signedIn && guestStart
+                        ? "Request a time with the name already on your account."
+                        : signedIn && accountStart
+                          ? "Upcoming visits stay with this account, so the next search can start from someone you already saw."
+                          : item.body}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </section>
@@ -105,7 +119,7 @@ export function LandingContinue() {
       <section aria-labelledby="landing-steps" className="border-t border-border bg-background">
         <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <h2 id="landing-steps" className="type-h2 text-foreground">
-            After you choose Book as guest
+            {signedIn ? "After you choose Book visit" : "After you choose Book as guest"}
           </h2>
           <ol className="mt-8 grid gap-6 sm:grid-cols-2">
             {STEPS.map((step, index) => (
@@ -117,8 +131,18 @@ export function LandingContinue() {
                   {index + 1}
                 </span>
                 <div>
-                  <h3 className="type-h3 text-foreground">{step.title}</h3>
-                  <p className="mt-1 type-body text-muted-foreground">{step.body}</p>
+                  <h3 className="type-h3 text-foreground">
+                    {signedIn && step.title === "Keep it only if you want to"
+                      ? "It stays on your account"
+                      : step.title}
+                  </h3>
+                  <p className="mt-1 type-body text-muted-foreground">
+                    {signedIn && step.title === "Request the visit"
+                      ? "Book visit sends a request for that clinician from your account."
+                      : signedIn && step.title === "Keep it only if you want to"
+                        ? "The request stays with your visits."
+                        : step.body}
+                  </p>
                 </div>
               </li>
             ))}
