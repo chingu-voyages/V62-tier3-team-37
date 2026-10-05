@@ -15,10 +15,10 @@ import { type NavItem, ROUTES } from "@/lib/constants/routes";
  */
 export const patientNavigation: NavItem[] = [
   {
-    label: "Search for Doctors",
-    href: ROUTES.patientSearch,
-    icon: "search",
-    ariaLabel: "Navigate to Search for Doctors",
+    label: "Home",
+    href: ROUTES.home,
+    icon: "home",
+    ariaLabel: "Navigate to Home",
     implemented: true,
   },
   {

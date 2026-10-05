@@ -15,6 +15,7 @@ export default async function PatientAreaLayout({ children }: { children: ReactN
     <AppShell
       items={availableNavItems(patientNavigation)}
       label="Patient navigation"
+      floatingNav
       aside={<PatientAIAssistant />}
     >
       {children}

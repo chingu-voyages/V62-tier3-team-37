@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -82,7 +82,7 @@ function AccountMenu({ displayName, initials, email, photo, profileHref }: Accou
   function handleLogout() {
     logoutMutation.mutate(undefined, {
       onSettled: () => {
-        router.push(ROUTES.auth);
+        router.push(ROUTES.home);
         router.refresh();
       },
     });
@@ -107,12 +107,10 @@ function AccountMenu({ displayName, initials, email, photo, profileHref }: Accou
             </AvatarFallback>
           </Avatar>
 
-          <span className="hidden min-w-0 flex-col text-left leading-tight sm:flex">
-            <span className="truncate type-label font-medium text-foreground">{displayName}</span>
-            {email ? (
-              <span className="truncate type-helper text-muted-foreground">{email}</span>
-            ) : null}
+          <span className="hidden min-w-0 truncate type-label font-medium text-foreground sm:inline">
+            {displayName}
           </span>
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
 

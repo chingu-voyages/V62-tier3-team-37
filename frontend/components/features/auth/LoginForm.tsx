@@ -53,9 +53,8 @@ export function LoginForm({ onCreateAccount }: { onCreateAccount?: () => void })
         {
           onSuccess: () => {
             if (!mounted.current) return;
-            // Push to the root and let the server route by role. The role is not
-            // known on the client yet, and hardcoding /patient/search sent every
-            // HCP to the patient directory.
+            // Push to the landing page and let the server route by role. Patients
+            // stay there; clinicians are sent on to their profile.
             router.push(ROUTES.home);
           },
           onError: (error) => {

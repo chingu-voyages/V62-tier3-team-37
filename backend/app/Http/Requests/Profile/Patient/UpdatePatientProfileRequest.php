@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Requests\Profile;
+namespace App\Http\Requests\Profile\Patient;
 
-use App\Enums\AllergySeverity;
 use App\Enums\BloodType;
+use App\Enums\UserGender;
 use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -27,18 +27,55 @@ class UpdatePatientProfileRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if ($this->filled('country')) {
-            $this->merge([
-                'country' => strtoupper(
-                    (string) $this->input('country')
-                ),
-            ]);
+        $merge = [];
+
+        foreach (['first_name', 'last_name', 'phone'] as $field) {
+            if ($this->exists($field) && is_string($this->input($field))) {
+                $merge[$field] = trim($this->input($field));
+            }
+        }
+
+        if ($this->exists('country') && is_string($this->input('country'))) {
+            $merge['country'] = trim($this->input('country'));
+        }
+
+        if ($merge !== []) {
+            $this->merge($merge);
         }
     }
 
     public function rules(): array
     {
         return [
+            'email' => ['prohibited'],
+
+            'first_name' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'last_name' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'birth_date' => [
+                'sometimes',
+                'required',
+                'date',
+                'before:today',
+            ],
+
+            'gender' => [
+                'sometimes',
+                'required',
+                Rule::enum(UserGender::class),
+            ],
+
             'phone' => [
                 'sometimes',
                 'nullable',

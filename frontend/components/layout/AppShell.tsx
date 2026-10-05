@@ -13,6 +13,11 @@ type AppShellProps = {
   /** Rendered outside the scroll container, e.g. a docked assistant. */
   aside?: ReactNode;
   /**
+   * Patient chrome: muted page (same surface as the public home) and a floating
+   * white tab rail with a single logo in the navbar.
+   */
+  floatingNav?: boolean;
+  /**
    * Vertically centre short pages. Off by default: it made short routes float in
    * the middle of the viewport while long ones overflowed, and the HCP area had
    * no equivalent, so the two areas rendered differently.
@@ -35,18 +40,29 @@ export async function AppShell({
   settingsHref,
   aside,
   centerContent,
+  floatingNav = false,
   children,
 }: AppShellProps) {
   const user = await getOptionalUser();
 
   return (
-    <div className="flex min-h-dvh">
-      <AppAsideLayout items={items} label={label} settingsHref={settingsHref} />
+    <div className={cn("flex min-h-dvh", floatingNav && "bg-muted")}>
+      <AppAsideLayout
+        items={items}
+        label={label}
+        settingsHref={settingsHref}
+        floating={floatingNav}
+      />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Navbar user={user} variant="app" className="sticky top-0 z-30 shrink-0" />
 
-        <main className="flex flex-1 flex-col bg-background">
+        <main
+          className={cn(
+            "flex flex-1 flex-col",
+            floatingNav ? "bg-muted md:pl-24" : "bg-background",
+          )}
+        >
           <div
             className={cn(
               "mx-auto flex w-full max-w-8xl flex-1 flex-col px-6 py-8 pb-24 md:pb-8 lg:px-8 xl:px-20",

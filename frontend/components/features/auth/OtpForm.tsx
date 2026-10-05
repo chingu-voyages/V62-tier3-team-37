@@ -118,7 +118,7 @@ export function OtpForm() {
         onSuccess: (response) => {
           if (!mounted.current) return;
           setNotice(response.message ?? "Email verified successfully.");
-          router.push(role === "HCP" ? ROUTES.hcpVerification : ROUTES.patientHome);
+          router.push(role === "HCP" ? ROUTES.hcpVerification : ROUTES.home);
         },
         onError: (error) => {
           if (!mounted.current) return;
@@ -237,11 +237,11 @@ export function OtpForm() {
           </Callout>
         ) : null}
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <div className="flex flex-col">
           <Button
             type="submit"
             size="xl"
-            className="w-full sm:w-auto sm:min-w-48"
+            className="w-full"
             disabled={!complete || busy}
           >
             {verifyMutation.isPending ? "Verifying…" : "Verify"}

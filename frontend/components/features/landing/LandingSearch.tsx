@@ -151,7 +151,7 @@ function matches(doctor: LandingDoctor, filters: LandingFilters): boolean {
   return true;
 }
 
-export function LandingSearch() {
+export function LandingSearch({ signedIn = false }: { signedIn?: boolean }) {
   const [query, setQuery] = useState("");
   const [specialty, setSpecialty] = useState("");
   const [city, setCity] = useState("");
@@ -208,13 +208,14 @@ export function LandingSearch() {
   return (
     <section aria-labelledby="landing-heading" className="flex flex-col gap-8">
       <div className="max-w-2xl">
-        <p className="type-step text-primary">Guest booking</p>
+        <p className="type-step text-primary">{signedIn ? "Find care" : "Guest booking"}</p>
         <h1 id="landing-heading" className="mt-2 type-h1 text-foreground">
-          Find a doctor and book without an account
+          {signedIn ? "Find a doctor" : "Find a doctor and book without an account"}
         </h1>
         <p className="mt-3 max-w-xl type-body text-muted-foreground">
-          Search by name or specialty, then narrow the list. You can request a visit before you sign
-          up.
+          {signedIn
+            ? "Search by name or specialty, then narrow the list."
+            : "Search by name or specialty, then narrow the list. You can request a visit before you sign up."}
         </p>
       </div>
 
@@ -396,7 +397,11 @@ export function LandingSearch() {
             <ul className="flex flex-col gap-3">
               {results.map((doctor) => (
                 <li key={doctor.id}>
-                  <DoctorResult doctor={doctor} onBook={() => setBookingDoctor(doctor)} />
+                  <DoctorResult
+                    doctor={doctor}
+                    bookLabel={signedIn ? "Book visit" : "Book as guest"}
+                    onBook={() => setBookingDoctor(doctor)}
+                  />
                 </li>
               ))}
             </ul>
@@ -404,16 +409,30 @@ export function LandingSearch() {
         </div>
       ) : (
         <p className="type-body text-muted-foreground">
-          Results appear after you search. Booking stays available without an account.
+          {signedIn
+            ? "Results appear after you search."
+            : "Results appear after you search. Booking stays available without an account."}
         </p>
       )}
 
-      <GuestBookingDialog doctor={bookingDoctor} onClose={() => setBookingDoctor(null)} />
+      <GuestBookingDialog
+        doctor={bookingDoctor}
+        signedIn={signedIn}
+        onClose={() => setBookingDoctor(null)}
+      />
     </section>
   );
 }
 
-function DoctorResult({ doctor, onBook }: { doctor: LandingDoctor; onBook: () => void }) {
+function DoctorResult({
+  doctor,
+  onBook,
+  bookLabel,
+}: {
+  doctor: LandingDoctor;
+  onBook: () => void;
+  bookLabel: string;
+}) {
   const initials = doctor.fullName
     .split(" ")
     .map((part) => part[0])
@@ -455,7 +474,7 @@ function DoctorResult({ doctor, onBook }: { doctor: LandingDoctor; onBook: () =>
         </p>
       </div>
       <Button type="button" className="sm:shrink-0" onClick={onBook}>
-        Book as guest
+        {bookLabel}
       </Button>
     </article>
   );
@@ -511,7 +530,15 @@ function FilterSelect({
   );
 }
 
-function GuestBookingDialog({ doctor, onClose }: { doctor: HCP | null; onClose: () => void }) {
+function GuestBookingDialog({
+  doctor,
+  signedIn,
+  onClose,
+}: {
+  doctor: HCP | null;
+  signedIn: boolean;
+  onClose: () => void;
+}) {
   return (
     <Dialog
       open={doctor !== null}
@@ -520,13 +547,23 @@ function GuestBookingDialog({ doctor, onClose }: { doctor: HCP | null; onClose: 
       }}
     >
       <DialogContent className="sm:max-w-lg">
-        {doctor ? <GuestBookingForm key={doctor.id} doctor={doctor} onClose={onClose} /> : null}
+        {doctor ? (
+          <GuestBookingForm key={doctor.id} doctor={doctor} signedIn={signedIn} onClose={onClose} />
+        ) : null}
       </DialogContent>
     </Dialog>
   );
 }
 
-function GuestBookingForm({ doctor, onClose }: { doctor: HCP; onClose: () => void }) {
+function GuestBookingForm({
+  doctor,
+  signedIn,
+  onClose,
+}: {
+  doctor: HCP;
+  signedIn: boolean;
+  onClose: () => void;
+}) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [date, setDate] = useState("");
@@ -536,9 +573,10 @@ function GuestBookingForm({ doctor, onClose }: { doctor: HCP; onClose: () => voi
   return (
     <>
       <DialogHeader className="items-start">
-        <DialogTitle>Book as a guest</DialogTitle>
+        <DialogTitle>{signedIn ? "Book a visit" : "Book as a guest"}</DialogTitle>
         <DialogDescription>
-          {doctor.fullName}, {doctor.specialties[0]}. No account is required.
+          {doctor.fullName}, {doctor.specialties[0]}.
+          {signedIn ? "" : " No account is required."}
         </DialogDescription>
       </DialogHeader>
       {booked ? (

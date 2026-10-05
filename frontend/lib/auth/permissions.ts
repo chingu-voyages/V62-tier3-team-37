@@ -29,12 +29,12 @@ export function isEmailVerified(user: AuthUser): boolean {
 /**
  * Where a user lands immediately after authenticating.
  *
- * Patients open their home, which holds visits and the clinician search.
- * Unverified accounts are sent to the OTP screen by the route guard before
- * this destination renders.
+ * Patients return to the landing page, which is their home. Clinicians open
+ * their profile. Unverified accounts are sent to the OTP screen by the route
+ * guard before this destination renders.
  */
 export function homePathForRole(role: string | null | undefined): string {
-  return isHcpRole(role) ? ROUTES.hcpProfile : ROUTES.patientHome;
+  return isHcpRole(role) ? ROUTES.hcpProfile : ROUTES.home;
 }
 
 function isPatientArea(pathname: string): boolean {

@@ -22,6 +22,10 @@ class ProfileService
 
         return DB::transaction(function () use ($user, $data) {
             $userData = Arr::only($data, [
+                'first_name',
+                'last_name',
+                'birth_date',
+                'gender',
                 'phone',
                 'country',
             ]);

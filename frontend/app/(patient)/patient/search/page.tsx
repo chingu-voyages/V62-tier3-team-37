@@ -1,12 +1,7 @@
-import { HCPDirectory } from "@/components/features/patient/HCPDirectory/HCPDirectory";
-import type { HCP } from "@/types/hcp-directory";
+import { redirect } from "next/navigation";
+import { ROUTES } from "@/lib/constants/routes";
 
-const hcps: HCP[] = [];
-
+/** Doctor search now lives on the landing page, which is the patient home. */
 export default function PatientDoctorsPage() {
-  return (
-    <div className="flex min-h-dvh">
-      <HCPDirectory hcps={hcps} />
-    </div>
-  );
+  redirect(ROUTES.home);
 }

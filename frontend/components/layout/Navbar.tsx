@@ -39,7 +39,12 @@ type NavbarProps = {
 export function Navbar({ user, variant, className }: NavbarProps) {
   return (
     <header className={cn("border-b border-border/70 bg-background", className)}>
-      <div className="mx-auto flex h-14 w-full max-w-8xl items-center gap-3 px-4 sm:h-16 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
+      <div
+        className={cn(
+          "flex h-14 w-full items-center gap-3 px-4 sm:h-16 sm:px-6 lg:px-8",
+          variant === "app" ? null : "mx-auto max-w-8xl xl:px-10 2xl:px-14",
+        )}
+      >
         <div className="flex min-w-0 items-center gap-2">
           {variant === "app" ? null : <BackToLanding />}
           <HealthHubLogo className={variant === "app" ? undefined : "lg:hidden"} />

@@ -6,7 +6,7 @@
  * would fail the build. `AsideNav` resolves the key on the client.
  */
 export type NavIconKey =
-  | "search"
+  | "home"
   | "calendar"
   | "calendarDays"
   | "clipboard"
@@ -32,6 +32,7 @@ export const ROUTES = {
 
   patientHome: "/patient/home",
   patientSearch: "/patient/search",
+  patientProfile: "/patient/profile",
   patientRecords: "/patient/records",
   patientMessages: "/patient/messages",
   patientAssistant: "/patient/assistant",

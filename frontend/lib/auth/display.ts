@@ -42,5 +42,5 @@ export function userInitials(user: NamedLike): string {
 
 /** Where the "Profile" item in the account menu should point. */
 export function userProfileHref(user: AuthUser): string {
-  return user?.role === HCP_ROLE ? ROUTES.hcpProfile : ROUTES.patientSearch;
+  return user?.role === HCP_ROLE ? ROUTES.hcpProfile : ROUTES.patientProfile;
 }

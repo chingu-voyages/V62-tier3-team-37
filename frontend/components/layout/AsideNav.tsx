@@ -4,9 +4,9 @@ import {
   Calendar,
   CalendarDays,
   ClipboardList,
+  Home,
   type LucideIcon,
   MessageSquare,
-  Search,
   Sparkles,
   UserRound,
   UsersRound,
@@ -18,7 +18,7 @@ import type { NavIconKey, NavItem } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils";
 
 const NAV_ICONS: Record<NavIconKey, LucideIcon> = {
-  search: Search,
+  home: Home,
   calendar: Calendar,
   calendarDays: CalendarDays,
   clipboard: ClipboardList,
@@ -46,7 +46,10 @@ export function AsideNav({ items, label }: AsideNavProps) {
   return (
     <nav aria-label={label} className="flex flex-row items-center gap-3 md:flex-col">
       {items.map((item) => {
-        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const isActive =
+          item.href === "/"
+            ? pathname === "/"
+            : pathname === item.href || pathname.startsWith(`${item.href}/`);
         const Icon = NAV_ICONS[item.icon];
 
         return (
