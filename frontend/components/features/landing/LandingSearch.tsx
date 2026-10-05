@@ -23,6 +23,7 @@ import {
 import { TextField } from "@/components/ui/text-field";
 import { cn } from "@/lib/utils";
 import type { HCP, HCPFilters } from "@/types/hcp-directory";
+import { PatientBookingPanel, type BookingPatient } from "./PatientBookingPanel";
 
 type DoctorGender = "female" | "male";
 type Availability = "today" | "tomorrow";
@@ -154,9 +155,11 @@ function matches(doctor: LandingDoctor, filters: LandingFilters): boolean {
 export function LandingSearch({
   signedIn = false,
   patientName,
+  patient,
 }: {
   signedIn?: boolean;
   patientName?: string;
+  patient?: BookingPatient;
 }) {
   const [query, setQuery] = useState("");
   const [specialty, setSpecialty] = useState("");
@@ -431,11 +434,27 @@ export function LandingSearch({
         </p>
       )}
 
-      <GuestBookingDialog
-        doctor={bookingDoctor}
-        signedIn={signedIn}
-        onClose={() => setBookingDoctor(null)}
-      />
+      {signedIn ? (
+        <PatientBookingPanel
+          doctor={bookingDoctor}
+          patient={
+            patient ?? {
+              firstName: patientName ?? "",
+              lastName: "",
+              email: "",
+              birthDate: null,
+              gender: null,
+            }
+          }
+          onClose={() => setBookingDoctor(null)}
+        />
+      ) : (
+        <GuestBookingDialog
+          doctor={bookingDoctor}
+          signedIn={false}
+          onClose={() => setBookingDoctor(null)}
+        />
+      )}
     </section>
   );
 }
