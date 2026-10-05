@@ -8,7 +8,6 @@ import type { SignupRole } from "@/types/auth";
 import { AuthCard } from "./AuthCard";
 import { LoginForm } from "./LoginForm";
 import { RegisterForm } from "./RegisterForm";
-import { SignupRoleSwitch } from "./SignupRoleSwitch";
 
 type AuthTab = "login" | "register";
 
@@ -72,7 +71,6 @@ export function AuthScreen({ initialTab = "register", initialRole = "PATIENT" }:
           title="Welcome back"
           subtitle={
             <div className="flex flex-col gap-2">
-              <SignupRoleSwitch role={role} onRoleChange={setRole} />
               <p>Log in with the email and password you used to create your account.</p>
             </div>
           }

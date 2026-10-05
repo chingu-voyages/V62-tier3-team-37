@@ -328,10 +328,28 @@ html.motion-enabled [data-motion="brand-content"] {
   transform: translateX(-34px);
 }
 
+html.motion-enabled [data-motion="navbar"] {
+  transform: scaleY(0);
+  transform-origin: top center;
+}
+
+html.motion-enabled [data-motion="navbar-back"],
+html.motion-enabled [data-motion="navbar-brand"] {
+  opacity: 0;
+  transform: translateX(-28px);
+}
+
+html.motion-enabled [data-motion="navbar-status"],
+html.motion-enabled [data-motion="navbar-user"] {
+  opacity: 0;
+  transform: translateX(28px);
+}
+
 html.motion-enabled [data-motion="step"],
 html.motion-enabled [data-motion="heading"],
 html.motion-enabled [data-motion="subheading"],
 html.motion-enabled [data-motion="role-switch"],
+html.motion-enabled [data-motion="tabs"],
 html.motion-enabled [data-motion="card"] {
   opacity: 0;
 }
