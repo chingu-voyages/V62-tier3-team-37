@@ -1,3 +1,5 @@
+"use client";
+import { usePathname } from "next/dist/client/components/navigation";
 import { cn } from "@/lib/utils";
 import { HealthHubLogo } from "./HealthHubLogo";
 
@@ -13,6 +15,7 @@ type AuthBrandPanelProps = {
  * gains nothing from the image optimizer.
  */
 export function AuthBrandPanel({ className }: AuthBrandPanelProps) {
+  const pathname = usePathname();
   return (
     <aside
       aria-label="About HealthHub"
@@ -28,7 +31,11 @@ export function AuthBrandPanel({ className }: AuthBrandPanelProps) {
 
       <div className="relative flex min-h-0 flex-1 flex-col justify-between gap-8 px-8 py-9 xl:px-12 xl:py-11 2xl:gap-10 2xl:px-16 2xl:py-14">
         <div className="flex flex-col gap-12 2xl:gap-25">
-          <HealthHubLogo tone="light" className="w-fit" />
+          {pathname === "/auth" ? (
+            <HealthHubLogo tone="light" className="w-fit" />
+          ) : (
+            <HealthHubLogo tone="dark" className="w-fit" />
+          )}
 
           <div className="max-w-md md:max-w-lg xl:max-w-lg 2xl:max-w-xl">
             <p className="flex items-center gap-2 type-step text-accent/90 2xl:gap-2.5">

@@ -54,8 +54,8 @@ export async function AppShell({
         floating={floatingNav}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Navbar user={user} variant="app" className="sticky top-0 z-30 shrink-0" />
+      <div className="flex w-full flex-1 flex-col">
+        <Navbar user={user} variant="app" className="sticky left-0 top-0 z-30 shrink-0" />
 
         <main
           className={cn(
