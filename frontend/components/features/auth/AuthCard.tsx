@@ -31,16 +31,25 @@ export function AuthCard({
     <div className="m-auto w-full max-w-xl 2xl:max-w-2xl">
       <div className="flex flex-col items-center gap-3 text-center">
         {step ? (
-          <StepIndicator current={step.current} total={step.total} detail={step.detail} />
+          <div data-motion="step">
+            <StepIndicator current={step.current} total={step.total} detail={step.detail} />
+          </div>
         ) : null}
         {eyebrow ? <p className="type-step text-muted-foreground">{eyebrow}</p> : null}
-        <h1 className="type-h1 text-foreground">{title}</h1>
-        <div className="max-w-lg type-body text-muted-foreground">{subtitle}</div>
+        <h1 data-motion="heading" className="type-h1 text-foreground">
+          {title}
+        </h1>
+        <div data-motion="subheading" className="max-w-lg type-body text-muted-foreground">
+          {subtitle}
+        </div>
       </div>
 
       {tabs ? <div className="mx-auto mt-6 w-full max-w-sm">{tabs}</div> : null}
 
-      <div className="mt-6 rounded-2xl border border-border/80 bg-card p-5 shadow-card sm:p-7 lg:p-8">
+      <div
+        data-motion="card"
+        className="mt-6 rounded-2xl border border-border/80 bg-card p-5 shadow-card sm:p-7 lg:p-8"
+      >
         {children}
       </div>
 

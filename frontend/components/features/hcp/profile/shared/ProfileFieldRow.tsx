@@ -26,9 +26,11 @@ export function ProfileFieldRow({ label, value, subValue, className }: ProfileFi
   return (
     <div className={cn("min-w-0", className)}>
       <dt className="type-helper text-muted-foreground">{label}</dt>
-      {hasValue ? <dd className="mt-0.5 type-body break-words text-foreground">{value}</dd> : null}
+      {hasValue ? (
+        <dd className="mt-0.5 type-body wrap-break-word text-foreground">{value}</dd>
+      ) : null}
       {hasSubValue ? (
-        <p className="mt-0.5 type-helper break-words text-muted-foreground">{subValue}</p>
+        <p className="mt-0.5 type-helper wrap-break-word text-muted-foreground">{subValue}</p>
       ) : null}
     </div>
   );

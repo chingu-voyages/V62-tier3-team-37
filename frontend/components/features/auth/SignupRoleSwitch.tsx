@@ -19,17 +19,11 @@ type SignupRoleSwitchProps = {
   onRoleChange: (role: SignupRole) => void;
 };
 
-/**
- * Current account type, plus one control that moves to the other type.
- *
- * The button name states the destination, so the choice stays clear without a
- * second pair of radios above the form.
- */
 export function SignupRoleSwitch({ role, onRoleChange }: SignupRoleSwitchProps) {
   const next = OTHER_ROLE[role];
 
   return (
-    <p className="type-body text-muted-foreground">
+    <p data-motion="role-switch" className="type-body text-muted-foreground">
       You&apos;re signing up as a{" "}
       <span className="font-medium text-foreground">{SIGNUP_ROLE_LABELS[role]}</span>.{" "}
       <button type="button" className={inlineLinkClassName} onClick={() => onRoleChange(next)}>

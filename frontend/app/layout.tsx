@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, Sora } from "next/font/google";
 import "./globals.css";
+import { InlineScript } from "@/components/motion/InlineScript";
 import { cn } from "@/lib/utils";
 import Providers from "./providers";
 
@@ -18,6 +19,18 @@ const outfit = Outfit({
   display: "swap",
 });
 
+const motionBootstrap = `
+try {
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    var root = document.documentElement;
+    root.classList.add("motion-enabled");
+    setTimeout(function () {
+      root.classList.remove("motion-enabled");
+    }, 4000);
+  }
+} catch (error) {}
+`;
+
 export const metadata: Metadata = {
   // Required for absolute OG/canonical URLs to resolve.
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
@@ -33,8 +46,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={cn("font-sans", sora.variable, outfit.variable)}>
+    <html
+      lang="en"
+      className={cn("font-sans", sora.variable, outfit.variable)}
+      suppressHydrationWarning
+    >
       <body>
+        <InlineScript html={motionBootstrap} />
         <Providers>{children}</Providers>
       </body>
     </html>

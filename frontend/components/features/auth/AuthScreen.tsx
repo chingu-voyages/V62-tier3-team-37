@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { AnimatedSize } from "@/components/motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { SignupRole } from "@/types/auth";
@@ -60,26 +61,35 @@ export function AuthScreen({ initialTab = "register", initialRole = "PATIENT" }:
     </div>
   );
 
-  if (tab === "login") {
-    return (
-      <AuthCard
-        title="Welcome back"
-        subtitle={
-          <div className="flex flex-col gap-2">
-            <SignupRoleSwitch role={role} onRoleChange={setRole} />
-            <p>Log in with the email and password you used to create your account.</p>
-          </div>
-        }
-        tabs={tabs}
-      >
-        <div role="tabpanel" id={`${baseId}-panel-login`} aria-labelledby={`${baseId}-tab-login`}>
-          <LoginForm onCreateAccount={() => setTab("register")} />
-        </div>
-      </AuthCard>
-    );
-  }
-
   return (
-    <RegisterForm tabs={tabs} role={role} onRoleChange={setRole} onLogIn={() => setTab("login")} />
+    <AnimatedSize
+      axis="height"
+      ease="layout"
+      className="m-auto w-full max-w-xl shrink-0 2xl:max-w-2xl"
+    >
+      {tab === "login" ? (
+        <AuthCard
+          title="Welcome back"
+          subtitle={
+            <div className="flex flex-col gap-2">
+              <SignupRoleSwitch role={role} onRoleChange={setRole} />
+              <p>Log in with the email and password you used to create your account.</p>
+            </div>
+          }
+          tabs={tabs}
+        >
+          <div role="tabpanel" id={`${baseId}-panel-login`} aria-labelledby={`${baseId}-tab-login`}>
+            <LoginForm onCreateAccount={() => setTab("register")} />
+          </div>
+        </AuthCard>
+      ) : (
+        <RegisterForm
+          tabs={tabs}
+          role={role}
+          onRoleChange={setRole}
+          onLogIn={() => setTab("login")}
+        />
+      )}
+    </AnimatedSize>
   );
 }

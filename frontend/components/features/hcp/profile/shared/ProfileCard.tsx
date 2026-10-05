@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * the component it stands in for.
  */
 export const PROFILE_CARD_SHELL_CLASS =
-  "@container flex min-w-0 flex-col rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5";
+  "@container flex min-w-0 flex-col rounded-2xl border border-border  bg-card p-4 shadow-soft sm:p-5";
 
 type ProfileCardProps = {
   title: string;
