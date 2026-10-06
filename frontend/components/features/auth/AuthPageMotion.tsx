@@ -75,6 +75,14 @@ function buildAuthSteps({ breakpoint }: MotionBuildContext): MotionStep[] {
       ease: "smooth",
     },
     {
+      target: "sliding-tabs",
+      position: "form+=0.18",
+      direction: "bottom",
+      distance: { mobile: 8, tablet: 10, desktop: 12 },
+      duration: 0.5,
+      ease: "smooth",
+    },
+    {
       target: "card",
       label: "card",
       position: "form+=0.24",

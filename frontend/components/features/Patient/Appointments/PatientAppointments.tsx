@@ -39,7 +39,6 @@ const STATUS_LABEL: Record<AppointmentStatus, string> = {
   cancelled: "Cancelled",
 };
 
-/** Today as `YYYY-MM-DD`, so a calendar date is compared without any timezone maths. */
 function todayIso(): string {
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -47,12 +46,6 @@ function todayIso(): string {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
-/**
- * A visit counts as past once its date has passed, not only once something
- * flipped its status. Reading `status` alone meant an appointment whose date went
- * by kept showing under "Upcoming" indefinitely, because nothing reconciled the
- * two.
- */
 function isPast(appointment: Appointment): boolean {
   if (appointment.status === "completed" || appointment.status === "cancelled") return true;
   return appointment.date < todayIso();

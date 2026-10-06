@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { PasswordPolicyHint } from "@/components/features/auth/PasswordPolicyHint";
 import { Button } from "@/components/ui/button";
+import CalendarWithTimeRange from "@/components/ui/calendar-16";
 import { Callout } from "@/components/ui/callout";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -252,27 +253,46 @@ export function RegisterForm({ tabs, role, onRoleChange, onLogIn }: RegisterForm
             )}
           </form.Field>
 
-          <div className="grid items-start gap-x-4 gap-y-1.5 sm:grid-cols-2">
+          <div className="grid items-start gap-x-15 gap-y-1.5 sm:grid-cols-2">
             <form.Field
               name="dateOfBirth"
               validators={{ onChange: ({ value }) => errorFor(dateOfBirthSchema, value) }}
             >
-              {(field) => (
-                <TextField
-                  id="dateOfBirth"
-                  name="dateOfBirth"
-                  label="Date of birth"
-                  type="date"
-                  autoComplete="bday"
-                  required
-                  min={MIN_DATE_OF_BIRTH}
-                  max={MAX_DATE_OF_BIRTH}
-                  value={field.state.value}
-                  error={firstTouchedError(field.state.meta)}
-                  onChange={field.handleChange}
-                  onBlur={field.handleBlur}
-                />
-              )}
+              {(field) => {
+                const error = firstTouchedError(field.state.meta);
+                const selected = field.state.value
+                  ? new Date(`${field.state.value}T00:00:00`)
+                  : undefined;
+                return (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="dateOfBirth">
+                      Date of birth
+                      <span aria-hidden="true" className="text-destructive">
+                        {" "}
+                        *
+                      </span>
+                      <span className="sr-only"> (required)</span>
+                    </Label>
+                    <CalendarWithTimeRange
+                      istime={false}
+                      id="dateOfBirth"
+                      value={selected}
+                      placeholder="Pick a date"
+                      minDate={new Date(`${MIN_DATE_OF_BIRTH}T00:00:00`)}
+                      maxDate={new Date(`${MAX_DATE_OF_BIRTH}T00:00:00`)}
+                      onChange={(date) => {
+                        field.handleChange(
+                          date
+                            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+                            : "",
+                        );
+                        field.handleBlur();
+                      }}
+                    />
+                    <FieldMessage id="dateOfBirth-error">{error}</FieldMessage>
+                  </div>
+                );
+              }}
             </form.Field>
 
             <form.Field

@@ -29,8 +29,6 @@ export function HCPDirectory({
   onFavorite,
 }: HCPDirectoryProps) {
   const [appliedFilters, setAppliedFilters] = useState<HCPFilters>({});
-  // Incremented on every external clear so the filter bar can re-seed its draft.
-  // The bar owns draft state, so this is how it learns the parent reset.
   const [resetToken, setResetToken] = useState(0);
 
   const handleApplyFilters = useCallback(

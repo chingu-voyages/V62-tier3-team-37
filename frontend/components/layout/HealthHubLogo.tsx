@@ -31,7 +31,23 @@ export function HealthHubLogo({
       aria-label="HealthHub home"
       className={cn("inline-flex shrink-0 items-center gap-2.5 ", className)}
     >
-      <Image src="/logo.png" alt="" width={1024} height={759} className="h-12 w-auto" />
+      {isLight ? (
+        <Image
+          src="/logo-mark-on-dark.svg"
+          alt=""
+          width={1024}
+          height={759}
+          className="h-12 w-auto"
+        />
+      ) : (
+        <Image
+          src="/logo-mark-on-light.svg"
+          alt=""
+          width={1024}
+          height={759}
+          className="h-12 w-auto"
+        />
+      )}
       {withWordmark ? (
         <span
           className={cn(

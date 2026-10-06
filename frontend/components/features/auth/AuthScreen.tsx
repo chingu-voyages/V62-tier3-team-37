@@ -1,9 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { AnimatedSize } from "@/components/motion";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { AnimatedSize, SlidingTabs } from "@/components/motion";
 import type { SignupRole } from "@/types/auth";
 import { AuthCard } from "./AuthCard";
 import { LoginForm } from "./LoginForm";
@@ -27,37 +25,15 @@ export function AuthScreen({ initialTab = "register", initialRole = "PATIENT" }:
   const baseId = useId();
 
   const tabs = (
-    <div
-      role="tablist"
+    <SlidingTabs
+      items={TABS}
+      value={tab}
+      onChange={setTab}
       aria-label="Sign up or log in"
-      className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1"
-    >
-      {TABS.map((option) => {
-        const selected = tab === option.value;
-        return (
-          <Button
-            key={option.value}
-            type="button"
-            role="tab"
-            id={`${baseId}-tab-${option.value}`}
-            aria-selected={selected}
-            aria-controls={`${baseId}-panel-${option.value}`}
-            // Only the selected tab is in the tab order; arrow keys move between them.
-            tabIndex={selected ? 0 : -1}
-            variant="ghost"
-            onClick={() => setTab(option.value)}
-            className={cn(
-              "h-10 w-full rounded-lg px-3 shadow-none",
-              selected
-                ? "bg-card text-foreground shadow-soft hover:bg-card hover:text-foreground"
-                : "text-muted-foreground hover:bg-transparent hover:text-foreground",
-            )}
-          >
-            {option.label}
-          </Button>
-        );
-      })}
-    </div>
+      idPrefix={baseId}
+      ease="move"
+      duration={0.25}
+    />
   );
 
   return (

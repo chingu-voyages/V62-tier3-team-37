@@ -349,7 +349,11 @@ html.motion-enabled [data-motion="step"],
 html.motion-enabled [data-motion="heading"],
 html.motion-enabled [data-motion="subheading"],
 html.motion-enabled [data-motion="role-switch"],
-html.motion-enabled [data-motion="tabs"],
+html.motion-enabled [data-motion="sliding-tabs"] {
+  opacity: 0;
+  transform: translateY(28px);
+}
+
 html.motion-enabled [data-motion="card"] {
   opacity: 0;
 }
@@ -364,6 +368,9 @@ html.motion-enabled [data-motion="card"] {
   }
 
   html.motion-enabled [data-motion="role-switch"] {
+    transform: translateY(12px);
+  }
+  html.motion-enabled [data-motion="sliding-tabs"] {
     transform: translateY(12px);
   }
 
