@@ -30,7 +30,7 @@ export const ROUTES = {
   otp: "/auth/otp",
   hcpVerification: "/auth/hcp/verification",
 
-  patientHome: "/patient/home",
+  patientAppointments: "/patient/appointments",
   patientSearch: "/patient/search",
   patientRecords: "/patient/records",
   patientMessages: "/patient/messages",

@@ -68,7 +68,7 @@ export function OtpForm() {
         onSuccess: (response) => {
           if (!mounted.current) return;
           setNotice(response.message ?? "Email verified successfully.");
-          router.push(role === "HCP" ? ROUTES.hcpVerification : ROUTES.patientHome);
+          router.push(role === "HCP" ? ROUTES.hcpVerification : ROUTES.patientAppointments);
         },
         onError: (error) => {
           if (!mounted.current) return;

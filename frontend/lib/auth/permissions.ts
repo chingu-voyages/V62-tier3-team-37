@@ -34,7 +34,7 @@ export function isEmailVerified(user: AuthUser): boolean {
  * this destination renders.
  */
 export function homePathForRole(role: string | null | undefined): string {
-  return isHcpRole(role) ? ROUTES.hcpProfile : ROUTES.patientHome;
+  return isHcpRole(role) ? ROUTES.hcpProfile : ROUTES.patientSearch;
 }
 
 function isPatientArea(pathname: string): boolean {

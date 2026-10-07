@@ -7,6 +7,11 @@ export type HCP = {
   specialties: string[];
   city?: string;
   area?: string;
+  nextAvailable?: string;
+  subSpecialty?: string;
+  workplaceName?: string;
+  workplaceAddress?: string;
+  yearsOfExperience?: number;
   fees?: number;
   currency?: string;
   waitingTime?: string;

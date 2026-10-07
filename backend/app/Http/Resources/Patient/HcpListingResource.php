@@ -20,8 +20,15 @@ class HcpListingResource extends JsonResource
 
             'specialty' => $this->hcpProfile?->specialty?->value,
 
-            'years_of_experience' =>
-                $this->hcpProfile?->years_of_experience,
+            'years_of_experience' => $this->hcpProfile?->years_of_experience,
+
+            'sub_specialty' => $this->hcpProfile?->sub_specialty,
+
+            'workplace_name' => $this->hcpProfile?->workplace_name,
+
+            'workplace_address' => $this->hcpProfile?->workplace_address,
+
+            'city' => $this->hcpProfile?->city,
         ];
     }
 }

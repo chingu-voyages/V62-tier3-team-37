@@ -23,7 +23,7 @@ export const patientNavigation: NavItem[] = [
   },
   {
     label: "Appointments",
-    href: ROUTES.patientHome,
+    href: ROUTES.patientAppointments,
     icon: "calendar",
     ariaLabel: "Navigate to Appointments",
     implemented: true,

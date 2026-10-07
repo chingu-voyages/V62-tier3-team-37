@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Hcp\HcpOnboardingController;
 use App\Http\Controllers\Hcp\HcpProfileController;
+use App\Http\Controllers\Patient\HcpListingController;
 use App\Http\Controllers\Patient\PatientMedicalDocumentController;
 use App\Http\Controllers\Patient\PatientProfileController;
 use App\Http\Controllers\Profile\ProfilePhotoController;
@@ -18,6 +19,9 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware(['auth:sanctum', EnsureEmailIsVerified::class])->group(function () {
 
     /**************************PATIENT************************************** */
+
+    Route::get('/patient/hcps', [HcpListingController::class, 'index']);
+
     Route::get('/patient/profile', [PatientProfileController::class, 'show']);
 
     Route::patch('/patient/profile', [PatientProfileController::class, 'update']);
@@ -32,11 +36,11 @@ Route::middleware(['auth:sanctum', EnsureEmailIsVerified::class])->group(functio
 
     /**************************HCP************************************** */
 
-    Route::post('/hcp/onboarding',[HcpOnboardingController::class, 'store']);
+    Route::post('/hcp/onboarding', [HcpOnboardingController::class, 'store']);
 
     Route::get('/hcp/profile', [HcpProfileController::class, 'show']);
 
-    Route::patch('/hcp/profile',[HcpProfileController::class, 'update']);
+    Route::patch('/hcp/profile', [HcpProfileController::class, 'update']);
 
     Route::put('/hcp/profile/availability', [HcpProfileController::class, 'updateAvailability']);
 
