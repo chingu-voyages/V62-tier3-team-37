@@ -11,230 +11,90 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { HCP, HCPFilters } from "@/types/hcp-directory";
+import { useHcpFilterOptionsQuery } from "@/hooks/use-hcps-query";
+import type { HCPFilters } from "@/types/hcp-directory";
+
+type FilterKey = "specialty" | "city" | "area" | "insurance";
 
 const FILTER_ICONS: Record<FilterKey, LucideIcon> = {
   specialty: Stethoscope,
   city: MapPin,
   area: MapPin,
   insurance: ShieldCheck,
-  search: Search,
 };
 
-type FilterKey = keyof HCPFilters;
-
-/**
- * Option lists carry their own "all" sentinel, so the handler and the rendered
- * option can never disagree about which value means "no filter".
- */
-type FilterOptions = {
-  key: FilterKey;
-  id: string;
-  label: string;
-  allLabel: string;
-  options: readonly string[];
-};
-
-type DoctorGender = "female" | "male";
-type Availability = "today" | "tomorrow";
-
-type LandingDoctor = HCP & {
-  gender: DoctorGender;
-  yearsOfExperience: number;
-  availableOn: readonly Availability[];
-};
-
-type LandingFilters = HCPFilters & {
-  gender?: DoctorGender;
-  maxPrice?: number;
-  minExperience?: number;
-  availability?: Availability;
-};
-
-// const SAMPLE_DOCTORS: LandingDoctor[] = [
-//   {
-//     id: "dr-lina",
-//     fullName: "Dr. Lina Hassan",
-//     title: "Consultant cardiologist",
-//     verified: true,
-//     specialties: ["Cardiology"],
-//     city: "Cairo",
-//     area: "Maadi",
-//     fees: 500,
-//     currency: "EGP",
-//     waitingTime: "20 min",
-//     rating: 4.8,
-//     reviewCount: 126,
-//     insuranceAccepted: ["AXA", "Allianz"],
-//     gender: "female",
-//     yearsOfExperience: 14,
-//     availableOn: ["today", "tomorrow"],
-//   },
-//   {
-//     id: "dr-omar",
-//     fullName: "Dr. Omar Farid",
-//     title: "Dermatologist",
-//     verified: true,
-//     specialties: ["Dermatology"],
-//     city: "Cairo",
-//     area: "Zamalek",
-//     fees: 400,
-//     currency: "EGP",
-//     waitingTime: "15 min",
-//     rating: 4.6,
-//     reviewCount: 89,
-//     insuranceAccepted: ["BUPA", "Cigna"],
-//     gender: "male",
-//     yearsOfExperience: 8,
-//     availableOn: ["tomorrow"],
-//   },
-//   {
-//     id: "dr-nadia",
-//     fullName: "Dr. Nadia Karim",
-//     title: "General practitioner",
-//     verified: true,
-//     specialties: ["General Medicine"],
-//     city: "Giza",
-//     area: "Mohandeseen",
-//     fees: 300,
-//     currency: "EGP",
-//     waitingTime: "10 min",
-//     rating: 4.7,
-//     reviewCount: 210,
-//     insuranceAccepted: ["Medicare", "AXA"],
-//     gender: "female",
-//     yearsOfExperience: 6,
-//     availableOn: ["today"],
-//   },
-//   {
-//     id: "dr-youssef",
-//     fullName: "Dr. Youssef Adel",
-//     title: "Pediatrician",
-//     specialties: ["Pediatrics"],
-//     city: "Alexandria",
-//     area: "Downtown",
-//     fees: 350,
-//     currency: "EGP",
-//     waitingTime: "25 min",
-//     rating: 4.5,
-//     reviewCount: 64,
-//     insuranceAccepted: ["Allianz"],
-//     gender: "male",
-//     yearsOfExperience: 18,
-//     availableOn: [],
-//   },
-// ];
-
-const FILTER_OPTIONS: readonly FilterOptions[] = [
-  {
-    key: "specialty",
-    id: "filter-specialty",
-    label: "Specialty",
-    allLabel: "All Specialties",
-    options: [
-      "Cardiology",
-      "Dermatology",
-      "Neurology",
-      "Pediatrics",
-      "Orthopedics",
-      "Ophthalmology",
-      "Psychiatry",
-      "Radiology",
-      "General Medicine",
-    ],
-  },
-  {
-    key: "city",
-    id: "filter-city",
-    label: "City",
-    allLabel: "All Cities",
-    options: ["Cairo", "Alexandria", "Giza", "Luxor", "Aswan"],
-  },
-  {
-    key: "area",
-    id: "filter-area",
-    label: "Area",
-    allLabel: "All Areas",
-    options: ["Downtown", "Heliopolis", "Maadi", "Zamalek", "Mohandeseen"],
-  },
-  {
-    key: "insurance",
-    id: "filter-insurance",
-    label: "Insurance",
-    allLabel: "All Insurance",
-    options: ["Medicare", "AXA", "Allianz", "Cigna", "BUPA"],
-  },
+const FILTER_META: { key: FilterKey; id: string; label: string; allLabel: string }[] = [
+  { key: "specialty", id: "filter-specialty", label: "Specialty", allLabel: "All Specialties" },
+  { key: "city", id: "filter-city", label: "City", allLabel: "All Cities" },
+  { key: "area", id: "filter-area", label: "Area", allLabel: "All Areas" },
+  { key: "insurance", id: "filter-insurance", label: "Insurance", allLabel: "All Insurance" },
 ];
 
-const ALL_FILTER_KEYS = FILTER_OPTIONS.map((option) => option.key);
+const SEARCH_KEYS = [...FILTER_META.map((meta) => meta.key), "search"] as (keyof HCPFilters)[];
 
 /** Whether any filter is set. Shared with the directory, which needs the same answer. */
 export function hasAnyFilter(filters: HCPFilters): boolean {
-  return ALL_FILTER_KEYS.some((key) => {
+  return SEARCH_KEYS.some((key) => {
     const value = filters[key];
     return value !== undefined && value !== "";
   });
 }
 
 type HCPDirectoryFiltersProps = {
+  /** Applied filters. The parent seeds this from the URL. */
   filters: HCPFilters;
   onApply: (filters: HCPFilters) => void;
-  resetToken?: number;
 };
 
-// function matches(doctor: LandingDoctor, filters: LandingFilters): boolean {
-//   if (filters.specialty && !doctor.specialties.includes(filters.specialty)) return false;
-//   if (filters.city && doctor.city !== filters.city) return false;
-//   if (filters.area && doctor.area !== filters.area) return false;
-//   if (filters.insurance && !doctor.insuranceAccepted?.includes(filters.insurance)) return false;
-//   if (filters.gender && doctor.gender !== filters.gender) return false;
-//   if (
-//     filters.maxPrice !== undefined &&
-//     (doctor.fees ?? Number.POSITIVE_INFINITY) > filters.maxPrice
-//   ) {
-//     return false;
-//   }
-//   if (filters.minExperience !== undefined && doctor.yearsOfExperience < filters.minExperience) {
-//     return false;
-//   }
-//   if (filters.availability && !doctor.availableOn.includes(filters.availability)) return false;
-//   if (filters.search) {
-//     const query = filters.search.trim().toLowerCase();
-//     const haystack =
-//       `${doctor.fullName} ${doctor.title} ${doctor.specialties.join(" ")}`.toLowerCase();
-//     if (query && !haystack.includes(query)) return false;
-//   }
-//   return true;
-// }
-
-const _genderOptions: readonly DoctorGender[] = ["female", "male"];
-
-export function HCPDirectoryFilters({ filters, onApply, resetToken }: HCPDirectoryFiltersProps) {
-  // Keyed on the parent's applied filters so an external reset re-seeds the
-  // draft. Previously `useState(filters)` captured the prop once, forever, and the
-  // "Clear filters" button in the empty state left the inputs showing the old
-  // selection while the applied filter was already empty.
+/**
+ * Search box plus the four filters.
+ *
+ * Options come from the API rather than a local list, so the dropdowns only
+ * offer values that have at least one eligible doctor behind them.
+ *
+ * The two halves behave differently on purpose:
+ *
+ * - **Selects apply immediately.** A dropdown is a decision, not a phrase being
+ *   composed, so choosing one should narrow the list at once rather than queue a
+ *   second click. The request goes out on `onValueChange`.
+ * - **The text box keeps the Search button.** Typing is incremental - every
+ *   keystroke would otherwise fire a request - so the field stays a draft until
+ *   the button (or Enter) commits it.
+ *
+ * The parent owns the applied filters and remounts this form when they change,
+ * so the draft only needs to seed from props once. Because a select writes through
+ * immediately it must not also update the local draft from its stale copy, or the
+ * two would disagree about what is applied.
+ */
+export function HCPDirectoryFilters({ filters, onApply }: HCPDirectoryFiltersProps) {
   const [draft, setDraft] = useState<HCPFilters>(filters);
-  const [seenToken, setSeenToken] = useState(resetToken);
+  const { data: options } = useHcpFilterOptionsQuery();
 
-  if (resetToken !== undefined && resetToken !== seenToken) {
-    setSeenToken(resetToken);
-    setDraft(filters);
-  }
+  const choices: Record<FilterKey, readonly string[]> = {
+    specialty: options?.specialties.map((option) => option.value) ?? [],
+    city: options?.cities ?? [],
+    area: options?.areas ?? [],
+    insurance: options?.insurances ?? [],
+  };
 
-  const update = useCallback((key: FilterKey, value: string) => {
+  /** Text input: holds the value locally until the form is submitted. */
+  const updateDraft = useCallback((key: FilterKey | "search", value: string) => {
     setDraft((previous) => ({ ...previous, [key]: value || undefined }));
   }, []);
 
-  const handleApply = useCallback(() => {
-    onApply(draft);
-  }, [draft, onApply]);
-
-  const _handleClear = useCallback(() => {
-    const cleared: HCPFilters = {};
-    setDraft(cleared);
-    onApply(cleared);
-  }, [onApply]);
+  /**
+   * Dropdown: applies straight away, merged onto the filters already applied.
+   *
+   * Merging from `filters` rather than from `draft` is what keeps a select from
+   * dragging along an uncommitted search phrase: only the dropdown's own key is
+   * sent to the API.
+   */
+  const applyFilter = useCallback(
+    (key: FilterKey, value: string) => {
+      onApply({ ...filters, [key]: value || undefined });
+    },
+    [filters, onApply],
+  );
 
   return (
     <div className="mb-6 rounded-2xl bg-accent/50 p-5">
@@ -242,7 +102,7 @@ export function HCPDirectoryFilters({ filters, onApply, resetToken }: HCPDirecto
         className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center"
         onSubmit={(event) => {
           event.preventDefault();
-          handleApply();
+          onApply(draft);
         }}
       >
         <div className="relative min-w-0 flex-1">
@@ -259,7 +119,7 @@ export function HCPDirectoryFilters({ filters, onApply, resetToken }: HCPDirecto
             placeholder="Search by name, specialty, or keyword..."
             className="h-11 rounded-xl bg-card pl-10"
             value={draft.search ?? ""}
-            onChange={(event) => update("search", event.target.value)}
+            onChange={(event) => updateDraft("search", event.target.value)}
           />
         </div>
         <Button type="submit" size="lg" className="h-11 rounded-xl px-6">
@@ -269,32 +129,36 @@ export function HCPDirectoryFilters({ filters, onApply, resetToken }: HCPDirecto
       </form>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {FILTER_OPTIONS.map((option) => {
-          const Icon = FILTER_ICONS[option.key];
+        {FILTER_META.map((meta) => {
+          const Icon = FILTER_ICONS[meta.key];
+          const values = choices[meta.key];
+
           return (
             <Select
-              key={option.key}
-              value={draft[option.key] ?? ""}
-              onValueChange={(value) => update(option.key, value)}
+              key={meta.key}
+              // Reflects what is applied, not the draft, so the trigger shows the
+              // request the list was actually filtered by.
+              value={filters[meta.key] ?? ""}
+              onValueChange={(value) => applyFilter(meta.key, value)}
             >
               <SelectTrigger
-                id={option.id}
-                aria-label={option.label}
+                id={meta.id}
+                aria-label={meta.label}
                 className="h-auto rounded-xl border-input bg-card px-3.5 py-2.5 shadow-none hover:bg-card"
               >
                 <span className="flex min-w-0 items-center gap-2.5">
                   <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <span className="flex min-w-0 flex-col items-start gap-0.5">
-                    <span className="type-helper text-muted-foreground">{option.label}</span>
+                    <span className="type-helper text-muted-foreground">{meta.label}</span>
                     <span className="type-label font-medium text-foreground">
-                      <SelectValue placeholder={option.allLabel} />
+                      <SelectValue placeholder={meta.allLabel} />
                     </span>
                   </span>
                 </span>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{option.allLabel}</SelectItem>
-                {option.options.map((value) => (
+                <SelectItem value="">{meta.allLabel}</SelectItem>
+                {values.map((value) => (
                   <SelectItem key={value} value={value}>
                     {value}
                   </SelectItem>

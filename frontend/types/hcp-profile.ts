@@ -69,6 +69,14 @@ export type HcpProfessionalInformation = {
   workplaceName?: string;
   workplaceAddress?: string;
   location?: string;
+  area?: string;
+  fees?: number;
+  currency?: string;
+  waitingTime?: string;
+  insuranceAccepted?: string[];
+  /** Aggregate of patient reviews. Read-only. */
+  rating?: number;
+  reviewCount?: number;
 };
 
 export type HcpProfessionalPreferences = {
@@ -96,6 +104,12 @@ export type HcpEditableProfile = {
   workplaceName: string;
   workplaceAddress: string;
   city: string;
+  area: string;
+  /** Kept as a string so an empty field can be sent as "clear this". */
+  fees: string;
+  currency: string;
+  waitingTime: string;
+  insuranceAccepted: string[];
 };
 
 export type WorkingDayKey = "MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT" | "SUN";

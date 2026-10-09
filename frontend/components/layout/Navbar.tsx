@@ -116,7 +116,7 @@ function BackToLanding() {
       href={ROUTES.home}
       data-motion="navbar-back"
       aria-label="Back to the landing page"
-      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md px-2.5 type-helper font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring"
+      className="lg:inline-flex h-9  hidden shrink-0 items-center gap-1.5 rounded-md px-2.5 type-helper font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring"
     >
       <ArrowLeft className="size-4" aria-hidden="true" />
       Back

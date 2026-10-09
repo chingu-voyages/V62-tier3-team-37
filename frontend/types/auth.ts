@@ -40,6 +40,14 @@ export const GENDER_LABELS: Record<Gender, string> = {
   female: "Female",
 };
 
+const GENDER_ORDER: Gender[] = ["male", "female"];
+
+/** `<Select>` options for a gender field, derived so the two cannot drift. */
+export const GENDER_OPTIONS: { value: Gender; label: string }[] = GENDER_ORDER.map((value) => ({
+  value,
+  label: GENDER_LABELS[value],
+}));
+
 /**
  * The user shape returned by `GET /api/user`.
  *

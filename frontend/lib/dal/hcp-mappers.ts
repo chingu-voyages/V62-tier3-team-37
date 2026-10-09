@@ -80,7 +80,7 @@ export function toProfessionalInformation(profile: ApiHcpProfile): HcpProfession
     dateOfBirth: calendarDate(personal.birth_date),
     gender: formatGender(personal.gender),
     phone: personal.phone ?? undefined,
-    email: personal.email || undefined,
+    email: personal.email ?? undefined,
     specialty: professional.specialty || undefined,
     subSpecialty: professional.sub_specialty ?? undefined,
     yearsOfExperience: professional.years_of_experience ?? undefined,
@@ -89,6 +89,13 @@ export function toProfessionalInformation(profile: ApiHcpProfile): HcpProfession
     workplaceName: professional.workplace_name ?? undefined,
     workplaceAddress: professional.workplace_address ?? undefined,
     location: joinLocation(professional.city, personal.country),
+    area: professional.area ?? undefined,
+    fees: professional.fees ?? undefined,
+    currency: professional.currency ?? undefined,
+    waitingTime: professional.waiting_time ?? undefined,
+    insuranceAccepted: professional.insurance_accepted,
+    rating: professional.rating ?? undefined,
+    reviewCount: professional.review_count ?? undefined,
   };
 }
 
@@ -139,6 +146,14 @@ export function toEditableProfile(profile: ApiHcpProfile): HcpEditableProfile {
     workplaceName: professional.workplace_name ?? "",
     workplaceAddress: professional.workplace_address ?? "",
     city: professional.city ?? "",
+    area: professional.area ?? "",
+    fees:
+      professional.fees === null || professional.fees === undefined
+        ? ""
+        : String(professional.fees),
+    currency: professional.currency ?? "",
+    waitingTime: professional.waiting_time ?? "",
+    insuranceAccepted: [...professional.insurance_accepted],
   };
 }
 

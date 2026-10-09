@@ -1,9 +1,12 @@
 export { EditAvailabilityForm } from "./EditAvailabilityForm";
 export { EditDetailsForm } from "./EditDetailsForm";
 export { EditProfileForm } from "./EditProfileForm";
+export { InsuranceAcceptedInput } from "./InsuranceAcceptedInput";
 export { PROFILE_CARD_SHELL_CLASS, ProfileCard } from "./ProfileCard";
 export { ProfileCardSkeleton } from "./ProfileCardSkeleton";
+export { ProfileDisclosure } from "./ProfileDisclosure";
 export { EditTrigger, ProfileEditDialog } from "./ProfileEditDialog";
+export { ProfileEyebrow } from "./ProfileEyebrow";
 export { hasProfileField, ProfileFieldRow } from "./ProfileFieldRow";
 export { ProfilePhotoControl } from "./ProfilePhotoControl";
 export { ProfilePill } from "./ProfilePill";

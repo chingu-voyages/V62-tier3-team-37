@@ -1,14 +1,11 @@
-import {
-  ProfileCardSkeleton,
-  ProfileSkeleton,
-  ProfileSkeletonLines,
-  skeletonKeys,
-} from "../shared";
+import { ProfileCardSkeleton, ProfileSkeleton, skeletonKeys } from "../shared";
 
 export function ProfileVerificationSkeleton() {
   return (
     <ProfileCardSkeleton action="badge" titleWidthClass="w-32">
-      <div className="flex flex-col gap-3">
+      <ProfileSkeleton className="h-3 w-40" />
+
+      <div className="mt-3 flex flex-col gap-3">
         {skeletonKeys(5).map((rowKey) => (
           <div key={rowKey} className="flex items-center justify-between gap-3">
             <ProfileSkeleton className="size-4 shrink-0 rounded-full" />
@@ -18,7 +15,7 @@ export function ProfileVerificationSkeleton() {
         ))}
       </div>
 
-      <ProfileSkeletonLines count={1} widths={["w-32"]} className="mt-4" />
+      <ProfileSkeleton className="mt-4 h-3 w-32" />
     </ProfileCardSkeleton>
   );
 }

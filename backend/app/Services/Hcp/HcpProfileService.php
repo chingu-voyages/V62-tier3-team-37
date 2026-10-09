@@ -8,6 +8,14 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Writes clinician-editable profile fields.
+ *
+ * Both lists below are explicit allow-lists, never `fill()`. That is the second
+ * line of defence behind `UpdateHcpProfileRequest`'s `prohibited` rules: even if a
+ * request slipped past validation, `rating` and `review_count` are absent here
+ * and so cannot be written. A clinician must never set their own rating.
+ */
 class HcpProfileService
 {
     public function update(User $user, array $data): User
@@ -33,6 +41,11 @@ class HcpProfileService
                 'workplace_name',
                 'workplace_address',
                 'city',
+                'area',
+                'fees',
+                'currency',
+                'waiting_time',
+                'insurance_accepted',
                 'bio',
                 'languages',
                 'consultation_types',

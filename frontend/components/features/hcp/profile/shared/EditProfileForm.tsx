@@ -13,6 +13,7 @@ import {
   PROFILE_LIMITS,
   type UpdateHcpProfileInput,
 } from "@/types/hcp-profile-api";
+import { InsuranceAcceptedInput } from "./InsuranceAcceptedInput";
 import { ProfileEditDialog } from "./ProfileEditDialog";
 
 type EditableProfile = {
@@ -26,6 +27,11 @@ type EditableProfile = {
   workplaceName: string;
   workplaceAddress: string;
   city: string;
+  area: string;
+  fees: string;
+  currency: string;
+  waitingTime: string;
+  insuranceAccepted: string[];
 };
 
 type EditProfileFormProps = {
@@ -45,7 +51,8 @@ const MAX_DATE_OF_BIRTH = new Date().toISOString().slice(0, 10);
  * Specialty, years of experience, license number and issuing authority are
  * deliberately absent: the API rejects them, so offering an input for them would
  * guarantee a 422. The read-only section says so instead of pretending to be
- * editable.
+ * editable. Rating and review count are absent for a different reason: they are
+ * aggregates of patient reviews, so a clinician must never be able to type them.
  */
 export function EditProfileForm({ values }: EditProfileFormProps) {
   const [draft, setDraft] = useState<EditableProfile>(values);
@@ -64,6 +71,7 @@ export function EditProfileForm({ values }: EditProfileFormProps) {
     setFieldErrors({});
 
     const birthDate = draft.birthDate.trim();
+    const fees = draft.fees.trim();
 
     // `birth_date` is optional, but sending it empty is not the same as omitting
     // it: the API would answer 422 for a blank string instead of leaving the
@@ -79,6 +87,13 @@ export function EditProfileForm({ values }: EditProfileFormProps) {
       workplace_name: draft.workplaceName.trim() || null,
       workplace_address: draft.workplaceAddress.trim() || null,
       city: draft.city.trim() || null,
+      area: draft.area.trim() || null,
+      // A blank field means "clear this", which is `null`, not `""`: the API
+      // validates `fees` as an integer and rejects an empty string.
+      fees: fees === "" ? null : Number(fees),
+      currency: draft.currency.trim() || null,
+      waiting_time: draft.waitingTime.trim() || null,
+      insurance_accepted: draft.insuranceAccepted,
     };
 
     try {
@@ -95,6 +110,11 @@ export function EditProfileForm({ values }: EditProfileFormProps) {
         workplaceName: getApiFieldError(error, "workplace_name") ?? "",
         workplaceAddress: getApiFieldError(error, "workplace_address") ?? "",
         city: getApiFieldError(error, "city") ?? "",
+        area: getApiFieldError(error, "area") ?? "",
+        fees: getApiFieldError(error, "fees") ?? "",
+        currency: getApiFieldError(error, "currency") ?? "",
+        waitingTime: getApiFieldError(error, "waiting_time") ?? "",
+        insuranceAccepted: getApiFieldError(error, "insurance_accepted.0") ?? "",
       });
       setFormError(getApiErrorMessage(error));
       throw error;
@@ -115,11 +135,6 @@ export function EditProfileForm({ values }: EditProfileFormProps) {
       }}
       onSubmit={handleSubmit}
     >
-      <Callout icon={Info}>
-        Specialty, years of experience and license details are set during verification and cannot be
-        changed here.
-      </Callout>
-
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField
           id="pf-first-name"
@@ -230,14 +245,72 @@ export function EditProfileForm({ values }: EditProfileFormProps) {
         onChange={(value) => set("workplaceAddress", value)}
       />
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <TextField
+          id="pf-city"
+          label="City"
+          maxLength={PROFILE_LIMITS.city}
+          value={draft.city}
+          error={fieldErrors.city || undefined}
+          onChange={(value) => set("city", value)}
+        />
+        <TextField
+          id="pf-area"
+          label="Area / District"
+          maxLength={PROFILE_LIMITS.area}
+          placeholder="Maadi"
+          value={draft.area}
+          error={fieldErrors.area || undefined}
+          onChange={(value) => set("area", value)}
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <TextField
+          id="pf-fees"
+          label="Consultation fee"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={PROFILE_LIMITS.feesMax}
+          placeholder="500"
+          hint="Leave empty if you have not set one."
+          value={draft.fees}
+          error={fieldErrors.fees || undefined}
+          onChange={(value) => set("fees", value)}
+        />
+        <TextField
+          id="pf-currency"
+          label="Currency"
+          maxLength={PROFILE_LIMITS.currency}
+          placeholder="EGP"
+          value={draft.currency}
+          error={fieldErrors.currency || undefined}
+          onChange={(value) => set("currency", value)}
+        />
+      </div>
+
       <TextField
-        id="pf-city"
-        label="City"
-        maxLength={PROFILE_LIMITS.city}
-        value={draft.city}
-        error={fieldErrors.city || undefined}
-        onChange={(value) => set("city", value)}
+        id="pf-waiting-time"
+        label="Typical wait"
+        maxLength={PROFILE_LIMITS.waitingTime}
+        placeholder="20 min"
+        hint="Shown on your listing so patients know what to expect."
+        value={draft.waitingTime}
+        error={fieldErrors.waitingTime || undefined}
+        onChange={(value) => set("waitingTime", value)}
       />
+
+      <InsuranceAcceptedInput
+        value={draft.insuranceAccepted}
+        error={fieldErrors.insuranceAccepted || undefined}
+        onChange={(next) => set("insuranceAccepted", next)}
+      />
+
+      <Callout icon={Info}>
+        Specialty, years of experience, license details and patient rating are set during
+        verification and by patient reviews, so they cannot be changed here.
+      </Callout>
     </ProfileEditDialog>
   );
 }

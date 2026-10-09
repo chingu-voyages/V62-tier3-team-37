@@ -1,7 +1,6 @@
 "use client";
 
 import { SlidersHorizontal } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -9,96 +8,101 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { HcpSort } from "@/lib/api/patient-hcps-client";
 import type { HCP, HCPFilters } from "@/types/hcp-directory";
-import type { BookingValues } from "./HCPBookingDialog";
 import { HCPDirectoryFilters, hasAnyFilter } from "./HCPDirectoryFilters";
 import { HCPDirectoryHeader } from "./HCPDirectoryHeader";
 import { HCPEmptyState } from "./HCPEmptyState";
 import { HCPList } from "./HCPList";
+import { HCPListSkeleton } from "./HCPListSkeleton";
 import { HCPPagination } from "./HCPPagination";
 
 type HCPDirectoryProps = {
+  /** The current page of results, as resolved by the API. */
   hcps: HCP[];
-  pagination?: {
-    currentPage: number;
-    totalPages: number;
-    total?: number;
-  };
+  /** First load: nothing to show yet. */
+  isLoading?: boolean;
+  /** A later page or filter is in flight; the current rows stay visible. */
+  isFetching?: boolean;
+  /** Total matches across all pages. */
+  total?: number;
+  /** The page currently displayed, as requested. */
+  currentPage?: number;
+  pageSize?: number;
+  filters: HCPFilters;
+  sort: HcpSort;
   onFiltersChange?: (filters: HCPFilters) => void;
   onPageChange?: (page: number) => void;
-  onBookRequest?: (hcp: HCP, values: BookingValues) => void;
+  onSortChange?: (sort: string) => void;
   onViewProfile?: (hcpId: string) => void;
 };
 
+/**
+ * Presentational directory.
+ *
+ * Every decision about *which* rows are shown has already been made by the API;
+ * this component renders the page it is handed and reports intent back up.
+ */
 export function HCPDirectory({
   hcps,
-  pagination,
+  isLoading = false,
+  isFetching = false,
+  total,
+  currentPage = 1,
+  pageSize = 10,
+  filters,
+  sort,
   onFiltersChange,
   onPageChange,
-  onBookRequest,
+  onSortChange,
   onViewProfile,
 }: HCPDirectoryProps) {
-  const [appliedFilters, setAppliedFilters] = useState<HCPFilters>({});
-  const [resetToken, setResetToken] = useState(0);
-  const [sort, setSort] = useState("best");
-
-  const sortedHcps = useMemo(() => {
-    const list = [...hcps];
-    switch (sort) {
-      case "name":
-        return list.sort((a, b) => a.fullName.localeCompare(b.fullName));
-      case "rating":
-        return list.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
-      case "experience":
-        return list.sort((a, b) => (b.yearsOfExperience ?? 0) - (a.yearsOfExperience ?? 0));
-      default:
-        return list;
-    }
-  }, [hcps, sort]);
-
-  const handleApplyFilters = useCallback(
-    (filters: HCPFilters) => {
-      setAppliedFilters(filters);
-      onFiltersChange?.(filters);
-    },
-    [onFiltersChange],
-  );
-
-  const handleClearFilters = useCallback(() => {
-    setAppliedFilters({});
-    setResetToken((token) => token + 1);
-    onFiltersChange?.({});
-  }, [onFiltersChange]);
-
-  const isEmpty = hcps.length === 0;
+  const filtered = hasAnyFilter(filters);
+  const showSkeleton = isLoading;
+  const showEmpty = !showSkeleton && hcps.length === 0;
+  const totalPages = pageSize > 0 ? Math.max(1, Math.ceil((total ?? hcps.length) / pageSize)) : 1;
+  const matchCount = total ?? hcps.length;
 
   return (
     <div className="flex flex-1 flex-col">
       <HCPDirectoryHeader />
+
+      {/*
+        Keyed on the applied *search term* only. The form's dropdowns read straight
+        from `filters`, so they never need re-seeding; only the text box holds a
+        draft, and it has to re-seed when the applied search changes - after a
+        submit, or when the URL moves under back/forward navigation.
+
+        Keying on every filter instead would also discard whatever had been typed
+        but not yet submitted whenever a dropdown was chosen, which is the one thing
+        a patient would notice as a lost keystroke.
+      */}
       <HCPDirectoryFilters
-        filters={appliedFilters}
-        onApply={handleApplyFilters}
-        resetToken={resetToken}
+        key={filters.search ?? ""}
+        filters={filters}
+        onApply={onFiltersChange ?? (() => {})}
       />
 
-      {isEmpty ? (
+      {showSkeleton ? (
+        <HCPListSkeleton count={Math.min(pageSize, 4)} />
+      ) : showEmpty ? (
         <div className="flex flex-1 items-center justify-center">
           <HCPEmptyState
-            variant={hasAnyFilter(appliedFilters) ? "no-results" : "no-data"}
-            onClearFilters={hasAnyFilter(appliedFilters) ? handleClearFilters : undefined}
+            variant={filtered ? "no-results" : "no-data"}
+            onClearFilters={filtered ? () => onFiltersChange?.({}) : undefined}
           />
         </div>
       ) : (
         <>
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="type-label font-medium text-primary">
-              {pagination?.total ?? hcps.length} doctor
-              {(pagination?.total ?? hcps.length) !== 1 ? "s" : ""} found
+            <p className="type-label font-medium text-primary" aria-live="polite">
+              {matchCount} doctor{matchCount !== 1 ? "s" : ""} found
+              {isFetching ? <span className="sr-only">, updating</span> : null}
             </p>
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="size-4 text-muted-foreground" aria-hidden="true" />
               <span className="type-label text-muted-foreground">Sort by</span>
-              <Select value={sort} onValueChange={setSort}>
+              <Select value={sort} onValueChange={onSortChange ?? (() => {})}>
                 <SelectTrigger
                   aria-label="Sort by"
                   className="h-9 w-40 rounded-lg border-input bg-card"
@@ -110,15 +114,18 @@ export function HCPDirectory({
                   <SelectItem value="name">Name A–Z</SelectItem>
                   <SelectItem value="rating">Top Rated</SelectItem>
                   <SelectItem value="experience">Most Experienced</SelectItem>
+                  <SelectItem value="price">Lowest Fee</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <HCPList hcps={sortedHcps} onViewProfile={onViewProfile} onBookRequest={onBookRequest} />
-          {pagination ? (
+
+          <HCPList hcps={hcps} onViewProfile={onViewProfile} />
+
+          {totalPages > 1 ? (
             <HCPPagination
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
+              currentPage={currentPage}
+              totalPages={totalPages}
               onPageChange={onPageChange ?? (() => {})}
             />
           ) : null}

@@ -1,7 +1,7 @@
 import { create } from "zustand";
-import type { Appointment, NewAppointment } from "@/types/appointment";
+import type { NewStoreAppointment, StoreAppointment } from "@/types/appointment";
 
-const INITIAL_APPOINTMENTS: Appointment[] = [
+const INITIAL_APPOINTMENTS: StoreAppointment[] = [
   {
     id: "apt-1",
     doctorName: "Dr. Lina Hassan",
@@ -35,8 +35,8 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
 ];
 
 type AppointmentStore = {
-  appointments: Appointment[];
-  addAppointment: (input: NewAppointment) => void;
+  appointments: StoreAppointment[];
+  addAppointment: (input: NewStoreAppointment) => void;
   postponeAppointment: (id: string, date: string, time: string) => void;
   cancelAppointment: (id: string) => void;
 };

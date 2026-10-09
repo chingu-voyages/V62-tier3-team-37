@@ -27,6 +27,9 @@ class UpdateHcpProfileRequest extends FormRequest
             'workplace_name',
             'workplace_address',
             'city',
+            'area',
+            'currency',
+            'waiting_time',
             'bio',
         ];
 
@@ -36,6 +39,11 @@ class UpdateHcpProfileRequest extends FormRequest
             if ($this->has($field) && is_string($this->input($field))) {
                 $normalized[$field] = trim($this->input($field));
             }
+        }
+
+        // `fees` is numeric, so it must not go through the string trim above.
+        if ($this->has('fees') && $this->input('fees') !== null) {
+            $normalized['fees'] = $this->input('fees');
         }
 
         $this->merge($normalized);
@@ -105,6 +113,43 @@ class UpdateHcpProfileRequest extends FormRequest
                 'string',
                 'max:100',
             ],
+            'area' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:100',
+            ],
+            'fees' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                'min:0',
+                'max:1000000',
+            ],
+            'currency' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:10',
+            ],
+            'waiting_time' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:20',
+            ],
+            'insurance_accepted' => [
+                'sometimes',
+                'nullable',
+                'array',
+                'max:20',
+            ],
+            'insurance_accepted.*' => [
+                'required',
+                'string',
+                'max:50',
+                'distinct:ignore_case',
+            ],
             'bio' => [
                 'sometimes',
                 'nullable',
@@ -146,6 +191,11 @@ class UpdateHcpProfileRequest extends FormRequest
             'qualification' => ['prohibited'],
             'liveness_status' => ['prohibited'],
             'consent' => ['prohibited'],
+
+            // Aggregates of patient reviews. A clinician must never be able to
+            // set these, so they are refused rather than merely ignored.
+            'rating' => ['prohibited'],
+            'review_count' => ['prohibited'],
         ];
     }
 }

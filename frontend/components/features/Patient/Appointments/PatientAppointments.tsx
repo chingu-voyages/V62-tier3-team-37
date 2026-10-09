@@ -15,7 +15,7 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { formatAppointmentSlot, formatClockTime, formatLongDate } from "@/lib/format";
 import { useAppointmentStore } from "@/store/use-appointment-store";
-import type { Appointment, AppointmentStatus } from "@/types/appointment";
+import type { StoreAppointment, StoreAppointmentStatus } from "@/types/appointment";
 
 type AppointmentFilter = "upcoming" | "past" | "all";
 
@@ -32,7 +32,7 @@ const FILTERS: { value: AppointmentFilter; label: string }[] = [
   { value: "all", label: "All" },
 ];
 
-const STATUS_LABEL: Record<AppointmentStatus, string> = {
+const STATUS_LABEL: Record<StoreAppointmentStatus, string> = {
   upcoming: "Upcoming",
   postponed: "Postponed",
   completed: "Completed",
@@ -46,12 +46,12 @@ function todayIso(): string {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
-function isPast(appointment: Appointment): boolean {
+function isPast(appointment: StoreAppointment): boolean {
   if (appointment.status === "completed" || appointment.status === "cancelled") return true;
   return appointment.date < todayIso();
 }
 
-function canManage(appointment: Appointment): boolean {
+function canManage(appointment: StoreAppointment): boolean {
   return appointment.status === "upcoming" || appointment.status === "postponed";
 }
 
@@ -323,7 +323,7 @@ function ViewAppointmentDialog({
   onPostpone,
   onCancel,
 }: {
-  appointment?: Appointment;
+  appointment?: StoreAppointment;
   onOpenChange: (open: boolean) => void;
   onPostpone: () => void;
   onCancel: () => void;
@@ -375,7 +375,7 @@ function PostponeAppointmentDialog({
   onOpenChange,
   onSubmit,
 }: {
-  appointment?: Appointment;
+  appointment?: StoreAppointment;
   onOpenChange: (open: boolean) => void;
   onSubmit: (date: string, time: string) => void;
 }) {
@@ -452,7 +452,7 @@ function CancelAppointmentDialog({
   onOpenChange,
   onConfirm,
 }: {
-  appointment?: Appointment;
+  appointment?: StoreAppointment;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 }) {

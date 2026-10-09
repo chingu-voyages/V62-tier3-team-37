@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
  * the component it stands in for.
  */
 export const PROFILE_CARD_SHELL_CLASS =
-  "@container flex min-w-0 flex-col rounded-2xl border border-border  bg-card p-4 shadow-soft sm:p-5";
+  "@container flex min-w-0 flex-col rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5";
 
 type ProfileCardProps = {
   title: string;
@@ -32,7 +32,10 @@ export function ProfileCard({
 }: ProfileCardProps) {
   return (
     <section className={cn(PROFILE_CARD_SHELL_CLASS, className)}>
-      <header className="flex items-start justify-between gap-3">
+      {/* Wraps rather than squeezing: on a narrow card the title and the action
+          (edit pencil, status badge) cannot share one line, and forcing them to
+          leaves a two-line title broken mid-phrase. */}
+      <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
         <div className="flex min-w-0 items-center gap-2.5">
           <span
             aria-hidden="true"

@@ -22,6 +22,13 @@ class HcpProfile extends Model
         'workplace_name',
         'workplace_address',
         'city',
+        'area',
+        'fees',
+        'currency',
+        'waiting_time',
+        'rating',
+        'review_count',
+        'insurance_accepted',
         'bio',
         'languages',
         'consultation_types',
@@ -32,8 +39,12 @@ class HcpProfile extends Model
         return [
             'specialty' => Specialty::class,
             'years_of_experience' => 'integer',
+            'fees' => 'integer',
+            'rating' => 'float',
+            'review_count' => 'integer',
             'languages' => 'array',
             'consultation_types' => 'array',
+            'insurance_accepted' => 'array',
         ];
     }
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Hcp\HcpOnboardingController;
 use App\Http\Controllers\Hcp\HcpProfileController;
+use App\Http\Controllers\Patient\HcpFilterOptionsController;
 use App\Http\Controllers\Patient\HcpListingController;
 use App\Http\Controllers\Patient\PatientMedicalDocumentController;
 use App\Http\Controllers\Patient\PatientProfileController;
@@ -21,6 +22,8 @@ Route::middleware(['auth:sanctum', EnsureEmailIsVerified::class])->group(functio
     /**************************PATIENT************************************** */
 
     Route::get('/patient/hcps', [HcpListingController::class, 'index']);
+
+    Route::get('/patient/hcps/filter-options', HcpFilterOptionsController::class);
 
     Route::get('/patient/profile', [PatientProfileController::class, 'show']);
 

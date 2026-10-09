@@ -80,6 +80,15 @@ class HcpProfileResource extends JsonResource
             'workplace_name' => $profile?->workplace_name,
             'workplace_address' => $profile?->workplace_address,
             'city' => $profile?->city,
+            'area' => $profile?->area,
+            'fees' => $profile?->fees,
+            'currency' => $profile?->currency,
+            'waiting_time' => $profile?->waiting_time,
+            'insurance_accepted' => $profile?->insurance_accepted ?? [],
+            // Aggregate of patient reviews, not clinician-set. Returned so the
+            // profile can show it, but never accepted on write.
+            'rating' => $profile?->rating,
+            'review_count' => $profile?->review_count,
         ];
     }
 

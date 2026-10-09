@@ -73,6 +73,14 @@ export type ApiProfessionalInformation = {
   workplace_name: string | null;
   workplace_address: string | null;
   city: string | null;
+  area: string | null;
+  fees: number | null;
+  currency: string | null;
+  waiting_time: string | null;
+  insurance_accepted: string[];
+  /** Aggregate of patient reviews. Read-only; rejected on write. */
+  rating: number | null;
+  review_count: number | null;
 };
 
 export type ApiPreferences = {
@@ -117,9 +125,16 @@ export type UpdateHcpProfileInput = {
   workplace_name?: string | null;
   workplace_address?: string | null;
   city?: string | null;
+  area?: string | null;
+  fees?: number | null;
+  currency?: string | null;
+  waiting_time?: string | null;
+  insurance_accepted?: string[];
   bio?: string | null;
   languages?: string[];
   consultation_types?: ApiConsultationType[];
+  // `rating` and `review_count` are intentionally absent: the API refuses them,
+  // and they are aggregates of patient reviews rather than clinician input.
 };
 
 export type ReplaceAvailabilityInput = {
@@ -134,6 +149,12 @@ export const PROFILE_LIMITS = {
   workplaceName: 255,
   workplaceAddress: 500,
   city: 100,
+  area: 100,
+  currency: 10,
+  waitingTime: 20,
+  feesMax: 1000000,
+  insuranceCount: 20,
+  insuranceLength: 50,
   bio: 2000,
   languages: 10,
   languageLength: 50,
@@ -141,6 +162,9 @@ export const PROFILE_LIMITS = {
   availabilitySlots: 35,
   photoBytes: 5 * 1024 * 1024,
 } as const;
+
+/** Insurers offered in the editor. Kept as suggestions, not a closed set. */
+export const COMMON_INSURANCES = ["Medicare", "AXA", "Allianz", "Cigna", "BUPA"] as const;
 
 export const PHOTO_ACCEPT = ".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp";
 

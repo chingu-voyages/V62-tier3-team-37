@@ -1,8 +1,9 @@
 import { InfoIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { EditDetailsForm } from "@/components/features/hcp/profile/shared/EditDetailsForm";
 import type { HcpProfessionalPreferences } from "@/types/hcp-profile";
-import type { ApiConsultationType } from "@/types/hcp-profile-api";
-import { ProfileCard, ProfilePill, SectionEmptyState } from "../shared";
+import { type ApiConsultationType, CONSULTATION_TYPE_LABELS } from "@/types/hcp-profile-api";
+import { ProfileCard, ProfileEyebrow, ProfilePill, SectionEmptyState } from "../shared";
 
 type ProfileDetailsProps = {
   preferences?: HcpProfessionalPreferences;
@@ -30,17 +31,25 @@ function PillList({ values, emptyMessage }: { values?: string[]; emptyMessage: s
   );
 }
 
-const CONSULTATION_LABELS: Record<ApiConsultationType, string> = {
-  IN_PERSON: "In person",
-  VIDEO: "Video call",
-  PHONE: "Phone call",
-};
-
 /** Show the enum's label where we know it, otherwise pass the value through. */
 function consultationLabel(value: string): string {
-  return CONSULTATION_LABELS[value as ApiConsultationType] ?? value;
+  return CONSULTATION_TYPE_LABELS[value as ApiConsultationType] ?? value;
 }
 
+type PreferenceGroup = {
+  id: string;
+  title: string;
+  content: ReactNode;
+};
+
+/**
+ * The preferences a patient's search and booking flow reads.
+ *
+ * Three groups, each separated by a hairline instead of whitespace alone, so a
+ * card where only one of them is filled still looks like the same card rather
+ * than a half-written one. The subjects are eyebrows, not headings of their own
+ * rank: the card title is the only heading this section owns.
+ */
 export function ProfileDetails({ preferences }: ProfileDetailsProps) {
   const editableValues = {
     bio: preferences?.bio ?? "",
@@ -48,35 +57,50 @@ export function ProfileDetails({ preferences }: ProfileDetailsProps) {
     consultationTypes: (preferences?.consultationTypes ?? []) as ApiConsultationType[],
   };
 
-  return (
-    <ProfileCard
-      icon={InfoIcon}
-      title="Additional Details"
-      className="flex  flex-col gap-2"
-      action={<EditDetailsForm values={editableValues} />}
-    >
-      <div className="flex flex-col mb-6 gap-3 px-4">
-        <h1 className="type-helper text-muted-foreground">Languages</h1>
+  const groups: PreferenceGroup[] = [
+    {
+      id: "languages",
+      title: "Languages",
+      content: (
         <PillList values={preferences?.languages} emptyMessage="No languages configured yet." />
-      </div>
-
-      <div className="flex flex-col mb-6 gap-3 px-4">
-        <h1 className="type-helper text-muted-foreground">Consultation Types</h1>
+      ),
+    },
+    {
+      id: "consultation-types",
+      title: "Consultation types",
+      content: (
         <PillList
           values={preferences?.consultationTypes?.map(consultationLabel)}
           emptyMessage="No consultation types configured yet."
         />
-      </div>
+      ),
+    },
+    {
+      id: "bio",
+      title: "Professional bio",
+      content: preferences?.bio ? (
+        <p className="type-body leading-relaxed wrap-break-word whitespace-pre-line text-pretty text-foreground">
+          {preferences.bio}
+        </p>
+      ) : (
+        <SectionEmptyState message="No professional bio has been added yet." />
+      ),
+    },
+  ];
 
-      <div className="flex flex-col gap-2 px-4">
-        <h1 className="type-helper text-muted-foreground">Professional Bio</h1>
-        {preferences?.bio ? (
-          <p className="type-body leading-relaxed wrap-break-word whitespace-pre-line text-foreground">
-            {preferences.bio}
-          </p>
-        ) : (
-          <SectionEmptyState message="No professional bio has been added yet." />
-        )}
+  return (
+    <ProfileCard
+      icon={InfoIcon}
+      title="Additional Details"
+      action={<EditDetailsForm values={editableValues} />}
+    >
+      <div className="flex flex-col divide-y divide-border [&>section]:pt-5 [&>section:first-child]:pt-0">
+        {groups.map((group) => (
+          <section key={group.id}>
+            <ProfileEyebrow>{group.title}</ProfileEyebrow>
+            <div className="mt-3">{group.content}</div>
+          </section>
+        ))}
       </div>
     </ProfileCard>
   );

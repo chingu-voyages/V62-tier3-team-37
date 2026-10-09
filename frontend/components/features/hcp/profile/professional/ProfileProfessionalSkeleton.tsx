@@ -1,28 +1,40 @@
 import { ProfileCardSkeleton, ProfileSkeleton, skeletonKeys } from "../shared";
 
-function SkeletonColumn({ rows }: { rows: number }) {
+function SkeletonField() {
   return (
-    <div className="flex min-w-0 flex-col gap-4">
-      {skeletonKeys(rows).map((rowKey) => (
-        <div key={rowKey} className="flex flex-col gap-1.5">
-          <ProfileSkeleton className="h-2.5 w-20" />
-          <ProfileSkeleton className="h-3.5 w-32" />
-        </div>
-      ))}
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <ProfileSkeleton className="h-2.5 w-20" />
+      <ProfileSkeleton className="h-3.5 w-32" />
     </div>
   );
 }
 
 export function ProfileProfessionalSkeleton() {
   return (
-    // `@lg:` below resolves against the card's own `@container`. The skeleton
-    // used to hardcode the shell class without `@container`, so the two-column
-    // breakpoint never matched and the loading state had a different layout from
-    // the loaded content it stood in for.
+    // Mirrors the collapsed card: highlights strip, practice fields and the
+    // disclosure trigger. The revealed groups are not placeholdered - they are
+    // one tap away and reserving them would double the height of every loading
+    // state on the page.
     <ProfileCardSkeleton titleWidthClass="w-40">
-      <div className="grid grid-cols-1 gap-6 @lg:grid-cols-2">
-        <SkeletonColumn rows={5} />
-        <SkeletonColumn rows={5} />
+      <div className="grid grid-cols-2 gap-4 rounded-2xl bg-accent p-4 @xl:grid-cols-4">
+        {skeletonKeys(4).map((statKey) => (
+          <div key={statKey} className="flex flex-col gap-1.5">
+            <ProfileSkeleton className="h-2.5 w-16" />
+            <ProfileSkeleton className="h-3.5 w-20" />
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 border-t border-border pt-5">
+        <div className="grid gap-x-6 gap-y-4 @xl:grid-cols-2">
+          {skeletonKeys(6).map((fieldKey) => (
+            <SkeletonField key={fieldKey} />
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5 flex justify-end border-t border-border pt-4">
+        <ProfileSkeleton className="h-8 w-28 rounded-md" />
       </div>
     </ProfileCardSkeleton>
   );

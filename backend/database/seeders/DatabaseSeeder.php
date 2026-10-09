@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             HcpProfileSeeder::class,
+            VerifiedHcpSeeder::class,
         ]);
     }
 }

@@ -1,4 +1,5 @@
 import { ShieldCheck } from "lucide-react";
+import { Callout } from "@/components/ui/callout";
 import { formatCalendarDate } from "@/lib/format";
 import type {
   ProfileVerificationRequirementKey,
@@ -34,9 +35,9 @@ export function ProfileVerification({ verification }: ProfileVerificationProps) 
       })
     : [];
 
-  const lastVerified = verification?.lastVerifiedAt
-    ? formatCalendarDate(verification.lastVerifiedAt)
-    : undefined;
+  const verifiedCount = rows.filter((row) => row.state === "VERIFIED").length;
+  const lastVerified = formatCalendarDate(verification?.lastVerifiedAt);
+  const rejectionReason = verification?.rejectionReason?.trim();
 
   return (
     <ProfileCard
@@ -47,8 +48,13 @@ export function ProfileVerification({ verification }: ProfileVerificationProps) 
       {rows.length === 0 ? (
         <SectionEmptyState message="Verification information isn't available yet." />
       ) : (
-        <>
-          <ul className="flex flex-col divide-y divide-border/70">
+        <div className="flex min-w-0 flex-col">
+          {/* Progress, stated rather than inferred from five coloured dots. */}
+          <p className="type-helper text-muted-foreground tabular-nums">
+            {verifiedCount} of {rows.length} requirements verified
+          </p>
+
+          <ul className="mt-3 flex flex-col divide-y divide-border/70">
             {rows.map(({ key, state }) => {
               const { label, icon: Icon, className } = VERIFICATION_STATE_PRESENTATION[state];
 
@@ -69,12 +75,20 @@ export function ProfileVerification({ verification }: ProfileVerificationProps) 
             })}
           </ul>
 
+          {rejectionReason ? (
+            <div className="mt-4">
+              <Callout tone="danger" title="Reason for rejection">
+                {rejectionReason}
+              </Callout>
+            </div>
+          ) : null}
+
           {lastVerified ? (
             <p className="mt-4 border-t border-border/70 pt-3 type-helper text-muted-foreground">
               Last verified on {lastVerified}
             </p>
           ) : null}
-        </>
+        </div>
       )}
     </ProfileCard>
   );
