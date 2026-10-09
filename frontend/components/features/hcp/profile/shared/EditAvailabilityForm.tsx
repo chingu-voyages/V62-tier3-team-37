@@ -2,6 +2,7 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { ProfileEditDialog } from "@/components/features/shared/profile";
 import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
 import { Label } from "@/components/ui/label";
@@ -20,7 +21,6 @@ import {
 import { getApiErrorMessage } from "@/lib/api/client";
 import type { HcpAvailabilitySlot } from "@/types/hcp-profile";
 import { type ApiWorkingDay, PROFILE_LIMITS } from "@/types/hcp-profile-api";
-import { ProfileEditDialog } from "./ProfileEditDialog";
 
 const DAYS: { value: ApiWorkingDay; label: string }[] = [
   { value: "MON", label: "Monday" },

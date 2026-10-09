@@ -71,3 +71,19 @@ export function formatAppointmentSlot(date: string, time: string): string {
   const day = formatLongDate(date);
   return day ? `${day} at ${formatClockTime(time)}` : time;
 }
+
+/**
+ * Enum values the API sends upper-cased, rendered for a reader.
+ *
+ * `MALE` -> `Male`, `VERIFIED` -> `Verified`. Shared by both profiles so the two
+ * surfaces cannot end up presenting the same enum differently.
+ */
+export function formatEnumLabel(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+}
+
+/** `24 years`, pluralised. */
+export function formatYears(years: number): string {
+  return `${years} ${years === 1 ? "year" : "years"}`;
+}

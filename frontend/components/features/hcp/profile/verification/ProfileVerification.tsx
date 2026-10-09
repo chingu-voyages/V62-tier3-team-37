@@ -1,4 +1,5 @@
 import { ShieldCheck } from "lucide-react";
+import { ProfileCard, SectionEmptyState } from "@/components/features/shared/profile";
 import { Callout } from "@/components/ui/callout";
 import { formatCalendarDate } from "@/lib/format";
 import type {
@@ -7,8 +8,6 @@ import type {
   ProfileVerificationSummary,
 } from "@/types/hcp-profile";
 import {
-  ProfileCard,
-  SectionEmptyState,
   StatusBadge,
   VERIFICATION_REQUIREMENT_KEYS,
   VERIFICATION_REQUIREMENT_LABELS,

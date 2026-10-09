@@ -29,6 +29,13 @@ export const patientNavigation: NavItem[] = [
     implemented: true,
   },
   {
+    label: "Profile",
+    href: ROUTES.patientProfile,
+    icon: "user",
+    ariaLabel: "Navigate to Patient Profile",
+    implemented: true,
+  },
+  {
     label: "Health Records",
     href: ROUTES.patientRecords,
     icon: "clipboard",

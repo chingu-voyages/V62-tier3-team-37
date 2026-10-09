@@ -1,8 +1,8 @@
 import { CalendarDays } from "lucide-react";
 import { EditAvailabilityForm } from "@/components/features/hcp/profile/shared/EditAvailabilityForm";
+import { ProfileCard, ProfilePill, SectionEmptyState } from "@/components/features/shared/profile";
 import { formatClockTime } from "@/lib/format";
 import type { HcpAvailability } from "@/types/hcp-profile";
-import { ProfileCard, ProfilePill, SectionEmptyState } from "../shared";
 
 type ProfileAvailabilitySectionProps = {
   availability?: HcpAvailability;

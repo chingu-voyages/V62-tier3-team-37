@@ -2,8 +2,6 @@ import { Star, UserRound } from "lucide-react";
 import type { FC } from "react";
 
 import { EditProfileForm } from "@/components/features/hcp/profile/shared/EditProfileForm";
-import type { HcpEditableProfile, HcpProfessionalInformation } from "@/types/hcp-profile";
-
 import {
   hasProfileField,
   ProfileCard,
@@ -11,7 +9,9 @@ import {
   ProfileEyebrow,
   ProfileFieldRow,
   SectionEmptyState,
-} from "../shared";
+} from "@/components/features/shared/profile";
+import { formatYears } from "@/lib/format";
+import type { HcpEditableProfile, HcpProfessionalInformation } from "@/types/hcp-profile";
 
 type ProfileProfessionalProps = {
   information?: HcpProfessionalInformation;
@@ -36,10 +36,6 @@ type Highlight = {
 /** Drop rows with nothing to show, counting the secondary line as content. */
 const presentFields = (fields: ProfessionalField[]): ProfessionalField[] => {
   return fields.filter((field) => hasProfileField(field.value, field.subValue));
-};
-
-const pluraliseYears = (count: number): string => {
-  return `${count} ${count === 1 ? "year" : "years"}`;
 };
 
 /** `500 EGP`, or just the amount when the currency is unset. */
@@ -79,7 +75,7 @@ const buildModel = (information?: HcpProfessionalInformation) => {
   const highlights: Highlight[] = [];
 
   if (information?.yearsOfExperience !== undefined) {
-    highlights.push({ label: "Experience", value: pluraliseYears(information.yearsOfExperience) });
+    highlights.push({ label: "Experience", value: formatYears(information.yearsOfExperience) });
   }
   const fees = formatFees(information?.fees, information?.currency);
   if (fees) highlights.push({ label: "Consultation fee", value: fees });

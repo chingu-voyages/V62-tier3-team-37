@@ -1,8 +1,6 @@
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { ROUTES } from "@/lib/constants/routes";
+import { PROFILE_BACK_LINKS, ProfilePageHeader } from "@/components/features/shared/profile";
 
 type ProfileLayoutProps = {
   children: ReactNode;
@@ -47,24 +45,12 @@ export default function ProfileLayout({
     <div className="flex w-full min-w-0 flex-col gap-5 sm:gap-6">
       {children}
 
-      <header className="flex min-w-0 flex-col gap-3">
-        <div className="min-w-0">
-          {/* A real link, so it is focusable, middle-clickable and prefetchable.
-              A handler-less <button aria-disabled> would be focusable and announced
-              as available but would do nothing. */}
-          <Link
-            href={ROUTES.hcpPatients}
-            className="inline-flex items-center gap-1.5 rounded-md text-muted-foreground transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          >
-            <ArrowLeft className="size-4 shrink-0" aria-hidden="true" />
-            <span className="type-label">Back</span>
-          </Link>
-          <h1 className="type-h1 mt-2 text-foreground">Health Care Provider Profile</h1>
-          <p className="mt-1 max-w-2xl type-body text-pretty text-muted-foreground">
-            Manage your professional information, credentials and availability.
-          </p>
-        </div>
-      </header>
+      <ProfilePageHeader
+        title="Health Care Provider Profile"
+        description="Manage your professional information, credentials and availability."
+        backHref={PROFILE_BACK_LINKS.hcp.href}
+        backLabel={PROFILE_BACK_LINKS.hcp.label}
+      />
 
       {/*
         Placement is stated with explicit grid lines rather than `col-span`

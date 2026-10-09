@@ -14,7 +14,10 @@ import { appointmentKeys } from "@/lib/query-keys";
  * The API owns who owns the list, so there is no ownership input here - the
  * session cookie is the whole scope. `page` is the only variable.
  */
-export function useAppointmentsQuery(page: number, perPage: number = APPOINTMENTS_PAGE_SIZE) {
+export function usePatientAppointmentsQuery(
+  page: number,
+  perPage: number = APPOINTMENTS_PAGE_SIZE,
+) {
   return useQuery({
     queryKey: appointmentKeys.list(page),
     queryFn: () => fetchAppointments(page, perPage),
@@ -32,7 +35,7 @@ export function useAppointmentsQuery(page: number, perPage: number = APPOINTMENT
  * appointment while a new one loads would put the wrong doctor and time on screen,
  * which is worse than a brief skeleton.
  */
-export function useAppointmentQuery(id: number | null) {
+export function usePatientAppointmentQuery(id: number | null) {
   return useQuery({
     queryKey: appointmentKeys.details(id ?? 0),
     queryFn: () => {

@@ -31,6 +31,7 @@ export const ROUTES = {
   hcpVerification: "/auth/hcp/verification",
 
   patientAppointments: "/patient/appointments",
+  patientProfile: "/patient/profile",
   patientSearch: "/patient/search",
   patientRecords: "/patient/records",
   patientMessages: "/patient/messages",

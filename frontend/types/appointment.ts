@@ -46,6 +46,14 @@ export const ATTENDEE_NAME_MAX = 255;
 export type AppointmentHcp = {
   id: number;
   name: string;
+  /**
+   * A storage **path** (`profile-photos/7/ax.jpg`), not a URL - this is what
+   * `AppointmentResource` projects, unlike `HcpProfileResource` which sends
+   * `profile_photo_url`.
+   *
+   * Resolve it with `publicStorageUrl` from `@/lib/api/storage` before handing it to
+   * an `<img src>`; a bare path resolves against this app's own origin and fails.
+   */
   profile_photo: string | null;
   specialty: string | null;
 };

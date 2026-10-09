@@ -1,4 +1,8 @@
-import { ProfileCardSkeleton, ProfileSkeleton, skeletonKeys } from "../shared";
+import {
+  ProfileCardSkeleton,
+  ProfileSkeleton,
+  skeletonKeys,
+} from "@/components/features/shared/profile";
 
 function SkeletonField() {
   return (

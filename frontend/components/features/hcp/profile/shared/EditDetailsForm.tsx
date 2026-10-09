@@ -2,6 +2,7 @@
 
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
+import { ProfileEditDialog } from "@/components/features/shared/profile";
 import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,7 +16,6 @@ import {
   CONSULTATION_TYPE_LABELS,
   PROFILE_LIMITS,
 } from "@/types/hcp-profile-api";
-import { ProfileEditDialog } from "./ProfileEditDialog";
 
 const CONSULTATION_TYPES = Object.keys(CONSULTATION_TYPE_LABELS) as ApiConsultationType[];
 

@@ -1,3 +1,4 @@
+import { formatCalendarDate, formatEnumLabel } from "@/lib/format";
 import type {
   HcpAvailability,
   HcpAvailabilitySlot,
@@ -19,36 +20,10 @@ import type {
   ApiWorkingDay,
 } from "@/types/hcp-profile-api";
 
-function calendarDate(value: string | null | undefined): string | undefined {
-  if (!value) return undefined;
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
-  if (!match) return undefined;
-
-  const [, year, month, day] = match;
-  const parsed = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
-  if (Number.isNaN(parsed.getTime())) return undefined;
-
-  return parsed.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-}
-
-function titleCase(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
-}
-
+/** City and country as one line, dropping whichever half is missing. */
 function joinLocation(city: string | null | undefined, country: string | null | undefined) {
   const parts = [city, country].map((part) => part?.trim()).filter(Boolean);
   return parts.length > 0 ? parts.join(", ") : undefined;
-}
-
-/** `MALE` -> `Male`, for display. The enum stays uppercase on the wire. */
-function formatGender(gender: string | null | undefined): string | undefined {
-  if (!gender) return undefined;
-  return titleCase(gender);
 }
 
 export function toProfileIdentity(profile: ApiHcpProfile): HcpProfileIdentity {
@@ -60,9 +35,9 @@ export function toProfileIdentity(profile: ApiHcpProfile): HcpProfileIdentity {
     fullName: personal.full_name || undefined,
     specialty: professional.specialty || undefined,
     isVerified: profile.is_verified,
-    dateOfBirth: calendarDate(personal.birth_date),
+    dateOfBirth: formatCalendarDate(personal.birth_date),
     age: personal.age ?? undefined,
-    gender: formatGender(personal.gender),
+    gender: formatEnumLabel(personal.gender),
     phone: personal.phone ?? undefined,
     email: personal.email || undefined,
     location: joinLocation(professional.city, personal.country),
@@ -77,8 +52,8 @@ export function toProfessionalInformation(profile: ApiHcpProfile): HcpProfession
 
   return {
     fullName: personal.full_name || undefined,
-    dateOfBirth: calendarDate(personal.birth_date),
-    gender: formatGender(personal.gender),
+    dateOfBirth: formatCalendarDate(personal.birth_date),
+    gender: formatEnumLabel(personal.gender),
     phone: personal.phone ?? undefined,
     email: personal.email ?? undefined,
     specialty: professional.specialty || undefined,

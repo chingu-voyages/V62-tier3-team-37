@@ -5,8 +5,9 @@ import { type FC, type ReactNode, useCallback, useMemo, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { formatYears } from "@/lib/format";
 import type { HCP } from "@/types/hcp-directory";
-
+import type { BookingPatient } from "../Booking/booking-types";
 import { doctorInitials } from "../Booking/DoctorSummary";
 import { HCPBookingDialog } from "./HCPBookingDialog";
 
@@ -15,6 +16,8 @@ const DEFAULT_CURRENCY = "EGP";
 
 type HCPListItemProps = {
   hcp: HCP;
+  /** The signed-in patient, used by this row's booking dialog. */
+  patient: BookingPatient;
   onViewProfile?: (hcpId: string) => void;
 };
 
@@ -25,10 +28,6 @@ type HCPSummary = {
   location: string | null;
   experience: string | null;
   fee: string | null;
-};
-
-const formatYears = (years: number): string => {
-  return `${years} ${years === 1 ? "year" : "years"}`;
 };
 
 /** Pure view-model: all "what do we show?" decisions live here, not in JSX. */
@@ -75,12 +74,20 @@ type HCPAvatarProps = {
   isVerified?: boolean;
 };
 
-/** Squircle echoes the squared HealthHub logo; the verified mark sits on the photo, not in the name row. */
+/**
+ * Squircle echoes the squared HealthHub logo; the verified mark sits on the photo, not
+ * in the name row.
+ *
+ * `AvatarImage` is rendered only when there is a photo to render. With an empty `src`
+ * Radix still fires a load, fails, and swaps in the fallback - which looks identical
+ * to "this clinician has no photo" even when the real reason was a bad URL, which is
+ * exactly the bug that hid the photos in the first place.
+ */
 const HCPAvatar: FC<HCPAvatarProps> = ({ name, src, isVerified }) => {
   return (
     <div className="relative shrink-0">
       <Avatar className="size-16 rounded-2xl ring-1 ring-border">
-        <AvatarImage src={src} alt="" />
+        {src ? <AvatarImage src={src} alt="" /> : null}
         <AvatarFallback className="rounded-none bg-accent font-heading type-h3 text-primary">
           {doctorInitials(name)}
         </AvatarFallback>
@@ -138,7 +145,7 @@ const HCPRating: FC<HCPRatingProps> = ({ rating, reviewCount }) => {
  * Top band: who they are + what to do (identity, location, actions).
  * Bottom band: the facts patients compare (experience, fee, rating).
  */
-export const HCPListItem: FC<HCPListItemProps> = ({ hcp, onViewProfile }) => {
+export const HCPListItem: FC<HCPListItemProps> = ({ hcp, patient, onViewProfile }) => {
   const { summary, isBookingOpen, openBooking, closeBooking } = useHCPListItem(hcp);
 
   return (
@@ -206,7 +213,7 @@ export const HCPListItem: FC<HCPListItemProps> = ({ hcp, onViewProfile }) => {
         </dl>
       </article>
 
-      <HCPBookingDialog hcp={isBookingOpen ? hcp : null} onClose={closeBooking} />
+      <HCPBookingDialog hcp={isBookingOpen ? hcp : null} patient={patient} onClose={closeBooking} />
     </>
   );
 };

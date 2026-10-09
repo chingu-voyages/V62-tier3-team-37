@@ -2,23 +2,6 @@ export { EditAvailabilityForm } from "./EditAvailabilityForm";
 export { EditDetailsForm } from "./EditDetailsForm";
 export { EditProfileForm } from "./EditProfileForm";
 export { InsuranceAcceptedInput } from "./InsuranceAcceptedInput";
-export { PROFILE_CARD_SHELL_CLASS, ProfileCard } from "./ProfileCard";
-export { ProfileCardSkeleton } from "./ProfileCardSkeleton";
-export { ProfileDisclosure } from "./ProfileDisclosure";
-export { EditTrigger, ProfileEditDialog } from "./ProfileEditDialog";
-export { ProfileEyebrow } from "./ProfileEyebrow";
-export { hasProfileField, ProfileFieldRow } from "./ProfileFieldRow";
-export { ProfilePhotoControl } from "./ProfilePhotoControl";
-export { ProfilePill } from "./ProfilePill";
-export { PROFILE_SECTION_ERROR_MESSAGES, ProfileSectionError } from "./ProfileSectionError";
-export { ProfileSectionErrorBoundary } from "./ProfileSectionErrorBoundary";
-export {
-  ProfileSkeleton,
-  ProfileSkeletonCircle,
-  ProfileSkeletonLines,
-  skeletonKeys,
-} from "./ProfileSkeleton";
-export { SectionEmptyState } from "./SectionEmptyState";
 export { StatusBadge } from "./StatusBadge";
 export {
   VERIFICATION_REQUIREMENT_KEYS,

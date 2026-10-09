@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import type { FC } from "react";
 
-import { ProfilePhotoControl } from "@/components/features/hcp/profile/shared/ProfilePhotoControl";
+import { ProfilePhotoControl } from "@/components/features/shared/profile";
+import { formatYears } from "@/lib/format";
 import type { HcpProfileIdentity } from "@/types/hcp-profile";
 
 type ProfileOverviewProps = {
@@ -31,10 +32,6 @@ type DetailItem = {
 type DetailCandidate = Omit<DetailItem, "value" | "subValue"> & {
   value?: string;
   subValue?: string;
-};
-
-const formatYears = (years: number): string => {
-  return `${years} ${years === 1 ? "year" : "years"}`;
 };
 
 /** Headline and subline, including the empty-profile fallbacks. */

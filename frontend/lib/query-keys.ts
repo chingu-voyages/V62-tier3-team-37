@@ -46,3 +46,19 @@ export const appointmentKeys = {
   lists: () => [...appointmentKeys.all, "list"] as const,
   list: (page: number) => [...appointmentKeys.lists(), { page }] as const,
 };
+
+/**
+ * The clinician's appointments, kept under their own keys.
+ *
+ * The two roles read the same `AppointmentResource` but from different endpoints
+ * (`/patient/appointments` vs `/hcp/appointments`), and a clinician's row is not a
+ * patient's row - it carries the attendee's identity and not "(you)". Sharing the
+ * keys would mean one role's cached list could be rendered for the other, so the
+ * prefix is deliberately different even though the record type is the same.
+ */
+export const hcpAppointmentKeys = {
+  all: ["hcp", "appointments"] as const,
+  details: (id: number | string) => [...hcpAppointmentKeys.all, "detail", id] as const,
+  lists: () => [...hcpAppointmentKeys.all, "list"] as const,
+  list: (page: number) => [...hcpAppointmentKeys.lists(), { page }] as const,
+};

@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLogoutMutation } from "@/hooks/use-auth-mutations";
+import { publicStorageUrl } from "@/lib/api/storage";
 import { userDisplayName, userInitials, userProfileHref } from "@/lib/auth/display";
 import { ROUTES } from "@/lib/constants/routes";
 import { cn } from "@/lib/utils";
@@ -34,7 +35,10 @@ export function UserMenu({ user, withMenu = true }: UserMenuProps) {
   const displayName = userDisplayName(user);
   const initials = userInitials(user);
   const email = user?.email ?? "";
-  const photo = user?.profile_photo_path;
+  // `/api/user` answers with the stored path, not a URL - the API origin has to be
+  // prepended before the browser can load it. `publicStorageUrl` is the same
+  // helper the profile pages use, so all three avatars resolve alike.
+  const photo = publicStorageUrl(user?.profile_photo_path);
 
   const identity = (
     <>

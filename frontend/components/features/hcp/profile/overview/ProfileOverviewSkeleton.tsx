@@ -1,4 +1,8 @@
-import { ProfileSkeleton, ProfileSkeletonCircle, skeletonKeys } from "../shared";
+import {
+  ProfileSkeleton,
+  ProfileSkeletonCircle,
+  skeletonKeys,
+} from "@/components/features/shared/profile";
 
 export function ProfileOverviewSkeleton() {
   return (

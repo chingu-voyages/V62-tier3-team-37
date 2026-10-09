@@ -1,6 +1,7 @@
 "use client";
 
 import { SlidersHorizontal } from "lucide-react";
+import { Pagination } from "@/components/features/shared/pagination/Pagination";
 import {
   Select,
   SelectContent,
@@ -10,16 +11,18 @@ import {
 } from "@/components/ui/select";
 import type { HcpSort } from "@/lib/api/patient-hcps-client";
 import type { HCP, HCPFilters } from "@/types/hcp-directory";
+import type { BookingPatient } from "../Booking/booking-types";
 import { HCPDirectoryFilters, hasAnyFilter } from "./HCPDirectoryFilters";
 import { HCPDirectoryHeader } from "./HCPDirectoryHeader";
 import { HCPEmptyState } from "./HCPEmptyState";
 import { HCPList } from "./HCPList";
 import { HCPListSkeleton } from "./HCPListSkeleton";
-import { HCPPagination } from "./HCPPagination";
 
 type HCPDirectoryProps = {
   /** The current page of results, as resolved by the API. */
   hcps: HCP[];
+  /** The signed-in patient, forwarded untouched to each row's booking dialog. */
+  patient: BookingPatient;
   /** First load: nothing to show yet. */
   isLoading?: boolean;
   /** A later page or filter is in flight; the current rows stay visible. */
@@ -45,6 +48,7 @@ type HCPDirectoryProps = {
  */
 export function HCPDirectory({
   hcps,
+  patient,
   isLoading = false,
   isFetching = false,
   total,
@@ -120,10 +124,10 @@ export function HCPDirectory({
             </div>
           </div>
 
-          <HCPList hcps={hcps} onViewProfile={onViewProfile} />
+          <HCPList hcps={hcps} patient={patient} onViewProfile={onViewProfile} />
 
           {totalPages > 1 ? (
-            <HCPPagination
+            <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={onPageChange ?? (() => {})}

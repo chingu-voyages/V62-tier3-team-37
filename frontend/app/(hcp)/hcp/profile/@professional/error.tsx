@@ -1,6 +1,6 @@
 "use client";
 
-import { ProfileSectionErrorBoundary } from "@/components/features/hcp/profile/shared";
+import { ProfileSectionErrorBoundary } from "@/components/features/shared/profile";
 
 export default function ProfessionalError({
   error,

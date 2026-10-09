@@ -1,9 +1,11 @@
 /**
  * Auth domain types.
  *
- * These live in `types/` rather than in a component so that `lib/`, `store/`
+ * These live in `types/` rather than in a component so that `lib/`, `store()`
  * and `hooks/` can depend on them without importing a `.tsx` file.
  */
+
+import type { ApiGender } from "@/types/profile-api";
 
 /**
  * The two account types a visitor can sign up as.
@@ -54,6 +56,11 @@ export const GENDER_OPTIONS: { value: Gender; label: string }[] = GENDER_ORDER.m
  * Mirrors what Laravel serialises, which includes `first_name` / `last_name`
  * separately (there is no combined `name` on the API). Everything is nullable
  * because a partial profile is legitimate.
+ *
+ * `birth_date` and `gender` are here because the endpoint already sends them - the
+ * `User` model hides only `password` and `remember_token` - and the booking
+ * identity card reads them. They were absent from this type, which is why the card
+ * fell back to "Not added" for every patient.
  */
 export type AuthUser = {
   id: number | string;
@@ -61,6 +68,10 @@ export type AuthUser = {
   last_name?: string | null;
   email?: string | null;
   role?: string | null;
+  /** `YYYY-MM-DD`. */
+  birth_date?: string | null;
+  /** `UserGender` as serialised: upper-cased, not the app's lowercase `Gender`. */
+  gender?: ApiGender | null;
   email_verified_at?: string | null;
   profile_photo_path?: string | null;
 } | null;

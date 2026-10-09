@@ -13,9 +13,9 @@ type ProfileSectionErrorProps = {
  * Error presentation for a single profile section. Keeps the failure contained so
  * sibling sections stay visible, and never surfaces the raw error.
  *
- * Server Component — it only becomes interactive through the `onRetry` prop, so
- * the owning `error.tsx` supplies the client directive and this file stays
- * reusable from anywhere.
+ * Server Component — it only becomes interactive through the `onRetry` prop, so the
+ * owning `error.tsx` supplies the client directive and this file stays reusable
+ * from anywhere.
  */
 export function ProfileSectionError({
   message,
@@ -44,15 +44,27 @@ export function ProfileSectionError({
 }
 
 /**
- * The five `error.tsx` files were identical apart from one message string, so the
- * wording lived in five places and could drift. Copy changes now touch one map.
+ * Per-section failure copy for both profile surfaces.
+ *
+ * The ten `error.tsx` files across the HCP and patient routes were identical
+ * apart from one message string, so the wording lived in ten places and could
+ * drift. Copy changes now touch one map - and a slot name that is not in it is a
+ * type error, not a silently blank section.
+ *
+ * `overview` is shared: both roles' identity panel fails the same way.
  */
 export const PROFILE_SECTION_ERROR_MESSAGES = {
   overview: "We couldn't load your profile information.",
+
+  // HCP sections.
   verification: "We couldn't load your verification status.",
   professional: "We couldn't load your professional details.",
   details: "We couldn't load your professional preferences.",
   availability: "We couldn't load your availability.",
+
+  // Patient sections.
+  health: "We couldn't load your health profile.",
+  allergies: "We couldn't load your allergies.",
 } as const satisfies Record<string, string>;
 
 export type ProfileSectionErrorMessages = typeof PROFILE_SECTION_ERROR_MESSAGES;

@@ -7,9 +7,21 @@ import { useHcpsQuery } from "@/hooks/use-hcps-query";
 import { HCP_PAGE_SIZE, type HcpSort } from "@/lib/api/patient-hcps-client";
 import type { HCPFilters } from "@/types/hcp-directory";
 
+import type { BookingPatient } from "../Booking/booking-types";
+
 const SORTS: HcpSort[] = ["best", "name", "rating", "experience", "price"];
 
 const FILTER_KEYS = ["search", "specialty", "city", "area", "insurance"] as const;
+
+type PatientSearchProps = {
+  /**
+   * The signed-in patient's own details, resolved on the server by the page.
+   *
+   * A prop rather than a query: the value is already in hand, and the identity card
+   * must never render as "not added" just because a dialog has not finished loading.
+   */
+  patient: BookingPatient;
+};
 
 /**
  * Filter inputs, page and sort live in the URL.
@@ -17,7 +29,7 @@ const FILTER_KEYS = ["search", "specialty", "city", "area", "insurance"] as cons
  * A result set is then shareable and survives a refresh, and the query key is
  * derived from one source of truth rather than two that can disagree.
  */
-export function PatientSearch() {
+export function PatientSearch({ patient }: PatientSearchProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -75,6 +87,7 @@ export function PatientSearch() {
     <div className="flex w-full h-full flex-col gap-25">
       <HCPDirectory
         hcps={query.data?.hcps ?? []}
+        patient={patient}
         isLoading={query.isPending}
         isFetching={query.isFetching}
         total={query.data?.total}

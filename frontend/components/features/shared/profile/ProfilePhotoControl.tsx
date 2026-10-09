@@ -5,15 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  useDeleteProfilePhotoMutation,
-  useUploadProfilePhotoMutation,
-} from "@/hooks/use-hcp-profile-mutations";
+import { useUploadProfilePhotoMutation } from "@/hooks/use-profile-photo-mutations";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { userInitials } from "@/lib/auth/display";
 import { cn } from "@/lib/utils";
 import { formatPhotoSize, validateProfilePhoto } from "@/lib/validation/photo";
-import { PHOTO_ACCEPT, PROFILE_LIMITS } from "@/types/hcp-profile-api";
+import { PROFILE_PHOTO_ACCEPT, PROFILE_PHOTO_MAX_BYTES } from "@/types/profile-api";
 
 type ProfilePhotoControlProps = {
   photoUrl?: string;
@@ -30,15 +27,32 @@ type ProfilePhotoControlProps = {
 };
 
 /**
- * Upload, replace and remove the profile photo.
+ * What the server confirmed after the last successful upload.
+ *
+ * `seenProp` records the `photoUrl` the upload was confirmed against, which is how
+ * a refreshed prop is told apart from the echo: if the server sends something
+ * different, the server wins.
+ */
+type ConfirmedPhoto = {
+  url: string;
+  seenProp: string | undefined;
+};
+
+/**
+ * Choose and replace the profile photo.
  *
  * A picker and a request are different things, so the control has two states.
  *
  * - **Nothing staged** - `Change` when a photo is stored, otherwise
- *   `Upload photo`. `Remove` appears alongside `Change`.
- * - **A file is staged** - the avatar previews it and `Change` becomes
- *   `Confirm`, which is the only thing that sends the request. `Remove` stays
- *   available and drops the staged file.
+ *   `Upload photo`, and nothing else.
+ * - **A file is staged** - the avatar previews it and `Change` becomes `Confirm`,
+ *   the only thing that sends the request. `Discard` sits beside it and drops the
+ *   unsaved file.
+ *
+ * The destructive action belongs to the pending pick, not to the stored photo, so
+ * it exists only in the staged state. There is no delete: a photo is replaced, not
+ * removed, and a red action parked next to `Change` put a delete one misclick away
+ * from choosing a new picture.
  *
  * The avatar shows the staged file in place of the stored photo, with no
  * "preview" badge: the visible change *is* the signal, and a label describing an
@@ -65,12 +79,26 @@ export function ProfilePhotoControl({
   const inputRef = useRef<HTMLInputElement>(null);
   const [stagedFile, setStagedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState<ConfirmedPhoto | null>(null);
 
   const upload = useUploadProfilePhotoMutation();
-  const remove = useDeleteProfilePhotoMutation();
-  const pending = upload.isPending || remove.isPending;
+  const pending = upload.isPending;
 
-  const hasPhoto = Boolean(photoUrl);
+  /*
+   * The endpoint answers with the stored photo's URL, so a save does not have to
+   * wait for the refresh to show up: the avatar can switch to the new image the
+   * moment the write lands. The refresh still runs - it is what reconciles every
+   * other surface that reads the user (navbar avatar, the other profile slots) -
+   * but this card no longer renders the old photo in the meantime.
+   *
+   * The echo is scoped to the `photoUrl` it was confirmed against: once the server
+   * sends a different value, the prop is the newer truth and the local copy is
+   * dropped. Derived rather than cleared in an effect, so there is no render in
+   * between showing both.
+   */
+  const storedPhoto = confirmed && confirmed.seenProp === photoUrl ? confirmed.url : photoUrl;
+
+  const hasPhoto = Boolean(storedPhoto);
 
   // Object URLs are not released with the component, so the live one is tracked
   // in a ref purely to revoke it on unmount.
@@ -114,8 +142,10 @@ export function ProfilePhotoControl({
     if (!stagedFile || pending) return;
 
     upload.mutate(stagedFile, {
-      onSuccess: () => {
-        // Only now does the stored photo become the avatar's source.
+      onSuccess: (response) => {
+        setConfirmed({ url: response.data.profile_photo_url, seenProp: photoUrl });
+        // The stored photo is now real, so the local preview has nothing left to
+        // stand in for.
         replacePreview(null);
         toast.success("Profile photo updated.");
       },
@@ -126,30 +156,19 @@ export function ProfilePhotoControl({
     });
   }
 
-  function handleRemove() {
+  /** Drop the unsaved file. Never touches what is stored. */
+  function handleDiscard() {
     if (pending) return;
 
-    // From the staged state this discards the unsaved file; otherwise it deletes
-    // the stored photo.
-    if (stagedFile) {
-      replacePreview(null);
-      toast("Change discarded.");
-      return;
-    }
-
-    remove.mutate(undefined, {
-      onSuccess: () => {
-        replacePreview(null);
-        toast.success("Profile photo removed.");
-      },
-      onError: (cause) => toast.error(getApiErrorMessage(cause)),
-    });
+    replacePreview(null);
+    toast("Change discarded.");
   }
 
-  // A staged file previews in place of the stored photo. `AvatarFallback` only
-  // renders when the image fails or is absent, so the initials stay as a safety
-  // net rather than being drawn behind the preview.
-  const shownPhoto = previewUrl ?? photoUrl;
+  // A staged file previews in place of the stored photo, and the stored photo is
+  // whichever of the server's value and the just-confirmed one is current.
+  // `AvatarFallback` only renders when the image fails or is absent, so the
+  // initials stay as a safety net rather than being drawn behind the preview.
+  const shownPhoto = previewUrl ?? storedPhoto;
   const uploading = upload.isPending;
   const onPrimary = tone === "primary";
 
@@ -179,7 +198,7 @@ export function ProfilePhotoControl({
           <input
             ref={inputRef}
             type="file"
-            accept={PHOTO_ACCEPT}
+            accept={PROFILE_PHOTO_ACCEPT}
             onChange={handleFile}
             className="sr-only"
             aria-label="Choose a profile photo"
@@ -223,7 +242,11 @@ export function ProfilePhotoControl({
               </Button>
             )}
 
-            {hasPhoto || stagedFile ? (
+            {stagedFile ? (
+              // The destructive action belongs to the staged file, so it sits beside
+              // Confirm - the one moment there is something to throw away. With only a
+              // stored photo there is nothing pending, and offering a red action next to
+              // "Change" put a delete one misclick away from picking a new picture.
               <Button
                 type="button"
                 variant="ghost"
@@ -233,11 +256,11 @@ export function ProfilePhotoControl({
                     ? "text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground"
                     : "text-destructive hover:bg-destructive/10"
                 }
-                onClick={handleRemove}
+                onClick={handleDiscard}
                 disabled={pending}
               >
                 <Trash2 className="mr-1.5 size-3.5" aria-hidden="true" />
-                {stagedFile ? "Discard" : remove.isPending ? "Removing…" : "Remove"}
+                Discard
               </Button>
             ) : null}
           </div>
@@ -260,7 +283,7 @@ export function ProfilePhotoControl({
                 onPrimary ? "text-primary-foreground/80" : "text-muted-foreground",
               )}
             >
-              JPG, PNG or WebP up to {formatPhotoSize(PROFILE_LIMITS.photoBytes)}.
+              JPG, PNG or WebP up to {formatPhotoSize(PROFILE_PHOTO_MAX_BYTES)}.
             </p>
           )}
         </div>

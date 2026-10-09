@@ -2,9 +2,10 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { HCPPagination as HCPPaginationModel } from "@/types/hcp-directory";
 
-type HCPPaginationProps = HCPPaginationModel & {
+type PaginationProps = {
+  currentPage: number;
+  totalPages: number;
   onPageChange: (page: number) => void;
   disabled?: boolean;
 };
@@ -38,14 +39,20 @@ function getPageNumbers(current: number, total: number): PageToken[] {
   return pages;
 }
 
-export function HCPPagination({
-  currentPage,
-  totalPages,
-  onPageChange,
-  disabled,
-}: HCPPaginationProps) {
+/**
+ * Page numbers for any list.
+ *
+ * Shared rather than owned by the doctor directory: the directory, the patient's
+ * appointments and the clinician's schedule all page a server-side result set, and
+ * living in one of those features would mean the other two import across a feature
+ * boundary for a control with no domain in it.
+ *
+ * Purely presentational - it holds no page state, so the same component serves all
+ * three and a "which page am I on" answer always comes from the URL or the query.
+ */
+export function Pagination({ currentPage, totalPages, onPageChange, disabled }: PaginationProps) {
   // `getPageNumbers` is pure and cheap, and the early return stays above any
-  // future hook — a `useMemo` here would violate the rules of hooks.
+  // future hook - a `useMemo` here would violate the rules of hooks.
   const pageNumbers = getPageNumbers(currentPage, totalPages);
 
   if (totalPages <= 1) return null;

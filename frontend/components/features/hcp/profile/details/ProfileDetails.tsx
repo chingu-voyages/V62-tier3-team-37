@@ -1,9 +1,14 @@
 import { InfoIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { EditDetailsForm } from "@/components/features/hcp/profile/shared/EditDetailsForm";
+import {
+  ProfileCard,
+  ProfileEyebrow,
+  ProfilePill,
+  SectionEmptyState,
+} from "@/components/features/shared/profile";
 import type { HcpProfessionalPreferences } from "@/types/hcp-profile";
 import { type ApiConsultationType, CONSULTATION_TYPE_LABELS } from "@/types/hcp-profile-api";
-import { ProfileCard, ProfileEyebrow, ProfilePill, SectionEmptyState } from "../shared";
 
 type ProfileDetailsProps = {
   preferences?: HcpProfessionalPreferences;

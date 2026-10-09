@@ -3,7 +3,7 @@ import {
   ProfileSkeleton,
   ProfileSkeletonLines,
   skeletonKeys,
-} from "../shared";
+} from "@/components/features/shared/profile";
 
 function SkeletonPills({ count }: { count: number }) {
   return (

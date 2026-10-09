@@ -3,6 +3,13 @@
 import { CalendarClock, Clock, Loader2, Stethoscope, UserRound, XCircle } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
+import {
+  appointmentDate,
+  appointmentStatusLabel,
+  appointmentTime,
+  attendeeName,
+  canManageAppointment,
+} from "@/components/features/shared/appointments";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,25 +21,18 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton, skeletonKeys } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useHcpAvailabilityQuery } from "@/hooks/use-hcps-query";
 import {
   useCancelAppointmentMutation,
   useRescheduleAppointmentMutation,
-} from "@/hooks/use-appointment-mutations";
-import { useAppointmentQuery } from "@/hooks/use-appointments-query";
-import { useHcpAvailabilityQuery } from "@/hooks/use-hcps-query";
+} from "@/hooks/use-patient-appointment-mutations";
+import { usePatientAppointmentQuery } from "@/hooks/use-patient-appointments-query";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { startOfDay, toIsoDate } from "@/lib/booking/schedule";
 import { slotToIsoTimestamp } from "@/lib/booking/slots";
 import { formatClockTime, formatLongDate } from "@/lib/format";
 import type { Appointment } from "@/types/appointment";
 import { AVAILABILITY_RANGE_MAX_DAYS } from "@/types/appointment";
-
-import {
-  appointmentDate,
-  appointmentStatusLabel,
-  appointmentTime,
-  canManageAppointment,
-} from "./appointment-parts";
 
 /* -------------------------------------------------------------------------- */
 /* Detail                                                                      */
@@ -58,7 +58,7 @@ export function AppointmentDetailDialog({
   onOpenChange,
   onCancel,
 }: DetailDialogProps) {
-  const query = useAppointmentQuery(appointmentId);
+  const query = usePatientAppointmentQuery(appointmentId);
   const appointment = query.data;
 
   return (
@@ -483,17 +483,16 @@ function FreeSlotPicker({ dates, selected, onSelect }: FreeSlotPickerProps) {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Who the visit is for.
+ * Who the visit is for, from this patient's point of view.
  *
- * A SELF booking is attended by the patient themselves; an OTHER booking is attended
- * by the named attendee. Showing the patient's own name for someone else's visit
- * would be actively misleading, so the branch is explicit.
+ * `attendeeName` resolves the SELF/OTHER branch; the "(you)" suffix is added here
+ * because only this screen has that relationship to the attendee - a clinician
+ * looking at the same record has no such claim.
  */
 function attendeeLabel(appointment: Appointment): string {
-  if (appointment.booking_for === "OTHER" && appointment.attendee) {
-    return `${appointment.attendee.first_name} ${appointment.attendee.last_name}`;
-  }
-  return `${appointment.patient.name} (you)`;
+  return appointment.booking_for === "SELF"
+    ? `${attendeeName(appointment)} (you)`
+    : attendeeName(appointment);
 }
 
 function Detail({

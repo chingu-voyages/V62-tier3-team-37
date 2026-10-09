@@ -2,6 +2,7 @@
 
 import { Info } from "lucide-react";
 import { useState } from "react";
+import { ProfileEditDialog } from "@/components/features/shared/profile";
 import { Callout } from "@/components/ui/callout";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -14,7 +15,6 @@ import {
   type UpdateHcpProfileInput,
 } from "@/types/hcp-profile-api";
 import { InsuranceAcceptedInput } from "./InsuranceAcceptedInput";
-import { ProfileEditDialog } from "./ProfileEditDialog";
 
 type EditableProfile = {
   firstName: string;

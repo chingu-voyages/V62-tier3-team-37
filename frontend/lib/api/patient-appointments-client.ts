@@ -1,4 +1,5 @@
-import { ApiError, apiRequest } from "@/lib/api/client";
+import { APPOINTMENTS_PAGE_SIZE } from "@/lib/api/appointments-contract";
+import { apiRequest } from "@/lib/api/client";
 import type {
   Appointment,
   AppointmentPageResponse,
@@ -17,7 +18,11 @@ const APPOINTMENTS_ENDPOINT = "/api/patient/appointments";
  * give the same page anyway - it is passed explicitly so the client and the
  * controller cannot drift apart unnoticed.
  */
-export const APPOINTMENTS_PAGE_SIZE = 15;
+export {
+  APPOINTMENTS_PAGE_SIZE,
+  isSlotConflict,
+  SLOT_CONFLICT_STATUS,
+} from "@/lib/api/appointments-contract";
 
 /** One page of the patient's own appointments. */
 export type AppointmentsPage = {
@@ -135,9 +140,7 @@ export function createAppointment(
  * Worth naming because the recovery differs from every other failure: the form
  * values are fine, the *slot* is gone, so the caller refreshes availability
  * rather than re-showing a validation error.
+ *
+ * Re-exported from the shared contract so both role clients speak about the same
+ * conflict; defined there, not here.
  */
-export const SLOT_CONFLICT_STATUS = 409;
-
-export function isSlotConflict(error: unknown): error is ApiError {
-  return error instanceof ApiError && error.status === SLOT_CONFLICT_STATUS;
-}

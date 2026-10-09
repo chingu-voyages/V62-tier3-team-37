@@ -6,9 +6,19 @@
  * `professional_information`, …); the UI wants flat, display-ready shapes.
  * `lib/dal/hcp-mappers.ts` is the only place that translates between them, so a
  * backend rename touches one mapper instead of five components.
+ *
+ * Anything both roles share - the gender enum, the photo limits - comes from
+ * `@/types/profile-api`, so the patient profile and this module cannot disagree
+ * about what the API accepts.
  */
 
-export type ApiGender = "MALE" | "FEMALE";
+import type { ApiEnvelope, ApiGender } from "./profile-api";
+
+/**
+ * Re-exported rather than redefined: the patient profile sends and receives the
+ * same enum, and two declarations of `ApiGender` could drift.
+ */
+export type { ApiEnvelope, ApiGender };
 
 export type ApiConsultationType = "IN_PERSON" | "VIDEO" | "PHONE";
 
@@ -101,18 +111,11 @@ export type ApiHcpProfile = {
   verification: ApiVerification;
 };
 
-/** Every mutating endpoint answers with `{ message, data }`. */
-export type ApiEnvelope<T> = {
-  message?: string;
-  data: T;
-};
-
+/**
+ * The envelope and the photo response come from `@/types/profile-api`: both are
+ * the API's conventions, shared with the patient profile rather than owned here.
+ */
 export type ApiHcpProfileResponse = ApiEnvelope<ApiHcpProfile>;
-
-export type ApiProfilePhotoResponse = ApiEnvelope<{
-  profile_photo_path: string;
-  profile_photo_url: string;
-}>;
 
 export type UpdateHcpProfileInput = {
   first_name?: string;
@@ -160,13 +163,10 @@ export const PROFILE_LIMITS = {
   languageLength: 50,
   consultationTypes: 3,
   availabilitySlots: 35,
-  photoBytes: 5 * 1024 * 1024,
 } as const;
 
 /** Insurers offered in the editor. Kept as suggestions, not a closed set. */
 export const COMMON_INSURANCES = ["Medicare", "AXA", "Allianz", "Cigna", "BUPA"] as const;
-
-export const PHOTO_ACCEPT = ".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp";
 
 export const CONSULTATION_TYPE_LABELS: Record<ApiConsultationType, string> = {
   IN_PERSON: "In person",

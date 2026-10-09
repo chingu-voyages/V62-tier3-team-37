@@ -3,25 +3,29 @@
 import { CalendarPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import {
+  AppointmentCard,
+  AppointmentCount,
+  AppointmentListSkeleton,
+  AppointmentsEmptyState,
+  AppointmentsErrorState,
+  AppointmentViewFilter,
+  appointmentView,
+  BookedForSomeoneElseChip,
+  Pagination,
+} from "@/components/features/shared/appointments";
 import { Button } from "@/components/ui/button";
-import { useAppointmentsQuery } from "@/hooks/use-appointments-query";
+import { usePatientAppointmentsQuery } from "@/hooks/use-patient-appointments-query";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { APPOINTMENTS_PAGE_SIZE } from "@/lib/api/patient-appointments-client";
-import { APPOINTMENT_VIEWS, type Appointment, type AppointmentView } from "@/types/appointment";
+import { ROUTES } from "@/lib/constants/routes";
+import type { Appointment, AppointmentView } from "@/types/appointment";
 
-import { HCPPagination } from "../HCPDirectory/HCPPagination";
 import {
   AppointmentDetailDialog,
   CancelAppointmentDialog,
   RescheduleDialog,
 } from "./AppointmentDialogs";
-import {
-  AppointmentCard,
-  AppointmentListSkeleton,
-  AppointmentsEmptyState,
-  AppointmentsErrorState,
-  appointmentView,
-} from "./appointment-parts";
 
 /**
  * "Your appointments", read from `GET /patient/appointments`.
@@ -41,6 +45,10 @@ import {
  *
  * A *page* fetch in flight keeps the current rows visible (`keepPreviousData` in the
  * query), so only the first load shows a skeleton.
+ *
+ * The card, the status chip, the view filter, the empty/error states and the pager
+ * are shared with the clinician's schedule; only the subject of the card and the
+ * actions on it are this screen's business.
  */
 export function PatientAppointments() {
   const router = useRouter();
@@ -51,7 +59,7 @@ export function PatientAppointments() {
   const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
 
-  const query = useAppointmentsQuery(page);
+  const query = usePatientAppointmentsQuery(page);
 
   const grouped = useMemo(() => {
     const appointments = query.data?.appointments ?? [];
@@ -71,7 +79,7 @@ export function PatientAppointments() {
   const isFirstLoad = query.isPending;
 
   function browseDoctors() {
-    router.push("/patient/search");
+    router.push(ROUTES.patientSearch);
   }
 
   return (
@@ -95,48 +103,37 @@ export function PatientAppointments() {
         </Button>
       </div>
 
-      <fieldset className="border-0 p-0">
-        <legend className="sr-only">Filter appointments</legend>
-        <div className="flex flex-wrap gap-2">
-          {APPOINTMENT_VIEWS.map((item) => {
-            const selected = view === item.value;
-            return (
-              <Button
-                key={item.value}
-                type="button"
-                size="sm"
-                variant={selected ? "default" : "outline"}
-                aria-pressed={selected}
-                onClick={() => {
-                  setView(item.value);
-                  // Page 4 of the previous view means nothing against a different one.
-                  setPage(1);
-                }}
-              >
-                {item.label}
-              </Button>
-            );
-          })}
-        </div>
-      </fieldset>
+      <AppointmentViewFilter
+        value={view}
+        onChange={(next) => {
+          setView(next);
+          // Page 4 of the previous view means nothing against a different one.
+          setPage(1);
+        }}
+      />
 
       {isFirstLoad ? (
         <AppointmentListSkeleton count={Math.min(APPOINTMENTS_PAGE_SIZE, 4)} />
       ) : query.isError ? (
         <AppointmentsErrorState
+          subject="your appointments"
           message={getApiErrorMessage(query.error, "Check your connection and try again.")}
           isRetrying={query.isFetching}
           onRetry={() => void query.refetch()}
         />
       ) : grouped.length === 0 ? (
-        <AppointmentsEmptyState view={view} onBrowseDoctors={browseDoctors} />
+        <AppointmentsEmptyState
+          view={view}
+          noun="appointments"
+          action={{ label: "Find a doctor", onClick: browseDoctors }}
+        />
       ) : (
         <>
-          <p className="type-label font-medium text-primary" aria-live="polite">
-            {grouped.length} {view === "upcoming" ? "upcoming" : "past"} appointment
-            {grouped.length === 1 ? "" : "s"}
-            {query.isFetching && !isFirstLoad ? <span className="sr-only">, updating</span> : null}
-          </p>
+          <AppointmentCount
+            count={grouped.length}
+            view={view}
+            isUpdating={query.isFetching && !isFirstLoad}
+          />
 
           {/*
             Paging is the API's, not ours: `index` returns 15 rows and the split into
@@ -149,6 +146,11 @@ export function PatientAppointments() {
               <li key={appointment.id}>
                 <AppointmentCard
                   appointment={appointment}
+                  title={appointment.hcp.name}
+                  subtitle={appointment.hcp.specialty ?? undefined}
+                  badges={
+                    appointment.booking_for === "OTHER" ? <BookedForSomeoneElseChip /> : undefined
+                  }
                   onView={() => setDetailId(appointment.id)}
                   onReschedule={() => setRescheduleTarget(appointment)}
                   onCancel={() => setCancelTarget(appointment)}
@@ -157,7 +159,7 @@ export function PatientAppointments() {
             ))}
           </ul>
 
-          <HCPPagination
+          <Pagination
             currentPage={query.data?.currentPage ?? page}
             totalPages={query.data?.totalPages ?? 1}
             onPageChange={setPage}

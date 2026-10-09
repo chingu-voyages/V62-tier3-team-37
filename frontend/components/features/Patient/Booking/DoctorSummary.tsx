@@ -15,7 +15,10 @@ export function DoctorSummary({ doctor, location }: DoctorSummaryProps) {
     <article className="rounded-2xl bg-background p-4 shadow-card ring-1 ring-border/70">
       <div className="flex items-center gap-3">
         <Avatar className="size-14 shrink-0">
-          <AvatarImage src={doctor.avatar} alt="" />
+          {/* Only rendered when there is a photo: an empty `src` would fail to load
+              and fall back to the initials anyway, hiding the difference between
+              "no photo" and "broken photo URL". */}
+          {doctor.avatar ? <AvatarImage src={doctor.avatar} alt="" /> : null}
           <AvatarFallback className="bg-accent font-heading text-lg text-primary">
             {doctorInitials(doctor.fullName)}
           </AvatarFallback>

@@ -1,4 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
+import { publicStorageUrl } from "@/lib/api/storage";
 import type { HcpAvailabilityEnvelope, HcpAvailabilityResponse } from "@/types/appointment";
 import type { HCP, HCPFilters } from "@/types/hcp-directory";
 
@@ -130,7 +131,13 @@ function mapApiHcp(api: ApiHcp): HCP {
 
   return {
     id: String(api.id),
-    avatar: api.profile_photo,
+    // `HcpListingResource` sends the *storage path* (`profile-photos/7/ax.jpg`), not a
+    // URL - unlike `HcpProfileResource`, which sends `profile_photo_url`. Passing the
+    // path straight to an `<img src>` resolves it against this app's own origin, the
+    // request 404s, and Radix silently falls back to initials, so a clinician with a
+    // perfectly good photo still looked anonymous. Resolved once here, at the
+    // boundary, so every consumer of `avatar` gets a loadable URL.
+    avatar: publicStorageUrl(api.profile_photo),
     fullName: api.name ?? "",
     title: api.specialty_label ?? api.specialty ?? "",
     verified: api.verified ?? false,
