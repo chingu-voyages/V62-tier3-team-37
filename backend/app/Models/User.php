@@ -8,11 +8,11 @@ use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -83,12 +83,21 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function hcpVerification(): HasOne
     {
-    return $this->hasOne(HcpVerification::class);
+        return $this->hasOne(HcpVerification::class);
     }
 
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class);
     }
-    
+
+    public function patientAppointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'patient_user_id');
+    }
+
+    public function hcpAppointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'hcp_user_id');
+    }
 }
