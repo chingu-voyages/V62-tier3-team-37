@@ -45,9 +45,8 @@ export function toIsoDate(date: Date): string {
  * One entry per grid cell of `month`, padded at the front so week 1 starts under
  * its weekday.
  *
- * Blanks carry the ISO date they would have occupied, so a caller can key on it
- * instead of the array index - which changes when the same month is re-rendered
- * from a different weekday offset.
+ * Blanks stand in for the tail of the previous month; `monthCellKeys` turns the
+ * position into a stable, unique key.
  */
 export function monthCells(month: Date): (number | null)[] {
   const firstOfMonth = startOfMonth(month);
@@ -57,11 +56,23 @@ export function monthCells(month: Date): (number | null)[] {
   return [...leadingBlanks, ...Array.from({ length: dayCount }, (_, index) => index + 1)];
 }
 
-/** A stable key for each cell of `monthCells`, blanks included. */
+/**
+ * A stable key for each cell of `monthCells`, blanks included.
+ *
+ * Blanks are keyed by the ISO date they stand in for - the tail of the previous
+ * month - so no two cells share a key and the key still survives the leading
+ * count changing between months. Never the array index.
+ */
 export function monthCellKeys(month: Date): string[] {
-  return monthCells(month).map((day) =>
+  const firstOfMonth = startOfMonth(month);
+  const leadingBlanks = firstOfMonth.getDay();
+
+  return monthCells(month).map((day, index) =>
     day === null
-      ? `blank-${toIsoDate(startOfMonth(month))}`
+      ? // A negative day rolls back into the previous month.
+        toIsoDate(
+          new Date(firstOfMonth.getFullYear(), firstOfMonth.getMonth(), index - leadingBlanks + 1),
+        )
       : toIsoDate(new Date(month.getFullYear(), month.getMonth(), day)),
   );
 }

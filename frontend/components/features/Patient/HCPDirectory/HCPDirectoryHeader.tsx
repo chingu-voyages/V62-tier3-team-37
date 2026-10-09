@@ -7,7 +7,7 @@ export function HCPDirectoryHeader() {
   const [_imageFailed, setImageFailed] = useState(false);
 
   return (
-    <div className="flex lg:max-w-7xl flex-row items-center bg-primary px-5 py-3 md:py-2 md:justify-center gap-5 lg:gap-15 xl:gap-25 md:flex-row-reverse md:items-center rounded-4xl pointer-none:">
+    <div className="flex lg:max-w-7xl flex-row items-center bg-primary px-5 py-3 md:py-2 md:justify-center gap-5 xl:gap-15 md:flex-row-reverse md:items-center rounded-4xl pointer-none:">
       <div className="max-w-2xl">
         <p className="type-label font-medium text-primary-foreground">Find a Doctor</p>
         <h1 className="mt-2 type-h4 md:type-h1 text-accent">

@@ -22,11 +22,10 @@ type HCPBookingDialogProps = {
  * the optional clinician the caller wants to be told about once the backend has
  * confirmed a booking.
  *
- * It deliberately does **not** write to `useAppointmentStore`. That store is a
- * client-side list for a screen that has no appointments endpoint yet, so feeding it
- * a confirmed booking would show the visit in a list the API cannot vouch for. When
- * an appointments list query exists, the created appointment should come from the
- * cache instead.
+ * It deliberately does **not** hold the created appointment in local state. The
+ * "Your appointments" list is served by `GET /patient/appointments`, and
+ * `useCreateAppointmentMutation` invalidates it on success, so the new visit appears
+ * because the API returned it - not because a client-side list was told about it.
  */
 export function HCPBookingDialog({
   hcp,

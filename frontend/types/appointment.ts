@@ -1,17 +1,10 @@
 /**
  * Appointment domain types.
  *
- * Two shapes live here and they must not be confused:
- *
- * 1. `Appointment` and friends - the wire contract of `POST /api/patient/appointments`.
- *    These are what the backend speaks: snake_case, ISO-8601 timestamps, enums in
- *    upper case.
- * 2. The `UpcomingAppointment`-style record the local appointment store keeps -
- *    a pre-wired client-side shape used by the "Your appointments" screen before
- *    an appointments list endpoint exists. It is not an API type.
- *
- * The API types are only consumed by the booking flow, so they are namespaced by
- * the wire shape rather than by the screen that renders them.
+ * Everything here is the wire contract of `/api/patient/appointments`: snake_case,
+ * ISO-8601 timestamps, enums in upper case. There is deliberately no second
+ * client-side appointment shape any more - the screen reads the API's records
+ * directly, so there is nothing to keep in sync with them.
  */
 
 /* -------------------------------------------------------------------------- */
@@ -97,9 +90,43 @@ export type Appointment = {
   cancellation_reason: string | null;
   rescheduled_at: string | null;
   rescheduled_by_user_id: number | null;
+  created_at: string;
 };
 
-/** Laravel's `{ message, data }` envelope, which every booking endpoint uses. */
+/**
+ * Laravel's paginator envelope, which `index` returns.
+ *
+ * `meta` is present even on an empty page, so `total` is the authoritative count
+ * rather than `data.length` - they differ whenever the patient has more than one
+ * page of visits.
+ */
+export type AppointmentPageResponse = {
+  data: Appointment[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+};
+
+/** `{ data: {...} }`, which `show`, `reschedule` and `cancel` all return. */
+export type AppointmentEnvelope = {
+  data: Appointment;
+};
+
+/** `PATCH .../reschedule` body. */
+export type RescheduleAppointmentRequest = {
+  /** ISO-8601 with an explicit offset or `Z`. */
+  scheduled_start_at: string;
+};
+
+/** `PATCH .../cancel` body. `reason` is optional and capped at 1000 characters. */
+export type CancelAppointmentRequest = {
+  reason?: string | null;
+};
+
+/** Laravel's `{ message, data }` envelope, which the booking endpoint uses. */
 export type CreateAppointmentResponse = {
   message: string;
   data: Appointment;
@@ -168,27 +195,20 @@ export type HcpAvailabilityEnvelope = {
 };
 
 /* -------------------------------------------------------------------------- */
-/* Client-side store shape                                                     */
+/* Presentation                                                                */
 /* -------------------------------------------------------------------------- */
 
 /**
- * The pre-wiring record used by `useAppointmentStore` and the "Your appointments"
- * screen.
+ * How an appointment is grouped on the "Your appointments" screen.
  *
- * Not an API type: there is no appointments list endpoint yet, so this shape has
- * no server counterpart and its status values are a UI concern.
+ * This is a *view* concern, not a backend one: the API returns a flat, newest-first
+ * list with three statuses and no notion of "past". Deriving the split here keeps
+ * the filter honest - a cancelled visit in the future is history, and a confirmed
+ * visit whose start has passed is history too, whichever way the backend stores it.
  */
-export type StoreAppointmentStatus = "upcoming" | "postponed" | "completed" | "cancelled";
+export type AppointmentView = "upcoming" | "past";
 
-export type StoreAppointment = {
-  id: string;
-  doctorName: string;
-  specialty: string;
-  location: string;
-  date: string;
-  time: string;
-  reason: string;
-  status: StoreAppointmentStatus;
-};
-
-export type NewStoreAppointment = Omit<StoreAppointment, "id" | "status">;
+export const APPOINTMENT_VIEWS: { value: AppointmentView; label: string }[] = [
+  { value: "upcoming", label: "Upcoming" },
+  { value: "past", label: "Past" },
+];

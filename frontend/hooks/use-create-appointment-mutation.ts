@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createAppointment } from "@/lib/api/patient-appointments-client";
-import { hcpKeys } from "@/lib/query-keys";
+import { appointmentKeys, hcpKeys } from "@/lib/query-keys";
 import type { CreateAppointmentRequest, CreateAppointmentResponse } from "@/types/appointment";
 
 /**
@@ -31,10 +31,9 @@ export function useCreateAppointmentMutation() {
       // the backend is the authority on what is still free.
       void queryClient.invalidateQueries({ queryKey: hcpKeys.availabilities() });
 
-      // Nothing reads `appointmentKeys.lists()` yet - there is no appointments list
-      // endpoint - so it is deliberately not invalidated. Seeding or invalidating a
-      // key no query watches would look like cache bookkeeping while doing nothing.
-      // When such a query exists, add its invalidation here.
+      // The new booking belongs in "Your appointments", so every page of that list is
+      // stale. `lists()` rather than one exact key: the patient may be on any page.
+      void queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
     },
   });
 }

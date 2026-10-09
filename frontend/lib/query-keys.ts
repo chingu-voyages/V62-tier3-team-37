@@ -36,13 +36,13 @@ export const hcpKeys = {
 /**
  * Appointment keys.
  *
- * `details(id)` exists so a created appointment has a stable home if it is ever
- * read directly; nothing reads it yet, so it is deliberately *not* populated on
- * success - invalidating a key no query watches would only look like caching.
+ * `lists()` exists so a booking, reschedule or cancellation can invalidate every
+ * page at once: those writes change what `index` returns, and the patient may have
+ * paged through several of them.
  */
 export const appointmentKeys = {
   all: ["appointments"] as const,
   details: (id: number | string) => [...appointmentKeys.all, "detail", id] as const,
   lists: () => [...appointmentKeys.all, "list"] as const,
-  list: (filters: unknown) => [...appointmentKeys.lists(), { filters }] as const,
+  list: (page: number) => [...appointmentKeys.lists(), { page }] as const,
 };

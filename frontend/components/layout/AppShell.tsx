@@ -40,7 +40,7 @@ export async function AppShell({
   const user = await getOptionalUser();
 
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex relative">
       <AppAsideLayout items={items} label={label} settingsHref={settingsHref} />
 
       <div className="flex min-w-0 flex-1 flex-col">

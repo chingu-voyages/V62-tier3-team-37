@@ -12,24 +12,38 @@
  *
  * ## The rule
  *
- * A slot is the clinic's local wall-clock time. It is interpreted in the clinic's
- * timezone and sent with that zone's offset, so the clinic receives the instant the
- * patient actually chose.
+ * The availability API returns a *bare wall clock* carrying no offset, and the backend
+ * computes it in **its own app timezone**, not the clinic's. The chain is:
+ * `PatientHcpAvailabilityController` builds its dates with
+ * `CarbonImmutable::createFromFormat('!Y-m-d', ...)` and
+ * `AppointmentAvailabilityService` fills them with `setTimeFromTimeString(...)` - both
+ * inherit `config/app.php`'s `'timezone'`, which is `UTC`. A returned `09:00` therefore
+ * means `09:00` in *that* zone.
+ *
+ * To return the instant the backend just offered, the wall clock has to be read back
+ * in the very same zone. Reading it anywhere else shifts every booking silently:
+ * interpreting `09:00` as `Africa/Cairo` stores `07:00Z`, two hours earlier than the
+ * clinic's own clock, and nothing on either side reports an error.
  *
  * ## Known dependency
  *
- * The contract does not currently carry a timezone: the availability response has no
- * `timezone` field and there is no per-clinician zone on the HCP profile, so the
- * clinic zone cannot be read from the backend yet. Until it can be, the zone comes
- * from configuration (`NEXT_PUBLIC_CLINIC_TIMEZONE`, defaulting to `Africa/Cairo`,
- * matching the rest of the product's market) rather than being invented here.
+ * The contract does not carry a timezone: the availability response has no `timezone`
+ * field and there is no per-clinician zone on the HCP profile, so the zone cannot be
+ * read from the backend and must be configured here. It defaults to `UTC` to match
+ * `backend/config/app.php`, and must only be overridden together with that file.
  *
- * When the backend exposes a clinic timezone, pass the clinician's own zone as
+ * When the backend does expose a clinic timezone, pass the clinician's own zone as
  * `timeZone` - nothing else has to change.
  */
 
-/** The clinic zone used until the API exposes one per clinician. */
-export const CLINIC_TIMEZONE = process.env.NEXT_PUBLIC_CLINIC_TIMEZONE ?? "Africa/Cairo";
+/**
+ * The zone the backend used to produce the bare wall-clock slots.
+ *
+ * Defaults to `UTC`, matching `backend/config/app.php`. Overriding it via
+ * `NEXT_PUBLIC_SLOT_TIMEZONE` is only safe if the backend's app timezone was changed
+ * to the same value - otherwise every booking lands at the wrong instant.
+ */
+export const SLOT_TIMEZONE = process.env.NEXT_PUBLIC_SLOT_TIMEZONE ?? "UTC";
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const SLOT_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -92,7 +106,7 @@ export function zoneOffsetMinutes(instant: Date, timeZone: string): number | nul
 export function slotToIsoTimestamp(
   date: string,
   slot: string,
-  timeZone: string = CLINIC_TIMEZONE,
+  timeZone: string = SLOT_TIMEZONE,
 ): string | null {
   if (!ISO_DATE_PATTERN.test(date)) return null;
 
@@ -150,7 +164,7 @@ export function slotToIsoTimestamp(
 }
 
 /** The zone's offset label at an instant, e.g. `+02:00`. */
-export function formatZoneOffset(instant: Date, timeZone: string = CLINIC_TIMEZONE): string | null {
+export function formatZoneOffset(instant: Date, timeZone: string = SLOT_TIMEZONE): string | null {
   const offset = zoneOffsetMinutes(instant, timeZone);
   if (offset === null) return null;
 

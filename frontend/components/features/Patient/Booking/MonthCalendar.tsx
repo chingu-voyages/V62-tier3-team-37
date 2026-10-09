@@ -80,12 +80,16 @@ export function MonthCalendar({
           </span>
         ))}
 
-        {cells.map((day, index) =>
-          day === null ? (
-            <span key={cellKeys[index]} />
-          ) : (
+        {cells.map((day, cellIndex) => {
+          const key = cellKeys[cellIndex];
+
+          if (day === null) {
+            return <span key={key} />;
+          }
+
+          return (
             <CalendarDay
-              key={`${month.getFullYear()}-${month.getMonth()}-${day}`}
+              key={key}
               day={day}
               month={month}
               todayIso={todayIso}
@@ -96,8 +100,8 @@ export function MonthCalendar({
               isLoading={isLoading}
               onSelect={onSelect}
             />
-          ),
-        )}
+          );
+        })}
       </div>
     </div>
   );

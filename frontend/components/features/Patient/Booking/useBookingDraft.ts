@@ -36,9 +36,9 @@ export function toAttendeeInput(guest: BookingGuest): AppointmentAttendeeInput {
  * yet submittable. The discriminated union is constructed here - not in the
  * component - so a SELF booking is physically unable to carry an attendee.
  *
- * `scheduled_start_at` is derived from the clinic's timezone at the moment of
- * submission, which is why it is not part of the draft: a stale timestamp cannot
- * be left sitting in state after a timezone change.
+ * `scheduled_start_at` is derived from the slot zone at the moment of submission,
+ * which is why it is not part of the draft: a stale timestamp cannot be left sitting
+ * in state after a timezone change.
  */
 export function buildAppointmentRequest(
   draft: BookingDraft,
