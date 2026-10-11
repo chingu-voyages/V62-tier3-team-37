@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { emailSchema } from "@/lib/validation/email";
+import { emailSchema } from "@/lib/validation/schemas";
 import {
   type ApiBookingFor,
   ATTENDEE_NAME_MAX,

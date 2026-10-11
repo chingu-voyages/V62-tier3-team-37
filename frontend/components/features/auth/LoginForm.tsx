@@ -10,9 +10,8 @@ import { PasswordField, TextField } from "@/components/ui/text-field";
 import { useLoginMutation } from "@/hooks/use-auth-mutations";
 import { getApiErrorMessage, getApiFieldError } from "@/lib/api/client";
 import { ROUTES } from "@/lib/constants/routes";
-import { emailSchema } from "@/lib/validation/email";
+import { emailError } from "@/lib/validation/email";
 import { firstTouchedError } from "@/lib/validation/field-error";
-import { errorFor, loginSchema } from "@/lib/validation/schemas";
 
 function revealFirstInvalid(form: HTMLFormElement) {
   const invalid = form.querySelector<HTMLElement>("[aria-invalid='true']");
@@ -42,7 +41,14 @@ export function LoginForm({ onCreateAccount }: { onCreateAccount?: () => void })
     validators: {
       // Submit-time gate. Without this the form relied entirely on onChange
       // validators firing, and a field never touched could post empty.
-      onSubmit: ({ value }) => errorFor(loginSchema, value),
+      //
+      // The object schema is imported here rather than at module scope: zod's
+      // schema builder measured as a 170ms long task during page load, and this
+      // code only runs once the visitor has filled the form in.
+      onSubmitAsync: async ({ value }) => {
+        const { errorFor, loginSchema } = await import("@/lib/validation/schemas");
+        return errorFor(loginSchema, value);
+      },
     },
     onSubmit: ({ value }) => {
       setSubmitError(null);
@@ -83,10 +89,7 @@ export function LoginForm({ onCreateAccount }: { onCreateAccount?: () => void })
         });
       }}
     >
-      <form.Field
-        name="email"
-        validators={{ onChange: ({ value }) => errorFor(emailSchema, value) }}
-      >
+      <form.Field name="email" validators={{ onChange: ({ value }) => emailError(value) }}>
         {(field) => (
           <TextField
             id="email"

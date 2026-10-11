@@ -35,16 +35,16 @@ export function HealthHubLogo({
         <Image
           src="/logo-mark-on-dark.svg"
           alt=""
-          width={1024}
-          height={759}
+          width={404}
+          height={400}
           className="h-12 w-auto"
         />
       ) : (
         <Image
           src="/logo-mark-on-light.svg"
           alt=""
-          width={1024}
-          height={759}
+          width={404}
+          height={404}
           className="h-12 w-auto"
         />
       )}

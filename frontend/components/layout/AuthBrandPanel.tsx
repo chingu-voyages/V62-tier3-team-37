@@ -24,7 +24,6 @@ export function AuthBrandPanel({ className }: AuthBrandPanelProps) {
       )}
     >
       <AuthBrandMedia className="absolute inset-0" />
-
       <div
         data-motion="brand-content"
         className="relative flex min-h-0 flex-1 flex-col justify-between gap-8 px-8 py-9 xl:px-12 xl:py-11 2xl:gap-10 2xl:px-16 2xl:py-14"

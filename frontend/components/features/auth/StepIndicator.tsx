@@ -26,6 +26,10 @@ export function StepIndicator({ current, total, detail }: StepIndicatorProps) {
     <div className="flex flex-col items-center gap-2">
       <p
         role="progressbar"
+        // `progressbar` is not named from its contents, so `aria-valuetext`
+        // alone left the role unlabelled. `aria-label` supplies the name; the
+        // visible text stays the short form.
+        aria-label={label}
         aria-valuemin={1}
         aria-valuemax={safeTotal}
         aria-valuenow={current}

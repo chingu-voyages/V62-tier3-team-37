@@ -1,8 +1,9 @@
 "use client";
 
+import type gsap from "gsap";
 import { type ReactNode, useEffect, useRef } from "react";
 import { resolveEase } from "@/lib/motion/easings";
-import { gsap, useGSAP } from "@/lib/motion/gsap";
+import { type GsapCore, loadGsap, scheduleMotion } from "@/lib/motion/gsap";
 import { reducedMotionQuery } from "@/lib/motion/resolve";
 import type { MotionEase } from "@/lib/motion/types";
 
@@ -96,140 +97,181 @@ export function AnimatedSize({
     transitionRef.current?.(true);
   }, [collapsed]);
 
-  useGSAP(
-    (_context, contextSafe) => {
-      const outer = outerRef.current;
-      const inner = innerRef.current;
-      if (!outer || !inner) return;
+  /**
+   * Observe size changes and animate between them.
+   *
+   * The observer is attached immediately — it is cheap and it is what notices
+   * that the content changed — but every GSAP call inside it goes through the
+   * engine handed to `run`. That engine is fetched on demand, so on a page that
+   * never resizes this component costs a `ResizeObserver` and nothing else:
+   * no engine parse, no `fromTo`, no work inside the hydration commit.
+   */
+  useEffect(() => {
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (!outer || !inner) return;
 
-      let lastSize: Size = { width: inner.offsetWidth, height: inner.offsetHeight };
-      let tween: gsap.core.Tween | null = null;
-      let pendingResize = false;
+    let disposed = false;
+    let engine: GsapCore | null = null;
+    let cancelScheduled: () => void = () => {};
 
-      const usesHeight = () => optionsRef.current.axis !== "width";
-      const usesWidth = () => optionsRef.current.axis !== "height";
-      const shouldAnimate = () =>
-        !optionsRef.current.disabled && !window.matchMedia(reducedMotionQuery).matches;
-      const measureOuter = (): Size => ({ width: outer.offsetWidth, height: outer.offsetHeight });
+    const usesHeight = () => optionsRef.current.axis !== "height";
+    const usesWidth = () => optionsRef.current.axis !== "height";
+    const shouldAnimate = () =>
+      !optionsRef.current.disabled && !window.matchMedia(reducedMotionQuery).matches;
+    const measureOuter = (): Size => ({ width: outer.offsetWidth, height: outer.offsetHeight });
 
-      function setInteractive(interactive: boolean) {
-        if (interactive) {
-          gsap.set(inner, { clearProps: "visibility,pointerEvents" });
-        } else {
-          gsap.set(inner, { visibility: "hidden", pointerEvents: "none" });
-        }
+    let lastSize: Size = { width: 0, height: 0 };
+    let sized = false;
+    let tween: gsap.core.Tween | null = null;
+    let pendingResize = false;
+
+    function setInteractive(interactive: boolean) {
+      if (!engine) return;
+      if (interactive) {
+        engine.set(inner, { clearProps: "visibility,pointerEvents" });
+      } else {
+        engine.set(inner, { visibility: "hidden", pointerEvents: "none" });
       }
+    }
 
-      function settleCollapsed() {
-        const vars: gsap.TweenVars = { overflow: "hidden" };
-        if (usesHeight()) vars.height = 0;
-        if (usesWidth()) vars.width = 0;
-        gsap.set(outer, vars);
-        setInteractive(false);
-      }
+    function settleCollapsed() {
+      if (!engine) return;
+      const vars: gsap.TweenVars = { overflow: "hidden" };
+      if (usesHeight()) vars.height = 0;
+      if (usesWidth()) vars.width = 0;
+      engine.set(outer, vars);
+      setInteractive(false);
+    }
 
-      function settleNatural() {
-        gsap.set(outer, { clearProps: "height,width,overflow" });
-        setInteractive(true);
-      }
+    function settleNatural() {
+      if (!engine) return;
+      engine.set(outer, { clearProps: "height,width,overflow" });
+      setInteractive(true);
+    }
 
-      function settle() {
-        tween = null;
-        if (collapsedRef.current) {
-          settleCollapsed();
-        } else {
-          settleNatural();
-          // Content changed while the previous transition was running.
-          if (pendingResize) {
-            pendingResize = false;
-            safeTransition(true);
-          }
-        }
-        callbacksRef.current.onComplete?.();
-      }
-
-      function transition(animate: boolean, from?: Size) {
-        const target: Size = collapsedRef.current ? { width: 0, height: 0 } : lastSize;
-        const start = from ?? measureOuter();
-        const distance = Math.max(
-          usesHeight() ? Math.abs(start.height - target.height) : 0,
-          usesWidth() ? Math.abs(start.width - target.width) : 0,
-        );
-
-        if (!animate || !shouldAnimate() || distance < SETTLED_EPSILON) {
-          tween?.kill();
-          tween = null;
+    function settle() {
+      tween = null;
+      if (collapsedRef.current) {
+        settleCollapsed();
+      } else {
+        settleNatural();
+        // Content changed while the previous transition was running.
+        if (pendingResize) {
           pendingResize = false;
-          if (collapsedRef.current) settleCollapsed();
-          else settleNatural();
-          return;
+          transition(true);
         }
+      }
+      callbacksRef.current.onComplete?.();
+    }
 
-        // Interactive again as soon as an expand starts, hidden only after a
-        // collapse settles.
-        if (!collapsedRef.current) setInteractive(true);
+    function transition(animate: boolean, from?: Size) {
+      if (!engine) return;
+      const target: Size = collapsedRef.current ? { width: 0, height: 0 } : lastSize;
+      const start = from ?? measureOuter();
+      const distance = Math.max(
+        usesHeight() ? Math.abs(start.height - target.height) : 0,
+        usesWidth() ? Math.abs(start.width - target.width) : 0,
+      );
 
-        const fromVars: gsap.TweenVars = { overflow: "hidden" };
-        const toVars: gsap.TweenVars = {
-          duration: resolveDuration(optionsRef.current.duration, distance),
-          delay: optionsRef.current.delay,
-          ease: resolveEase(optionsRef.current.ease),
-          overwrite: "auto",
-          onStart: () => callbacksRef.current.onStart?.(),
-          onComplete: () => safeSettle(),
-        };
-        if (usesHeight()) {
-          fromVars.height = start.height;
-          toVars.height = target.height;
-        }
-        if (usesWidth()) {
-          fromVars.width = start.width;
-          toVars.width = target.width;
-        }
-
+      if (!animate || !shouldAnimate() || distance < SETTLED_EPSILON) {
         tween?.kill();
-        tween = gsap.fromTo(outer, fromVars, toVars);
+        tween = null;
+        pendingResize = false;
+        if (collapsedRef.current) settleCollapsed();
+        else settleNatural();
+        return;
       }
 
-      const safeTransition = contextSafe ? contextSafe(transition) : transition;
-      const safeSettle = contextSafe ? contextSafe(settle) : settle;
+      // Interactive again as soon as an expand starts, hidden only after a
+      // collapse settles.
+      if (!collapsedRef.current) setInteractive(true);
 
-      transitionRef.current = (animate) => safeTransition(animate);
-
-      if (collapsedRef.current) settleCollapsed();
-
-      const observer = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          // The wrapper may be inside a hidden subtree; ignore those reports.
-          if (entry.target !== inner || inner.getClientRects().length === 0) continue;
-
-          const next = readEntrySize(entry);
-          if (next.width === lastSize.width && next.height === lastSize.height) continue;
-
-          const previous = lastSize;
-          lastSize = next;
-
-          if (collapsedRef.current || !shouldAnimate()) continue;
-
-          if (tween?.isActive()) {
-            // Latest content wins; settle() runs a follow-up if needed.
-            pendingResize = true;
-            continue;
-          }
-
-          safeTransition(true, previous);
-        }
-      });
-      observer.observe(inner);
-
-      return () => {
-        observer.disconnect();
-        tween = null;
-        transitionRef.current = null;
+      const fromVars: gsap.TweenVars = { overflow: "hidden" };
+      const toVars: gsap.TweenVars = {
+        duration: resolveDuration(optionsRef.current.duration, distance),
+        delay: optionsRef.current.delay,
+        ease: resolveEase(optionsRef.current.ease),
+        overwrite: "auto",
+        onStart: () => callbacksRef.current.onStart?.(),
+        onComplete: () => settle(),
       };
-    },
-    { scope: outerRef, dependencies: [] },
-  );
+      if (usesHeight()) {
+        fromVars.height = start.height;
+        toVars.height = target.height;
+      }
+      if (usesWidth()) {
+        fromVars.width = start.width;
+        toVars.width = target.width;
+      }
+
+      tween?.kill();
+      tween = engine.fromTo(outer, fromVars, toVars);
+    }
+
+    transitionRef.current = (animate) => transition(animate);
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target !== inner) continue;
+
+        const next = readEntrySize(entry);
+
+        // A wrapper in a hidden subtree reports a zero box, and a wrapper that
+        // is genuinely 0×0 has nothing to animate anyway. Checking the reported
+        // box keeps this off `getClientRects()`, which forced a synchronous
+        // layout on every observation.
+        if (next.width === 0 && next.height === 0) continue;
+
+        // The observer always fires once on observe. That first report is the
+        // natural size, not a change to it: seeding it here is what lets the
+        // mount path avoid reading `offsetWidth`/`offsetHeight`, another forced
+        // reflow before the first paint.
+        if (!sized) {
+          sized = true;
+          lastSize = next;
+          continue;
+        }
+
+        if (next.width === lastSize.width && next.height === lastSize.height) continue;
+
+        const previous = lastSize;
+        lastSize = next;
+
+        if (collapsedRef.current || !shouldAnimate()) continue;
+
+        if (tween?.isActive()) {
+          // Latest content wins; settle() runs a follow-up if needed.
+          pendingResize = true;
+          continue;
+        }
+
+        transition(true, previous);
+      }
+    });
+    observer.observe(inner);
+
+    // The engine is only needed once something actually has to move. Loading it
+    // in the same frame as the first real resize keeps the common case — a
+    // wrapper that never resizes — free of GSAP entirely.
+    void loadGsap().then((loaded) => {
+      if (disposed) return;
+      engine = loaded;
+
+      cancelScheduled = scheduleMotion(() => {
+        if (disposed) return;
+        if (collapsedRef.current) settleCollapsed();
+      });
+    });
+
+    return () => {
+      disposed = true;
+      cancelScheduled();
+      observer.disconnect();
+      tween = null;
+      transitionRef.current = null;
+    };
+  }, []);
 
   return (
     <div ref={outerRef} className={className}>

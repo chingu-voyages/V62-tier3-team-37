@@ -1,9 +1,10 @@
 "use client";
 
+import type gsap from "gsap";
 import { type ReactNode, useCallback, useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { resolveEase } from "@/lib/motion/easings";
-import { gsap } from "@/lib/motion/gsap";
+import { type GsapCore, loadGsap } from "@/lib/motion/gsap";
 import { reducedMotionQuery } from "@/lib/motion/resolve";
 import type { MotionEase } from "@/lib/motion/types";
 import { cn } from "@/lib/utils";
@@ -53,9 +54,23 @@ export function SlidingTabs<T extends string = string>({
   const listRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLDivElement>(null);
   const tweenRef = useRef<gsap.core.Tween | null>(null);
+  const engineRef = useRef<GsapCore | null>(null);
   const valueRef = useRef(value);
   const optionsRef = useRef({ ease, duration });
   const lastTargetRef = useRef<{ x: number; width: number } | null>(null);
+
+  // The engine is fetched on demand. Until it lands the pill stays hidden, so
+  // nothing paints in the wrong place and no layout is measured for an element
+  // that is not on screen yet.
+  useEffect(() => {
+    let disposed = false;
+    void loadGsap().then((engine) => {
+      if (!disposed) engineRef.current = engine;
+    });
+    return () => {
+      disposed = true;
+    };
+  }, []);
 
   useEffect(() => {
     optionsRef.current = { ease, duration };
@@ -69,45 +84,77 @@ export function SlidingTabs<T extends string = string>({
     return { x: active.offsetLeft, width: active.offsetWidth };
   }, []);
 
+  /**
+   * Position the pill.
+   *
+   * Reading `offsetLeft`/`offsetWidth` flushes any pending layout, so it must
+   * never share a task with a write. Splitting the two — read here, then apply
+   * in the `requestAnimationFrame` below — keeps this off the forced reflow
+   * list; interleaving them made every tab paint cost a synchronous layout.
+   *
+   * The work is also deferred until the engine has loaded, so measuring the
+   * tab list never blocks hydration on a page whose animation has not started.
+   */
   const place = useCallback(
     (animate: boolean) => {
-      const pill = pillRef.current;
       const target = measureActive();
-      if (!pill || !target) return;
+      if (!pillRef.current || !target) return;
       lastTargetRef.current = target;
       const instant = !animate || window.matchMedia(reducedMotionQuery).matches;
-      tweenRef.current?.kill();
-      if (instant) {
-        tweenRef.current = null;
-        gsap.set(pill, { x: target.x, width: target.width, visibility: "visible" });
-        return;
-      }
-      tweenRef.current = gsap.to(pill, {
-        x: target.x,
-        width: target.width,
-        visibility: "visible",
-        duration: optionsRef.current.duration,
-        ease: resolveEase(optionsRef.current.ease),
-        overwrite: "auto",
+
+      requestAnimationFrame(() => {
+        const engine = engineRef.current;
+        const pill = pillRef.current;
+        if (!engine || !pill) return;
+        tweenRef.current?.kill();
+        if (instant) {
+          tweenRef.current = null;
+          engine.set(pill, { x: target.x, width: target.width, visibility: "visible" });
+          return;
+        }
+        tweenRef.current = engine.to(pill, {
+          x: target.x,
+          width: target.width,
+          visibility: "visible",
+          duration: optionsRef.current.duration,
+          ease: resolveEase(optionsRef.current.ease),
+          overwrite: "auto",
+        });
       });
     },
     [measureActive],
   );
 
   useEffect(() => {
-    let raf = 0;
-    const cached = lastPositions.get(rootId);
-    if (cached && pillRef.current) {
-      // Start where the pill used to be, then slide to the current tab.
-      gsap.set(pillRef.current, {
-        x: cached.x,
-        width: cached.width,
-        visibility: "visible",
+    let disposed = false;
+
+    const position = () => {
+      if (disposed) return;
+      const cached = lastPositions.get(rootId);
+      const engine = engineRef.current;
+      if (cached && pillRef.current && engine) {
+        // Start where the pill used to be, then slide to the current tab.
+        engine.set(pillRef.current, {
+          x: cached.x,
+          width: cached.width,
+          visibility: "visible",
+        });
+        place(true);
+      } else {
+        place(false);
+      }
+    };
+
+    // First placement needs the engine; if it has not loaded yet, run it as
+    // soon as it does rather than measuring for nothing.
+    if (engineRef.current) position();
+    else
+      void loadGsap().then((engine) => {
+        if (disposed) return;
+        engineRef.current = engine;
+        position();
       });
-      raf = requestAnimationFrame(() => place(true));
-    } else {
-      place(false);
-    }
+
     const list = listRef.current;
     if (!list) return;
     // ResizeObserver reports contentRect (content box) and always fires once on
@@ -131,7 +178,7 @@ export function SlidingTabs<T extends string = string>({
     });
     observer.observe(list);
     return () => {
-      cancelAnimationFrame(raf);
+      disposed = true;
       observer.disconnect();
       tweenRef.current?.kill();
       // Remember where the pill was so a remount can slide from here.

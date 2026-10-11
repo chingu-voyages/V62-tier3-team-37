@@ -36,6 +36,12 @@ type NavbarProps = {
  *
  * On `lg` and up the auth brand panel sits alongside this bar and already carries
  * the lockup, so the mark collapses to free up room for the form.
+ *
+ * `opacity: 1` on every step is deliberate, for the same reason as on the auth
+ * page: the navbar sits above the fold on every route in the app, and
+ * `html.motion-enabled` is applied before first paint, so a default `opacity: 0`
+ * from-state held the header invisible until hydration finished. The bar still
+ * slides and scales into place; it just never sits at opacity 0 while it does.
  */
 const navbarSteps: MotionStep[] = [
   {
@@ -46,6 +52,7 @@ const navbarSteps: MotionStep[] = [
     duration: 0.6,
     ease: "back.out(1.7)",
     transformOrigin: "top center",
+    opacity: 1,
   },
   {
     target: "navbar-back",
@@ -54,6 +61,7 @@ const navbarSteps: MotionStep[] = [
     distance: { mobile: 14, tablet: 20, desktop: 28 },
     duration: 0.5,
     ease: "entrance",
+    opacity: 1,
   },
   {
     target: "navbar-brand",
@@ -62,6 +70,7 @@ const navbarSteps: MotionStep[] = [
     distance: { mobile: 14, tablet: 20, desktop: 28 },
     duration: 0.5,
     ease: "entrance",
+    opacity: 1,
   },
   {
     target: "navbar-status",
@@ -70,6 +79,7 @@ const navbarSteps: MotionStep[] = [
     distance: { mobile: 14, tablet: 20, desktop: 28 },
     duration: 0.5,
     ease: "entrance",
+    opacity: 1,
   },
   {
     target: "navbar-user",
@@ -78,6 +88,7 @@ const navbarSteps: MotionStep[] = [
     distance: { mobile: 14, tablet: 20, desktop: 28 },
     duration: 0.5,
     ease: "entrance",
+    opacity: 1,
   },
 ];
 

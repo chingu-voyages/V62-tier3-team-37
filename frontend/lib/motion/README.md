@@ -4,6 +4,9 @@ A small, reusable GSAP timeline layer. Pages declare **what** should arrive and
 **how** it relates to the rest of the entrance; the motion layer owns GSAP,
 lifecycle, responsiveness and reduced-motion behavior.
 
+The engine itself is fetched on demand and never sits in a route's initial
+bundle — see [Lifecycle and responsiveness](#lifecycle-and-responsiveness).
+
 Current consumers: the auth screens (`components/features/auth/AuthPageMotion.tsx`
 for the entrance, `AuthBrandMedia.tsx` for the media-gated overlay).
 
@@ -134,8 +137,18 @@ state where content depends on JS to become visible.
 
 ## Lifecycle and responsiveness
 
-- `useGSAP` + a scoped root ref own creation and cleanup; a matchMedia branch
-  is reverted and rebuilt when the viewport crosses a breakpoint.
+- The engine is **loaded on demand** (`loadGsap()`), so GSAP is a separate chunk
+  fetched and parsed after hydration rather than sitting in the route's initial
+  bundle. Nothing on the page needs it in order to render.
+- Timeline setup is **queued through `scheduleMotion`**, which runs one entry per
+  animation frame. Setup therefore happens after the hydrated frame has painted
+  rather than inside React's commit, which is what keeps an entrance animation
+  out of Total Blocking Time.
+- One entry per frame is deliberate. TBT charges the excess over 50 ms for each
+  long task, so draining every timeline in one callback produces a single very
+  long task and measures *worse* than the commit it was meant to avoid.
+- A scoped `gsap.context()` owns creation and cleanup; a matchMedia branch is
+  reverted and rebuilt when the viewport crosses a breakpoint.
 - Completed tweens clear their inline `transform`/`transformOrigin`/`opacity`/
   `visibility`, so no stale styles survive a resize.
 - Strict Mode double-mounts are safe: cleanup reverts everything before the
@@ -158,13 +171,18 @@ renders its `from()` state immediately (everything hidden) until played.
 
 Animations created after the timeline callback (click, hover, timers) must be
 registered with the component's context or they will not be cleaned up. Use the
-`contextSafe` exposed on the handle, or call `useGSAP` in the component that
-owns the interaction:
+`contextSafe` exposed on the handle:
 
 ```tsx
-const { contextSafe } = useGSAP({ scope: root });
-const onHover = contextSafe(() => gsap.to(el, { scale: 1.02, ease: "standard" }));
+const timeline = useRef<GsapTimelineHandle>(null);
+const onHover = () =>
+  timeline.current?.contextSafe?.(() =>
+    loadGsap().then(({ gsap }) => gsap.to(el, { scale: 1.02, ease: "standard" })),
+  );
 ```
+
+`contextSafe` is `null` until the timeline has been built, which happens after
+the engine loads — one frame after mount, not during the first render.
 
 ## Advanced escape hatch
 

@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { emailSchema } from "./email";
-import { passwordSchema } from "./password";
+import { emailError, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "./rules";
 
 /**
  * Form-level schemas.
@@ -10,11 +9,48 @@ import { passwordSchema } from "./password";
  * and Laravel's 422 was the only thing stopping it. Field-level schemas are
  * exported alongside the form schemas so the same rule drives both the inline
  * message and the submit check.
+ *
+ * **Why the forms do not import this file directly.** Building these schemas is
+ * what costs main-thread time — zod's schema builder is ~83 KB parsed and its
+ * module evaluation measured as a 170ms long task on the auth route. The forms
+ * need it exactly once, when an already-valid form is submitted, so they
+ * `await import()` this module inside their submit validator instead. Field-level
+ * checks live in `rules.ts` as plain functions and need no library at all.
+ *
+ * When a rule changes it must change in `rules.ts` too — the two are kept
+ * deliberately adjacent so the duplication stays visible.
  */
 
-const today = new Date();
-export const MAX_DATE_OF_BIRTH_YEAR = today.getFullYear();
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export const MAX_DATE_OF_BIRTH_YEAR = new Date().getFullYear();
 export const MIN_DATE_OF_BIRTH_YEAR = 1900;
+
+export const emailSchema = z
+  .string()
+  .trim()
+  .min(1, "Email address is required")
+  .max(254, "Email address is too long")
+  .refine((value) => EMAIL_PATTERN.test(value), "Enter a valid email address")
+  .transform((value) => value.toLowerCase());
+
+/** Re-exported so existing call sites keep working. */
+export { emailError };
+
+export const passwordSchema = z
+  .string()
+  .min(1, "Password is required")
+  .max(PASSWORD_MAX_LENGTH, "Password is too long")
+  .refine(
+    (value) => value.length >= PASSWORD_MIN_LENGTH,
+    `Password must be at least ${PASSWORD_MIN_LENGTH} characters`,
+  )
+  .refine(
+    (value) => /[a-z]/.test(value) && /[A-Z]/.test(value),
+    "Password must contain an uppercase and a lowercase letter",
+  )
+  .refine((value) => /\d/.test(value), "Password must contain at least one number")
+  .refine((value) => /[^A-Za-z0-9]/.test(value), "Password must contain at least one symbol");
 
 export const firstNameSchema = z
   .string()

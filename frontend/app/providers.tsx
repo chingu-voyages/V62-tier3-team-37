@@ -1,8 +1,8 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { useState } from "react";
-import { Toaster } from "sonner";
 
 import { installFlushSyncWarningFilter } from "@/lib/dev/suppress-known-warnings";
 
@@ -11,6 +11,19 @@ import { installFlushSyncWarningFilter } from "@/lib/dev/suppress-known-warnings
 // The install is a no-op on the server and in production, so it is safe to evaluate
 // during SSR and in the production bundle.
 installFlushSyncWarningFilter();
+
+/**
+ * The toast outlet is not on the critical path.
+ *
+ * Nothing renders a toast until the visitor has done something — a form submit,
+ * a photo upload — and by then hydration has long finished. Loading the outlet
+ * with `ssr: false` keeps `sonner` out of the initial payload of every route.
+ *
+ * Safe because `sonner` keeps its queue in a module-level store and replays
+ * whatever is still active to each new subscriber, so a toast raised in the
+ * moment before the chunk lands is shown rather than dropped.
+ */
+const Toaster = dynamic(() => import("sonner").then((m) => m.Toaster), { ssr: false });
 
 function makeQueryClient() {
   return new QueryClient({
@@ -45,7 +58,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         toastOptions={{
           style: { fontFamily: "var(--font-outfit)" },
         }}
-      />
+      />{" "}
     </QueryClientProvider>
   );
 }

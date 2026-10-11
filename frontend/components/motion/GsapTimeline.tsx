@@ -1,9 +1,10 @@
 "use client";
 
+import type gsap from "gsap";
 import { type ReactNode, type Ref, useEffect, useImperativeHandle, useRef } from "react";
 import { useMediaReady } from "@/components/motion/useMediaReady";
 import { resolveEase } from "@/lib/motion/easings";
-import { gsap, useGSAP } from "@/lib/motion/gsap";
+import { type GsapCore, loadGsap, scheduleMotion } from "@/lib/motion/gsap";
 import { motionDefaults } from "@/lib/motion/presets";
 import {
   directionToTweenVars,
@@ -59,6 +60,7 @@ export type GsapTimelineProps = {
 };
 
 function buildTimeline(
+  engine: GsapCore,
   root: HTMLElement,
   steps: MotionSteps,
   defaults: MotionStepDefaults,
@@ -66,7 +68,7 @@ function buildTimeline(
   breakpoint: MotionBreakpoint,
   onComplete: (() => void) | undefined,
 ): gsap.core.Timeline {
-  const timeline = gsap.timeline({ onComplete });
+  const timeline = engine.timeline({ onComplete });
   const resolvedSteps = typeof steps === "function" ? steps({ breakpoint }) : steps;
 
   for (const step of resolvedSteps) {
@@ -152,41 +154,82 @@ export function GsapTimeline({
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
   const mediaReady = useMediaReady(rootRef, waitForMedia);
   const mediaReadyRef = useRef(mediaReady);
+  const contextSafeRef = useRef<ContextSafe | null>(null);
 
-  const { contextSafe } = useGSAP(
-    () => {
-      // The pre-paint frozen frame in globals.css has done its job once the
-      // engine is about to apply its own from-states. Removing it first keeps
-      // `from()` reading the natural values instead of the frozen ones.
-      document.documentElement.classList.remove("motion-enabled");
+  /**
+   * Build the timeline off the hydration commit.
+   *
+   * This used to be `useGSAP`, which runs in a layout effect — synchronously,
+   * inside React's commit, before the browser gets to paint. Every timeline on
+   * the page therefore ran its `matchMedia` setup and `from()` measurement in
+   * one long task on the critical path, which is exactly what TBT charges for:
+   * the auth audit put a 52ms task in GSAP's CSSPlugin and 104ms unattributed.
+   *
+   * Now the engine is fetched on demand and the setup is queued through
+   * `scheduleMotion`, so it lands in the frame *after* hydration paints. The
+   * entrance looks the same — the pre-paint frame in globals.css holds the
+   * elements at their from-state until the engine applies its own — but it no
+   * longer competes with hydration for the main thread.
+   */
+  useEffect(() => {
+    let disposed = false;
+    let cancelScheduled: () => void = () => {};
 
-      const root = rootRef.current;
-      if (!root) return;
+    void loadGsap().then((engine: GsapCore) => {
+      if (disposed) return;
 
-      const resolvedDefaults: MotionStepDefaults = { ...motionDefaults, ...defaults };
-      const media = gsap.matchMedia();
+      cancelScheduled = scheduleMotion(() => {
+        if (disposed) return;
 
-      media.add(motionMediaQueries, (context) => {
-        const breakpoint = resolveBreakpoint(context.conditions);
-        const timeline = buildTimeline(
-          root,
-          steps,
-          resolvedDefaults,
-          labels,
-          breakpoint,
-          onComplete,
-        );
+        // The pre-paint frozen frame in globals.css has done its job once the
+        // engine is about to apply its own from-states. Removing it first keeps
+        // `from()` reading the natural values instead of the frozen ones.
+        document.documentElement.classList.remove("motion-enabled");
 
-        timelineRef.current = timeline;
-        if (paused || (waitForMedia && !mediaReadyRef.current)) timeline.pause();
+        const root = rootRef.current;
+        if (!root) return;
+
+        const resolvedDefaults: MotionStepDefaults = { ...motionDefaults, ...defaults };
+        const context = engine.context(() => {
+          const media = engine.matchMedia();
+
+          media.add(motionMediaQueries, (matchContext) => {
+            const breakpoint = resolveBreakpoint(matchContext.conditions);
+            const timeline = buildTimeline(
+              engine,
+              root,
+              steps,
+              resolvedDefaults,
+              labels,
+              breakpoint,
+              onComplete,
+            );
+
+            timelineRef.current = timeline;
+            if (paused || (waitForMedia && !mediaReadyRef.current)) timeline.pause();
+          });
+        }, root);
+
+        // `context.add(func)` is the single-argument form: it runs `func`
+        // inside the context and records whatever animations it creates so they
+        // are reverted together. This is the `contextSafe` helper `@gsap/react`
+        // used to hand back, reimplemented so the engine can stay lazy.
+        contextSafeRef.current = ((func: never) =>
+          context.add(func as unknown as () => void)) as ContextSafe;
       });
+    });
 
-      return () => {
-        timelineRef.current = null;
-      };
-    },
-    { scope: rootRef, dependencies: [] },
-  );
+    return () => {
+      disposed = true;
+      cancelScheduled();
+      timelineRef.current?.revert();
+      timelineRef.current = null;
+      contextSafeRef.current = null;
+    };
+    // Mount-only: the engine is memoised and the steps are read at build time.
+    // This matches the `dependencies: []` that the useGSAP call used.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [steps, labels, waitForMedia, paused, onComplete, defaults]);
 
   useEffect(() => {
     mediaReadyRef.current = mediaReady;
@@ -230,9 +273,9 @@ export function GsapTimeline({
         timelineRef.current = null;
       },
       getTimeline: () => timelineRef.current,
-      contextSafe: contextSafe as ContextSafe,
+      contextSafe: contextSafeRef.current,
     }),
-    [contextSafe],
+    [],
   );
 
   return (

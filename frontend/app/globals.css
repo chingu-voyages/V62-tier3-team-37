@@ -317,10 +317,13 @@ body {
   }
 }
 
+/* The brand photo is the auth page's LCP element, so it is never gated on
+   opacity: the pre-paint frame only pins the transform that `AuthPageMotion`
+   animates from. Fading it in here kept the image invisible until hydration
+   plus the GSAP timeline had run, which is exactly the render delay LCP
+   measures. */
 html.motion-enabled [data-motion="brand-image"] {
-  opacity: 0;
   transform: translateX(-28px) scale(1.22);
-  will-change: opacity, transform;
 }
 
 html.motion-enabled [data-motion="brand-content"] {
@@ -333,29 +336,45 @@ html.motion-enabled [data-motion="navbar"] {
   transform-origin: top center;
 }
 
+/* Held back by transform only, for the same LCP reason as the form column
+   below: the header is above the fold on every route, so hiding it until
+   hydration cost every page its first paint of the navbar. */
 html.motion-enabled [data-motion="navbar-back"],
 html.motion-enabled [data-motion="navbar-brand"] {
-  opacity: 0;
   transform: translateX(-28px);
 }
 
 html.motion-enabled [data-motion="navbar-status"],
 html.motion-enabled [data-motion="navbar-user"] {
-  opacity: 0;
   transform: translateX(28px);
 }
 
+/* The form column is the largest content on the auth route and, below `lg`,
+   where the brand panel is hidden, it is the LCP element — so it is held back
+   by transform only, never by opacity.
+
+   Hiding it was the single largest cost on this page. `html.motion-enabled` is
+   added by an inline script before first paint and removed by GSAP once
+   hydration finishes, so an `opacity: 0` here means the heading, the stepper
+   and the card are all unpainted until the entry bundle has downloaded,
+   parsed and run. The audit showed exactly that shape: a 0.4s FCP and a 5.8s
+   LCP, with the gap being pure render delay rather than network time.
+
+   The entrance is unchanged in every way that reads as motion: each element
+   still travels from its offset to rest and still settles, it just does so
+   without being invisible first. */
 html.motion-enabled [data-motion="step"],
 html.motion-enabled [data-motion="heading"],
 html.motion-enabled [data-motion="subheading"],
 html.motion-enabled [data-motion="role-switch"],
 html.motion-enabled [data-motion="sliding-tabs"] {
-  opacity: 0;
   transform: translateY(28px);
 }
 
 html.motion-enabled [data-motion="card"] {
-  opacity: 0;
+  /* No transform to pin: the card's entrance is a fade-up in
+     `AuthPageMotion`, which is now the only thing driving it. */
+  transform: translateY(28px);
 }
 
 @media (width >= 64rem) {
