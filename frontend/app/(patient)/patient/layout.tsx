@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { PatientAIAssistant } from "@/components/features/patient/AIAssistant/PatientAIAssistant";
+import { PatientAIAssistant } from "@/components/features/Patient/AIAssistant/PatientAIAssistant";
 import { AppShell } from "@/components/layout/AppShell";
 import { availableNavItems, patientNavigation } from "@/lib/constants/navigation";
 import { requireRole } from "@/lib/dal/auth";

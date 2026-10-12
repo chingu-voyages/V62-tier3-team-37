@@ -166,7 +166,9 @@ export function LoginForm({ onCreateAccount }: { onCreateAccount?: () => void })
               setResetPending(true);
               setResetNotice(null);
               requestPasswordReset(email)
-                .then((response) => setResetNotice(response.message))
+                .then((response) =>
+                  setResetNotice(response.message ?? "Check your email for a reset link."),
+                )
                 .catch((cause: unknown) => setResetNotice(getApiErrorMessage(cause)))
                 .finally(() => setResetPending(false));
             }}

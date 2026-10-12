@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PatientFeedbackForm } from "@/components/features/patient/PatientFeedbackForm";
+import { PatientFeedbackForm } from "@/components/features/Patient/PatientFeedbackForm";
 import { specialtyLabel } from "@/lib/admin/clinician-labels";
 import { getFeedbackClinicians } from "@/lib/dal/feedback";
 

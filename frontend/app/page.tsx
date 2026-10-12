@@ -4,7 +4,7 @@ import { LandingContinue } from "@/components/features/landing/LandingContinue";
 import { LandingHeader } from "@/components/features/landing/LandingHeader";
 import { LandingSearch } from "@/components/features/landing/LandingSearch";
 import type { BookingPatient } from "@/components/features/landing/PatientBookingPanel";
-import { PatientAIAssistant } from "@/components/features/patient/AIAssistant/PatientAIAssistant";
+import { PatientAIAssistant } from "@/components/features/Patient/AIAssistant/PatientAIAssistant";
 import { AppAsideLayout } from "@/components/layout/AppAsideLayout";
 import { Navbar } from "@/components/layout/Navbar";
 import { userFirstName } from "@/lib/auth/display";

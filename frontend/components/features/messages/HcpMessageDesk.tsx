@@ -190,7 +190,7 @@ function PatientList({
   ready: boolean;
   query: string;
   threads: MessageThread[];
-  copy: (typeof COPY)["hcp"];
+  copy: (typeof COPY)[keyof typeof COPY];
   onQuery: (value: string) => void;
   onOpen: (id: number) => void;
 }) {
