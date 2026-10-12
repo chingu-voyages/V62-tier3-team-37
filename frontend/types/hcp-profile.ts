@@ -31,12 +31,16 @@ export type ProfileVerificationRequirement = {
   state: ProfileVerificationState;
 };
 
+/** Outcome of the admin review, shown on the clinician's own profile. */
+export type ProfileRequestDecision = "none" | "pending" | "accepted" | "declined";
+
 export type ProfileVerificationSummary = {
   overall: ProfileVerificationState;
   requirements: ProfileVerificationRequirement[];
   lastVerifiedAt?: string;
   /** Present only when the backend rejected the application. */
   rejectionReason?: string;
+  requestDecision: ProfileRequestDecision;
 };
 
 export type HcpProfileIdentity = {

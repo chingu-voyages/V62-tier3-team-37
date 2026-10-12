@@ -12,6 +12,7 @@ import type { AuthUser, SignupRole } from "@/types/auth";
 
 export const HCP_ROLE: SignupRole = "HCP";
 export const PATIENT_ROLE: SignupRole = "PATIENT";
+export const ADMIN_ROLE = "ADMIN";
 
 function isHcpRole(role: string | null | undefined): boolean {
   return role === HCP_ROLE;
@@ -34,6 +35,7 @@ export function isEmailVerified(user: AuthUser): boolean {
  * this destination renders.
  */
 export function homePathForRole(role: string | null | undefined): string {
+  if (role === ADMIN_ROLE) return ROUTES.adminHome;
   return isHcpRole(role) ? ROUTES.hcpProfile : ROUTES.patientSearch;
 }
 
@@ -63,6 +65,10 @@ export function decideRouteAccess(pathname: string, user: AuthUser): RouteDecisi
   }
 
   if (!user) {
+    if (pathname === ROUTES.admin) return { action: "allow" };
+    if (pathname === ROUTES.adminHome || pathname.startsWith(`${ROUTES.admin}/`)) {
+      return { action: "redirect", to: ROUTES.admin };
+    }
     return isPubliclyReachableWhileGuest(pathname)
       ? { action: "allow" }
       : { action: "redirect", to: ROUTES.auth };
@@ -76,8 +82,20 @@ export function decideRouteAccess(pathname: string, user: AuthUser): RouteDecisi
     return { action: "redirect", to: homePathForRole(user.role) };
   }
 
+  if (pathname === ROUTES.admin) {
+    return user?.role === ADMIN_ROLE
+      ? { action: "redirect", to: ROUTES.adminHome }
+      : { action: "allow" };
+  }
+
+  if (pathname === ROUTES.adminHome || pathname.startsWith(`${ROUTES.admin}/`)) {
+    return user?.role === ADMIN_ROLE
+      ? { action: "allow" }
+      : { action: "redirect", to: ROUTES.admin };
+  }
+
   if (onPatientRoute && !isPatientRole(user.role)) {
-    return { action: "redirect", to: ROUTES.hcpProfile };
+    return { action: "redirect", to: homePathForRole(user.role) };
   }
 
   const needsVerifiedEmail = onPatientRoute || onHcpRoute || onVerification;

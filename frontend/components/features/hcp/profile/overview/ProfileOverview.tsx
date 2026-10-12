@@ -2,6 +2,8 @@ import {
   BadgeCheck,
   Building2,
   CalendarDays,
+  CircleAlert,
+  Clock,
   type LucideIcon,
   Mail,
   MapPin,
@@ -12,13 +14,17 @@ import type { FC } from "react";
 
 import { ProfilePhotoControl } from "@/components/features/shared/profile";
 import { formatYears } from "@/lib/format";
-import type { HcpProfileIdentity } from "@/types/hcp-profile";
+import type { HcpProfileIdentity, ProfileRequestDecision } from "@/types/hcp-profile";
 
 type ProfileOverviewProps = {
   profile?: HcpProfileIdentity;
   /** Raw names, for the avatar initials when no photo is set. */
   firstName?: string;
   lastName?: string;
+  /** What the admin desk decided about this clinician's credentials. */
+  decision?: ProfileRequestDecision;
+  /** Shown with a decline, so the clinician knows what to fix. */
+  decisionReason?: string;
 };
 
 type DetailItem = {
@@ -116,58 +122,155 @@ const DetailRow: FC<DetailItem> = ({ icon: Icon, label, value, subValue }) => {
  * - narrow: green panel on top (photo beside name), details below
  * - wide:   green panel left (photo above name), details right
  */
-export const ProfileOverview: FC<ProfileOverviewProps> = ({ profile, firstName, lastName }) => {
+export const ProfileOverview: FC<ProfileOverviewProps> = ({
+  profile,
+  firstName,
+  lastName,
+  decision = "none",
+  decisionReason,
+}) => {
   const { name, subtitle } = buildHeading(profile);
   const details = buildDetails(profile);
 
   return (
-    <section
-      aria-label="Profile overview"
-      className="@container overflow-hidden rounded-3xl border border-border bg-card shadow-card"
-    >
-      <div className="grid @3xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.5fr)]">
-        {/* Vertically centred once the panels sit side by side: the identity
-            block is shorter than the list of facts beside it, and a top-aligned
-            block leaves a lopsided gap under the verified chip. */}
-        <div className="flex flex-col bg-primary p-6 text-primary-foreground @3xl:justify-center @3xl:p-7">
-          <ProfilePhotoControl
-            tone="primary"
-            photoUrl={profile?.photoUrl}
-            firstName={firstName}
-            lastName={lastName}
-          />
+    <div className="flex flex-col gap-4">
+      <RequestOutcome decision={decision} reason={decisionReason} />
+      <section
+        aria-label="Profile overview"
+        className="@container overflow-hidden rounded-3xl border border-border bg-card shadow-card"
+      >
+        <div className="grid @3xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.5fr)]">
+          {/* Vertically centred once the panels sit side by side: the identity
+              block is shorter than the list of facts beside it, and a top-aligned
+              block leaves a lopsided gap under the status chip. */}
+          <div className="flex flex-col bg-primary p-6 text-primary-foreground @3xl:justify-center @3xl:p-7">
+            <ProfilePhotoControl
+              tone="primary"
+              photoUrl={profile?.photoUrl}
+              firstName={firstName}
+              lastName={lastName}
+            />
 
-          <div className="mt-5 min-w-0">
-            <h2 className="type-h2 text-balance text-primary-foreground">{name}</h2>
-            <p className="mt-1 type-body text-pretty text-primary-foreground/80">{subtitle}</p>
+            <div className="mt-5 min-w-0">
+              <h2 className="type-h2 text-balance text-primary-foreground">{name}</h2>
+              <p className="mt-1 type-body text-pretty text-primary-foreground/80">{subtitle}</p>
 
-            {profile?.isVerified ? (
-              <p className="mt-3">
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-foreground/25 bg-primary-foreground/10 px-2.5 py-1 type-helper font-medium text-accent">
-                  <BadgeCheck className="size-3.5 shrink-0" aria-hidden="true" />
-                  Verified HCP
-                </span>
+              <div className="mt-3">
+                <DecisionChip decision={decision} isVerified={profile?.isVerified} />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 @3xl:p-7">
+            {details.length > 0 ? (
+              // Two columns once the facts panel is wide enough to keep each value
+              // on one line, one while it is the full card width.
+              <dl className="grid gap-x-8 gap-y-5 @xl:grid-cols-2">
+                {details.map((item) => (
+                  <DetailRow key={item.id} {...item} />
+                ))}
+              </dl>
+            ) : (
+              <p className="type-body text-pretty text-muted-foreground">
+                No contact or location details to show yet.
               </p>
-            ) : null}
+            )}
           </div>
         </div>
-
-        <div className="p-6 @3xl:p-7">
-          {details.length > 0 ? (
-            // Two columns once the facts panel is wide enough to keep each value
-            // on one line, one while it is the full card width.
-            <dl className="grid gap-x-8 gap-y-5 @xl:grid-cols-2">
-              {details.map((item) => (
-                <DetailRow key={item.id} {...item} />
-              ))}
-            </dl>
-          ) : (
-            <p className="type-body text-pretty text-muted-foreground">
-              No contact or location details to show yet.
-            </p>
-          )}
-        </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 };
+
+/**
+ * The admin desk's verdict, on the green identity panel.
+ *
+ * `none` means nobody has decided yet, so the chip falls back to the plain
+ * "Verified HCP" marker that was always here. Every state carries a word, never
+ * colour alone.
+ */
+function DecisionChip({
+  decision,
+  isVerified,
+}: {
+  decision: ProfileRequestDecision;
+  isVerified?: boolean;
+}) {
+  if (decision === "accepted") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-foreground/25 bg-primary-foreground/10 px-2.5 py-1 type-helper font-medium text-accent">
+        <BadgeCheck className="size-3.5 shrink-0" aria-hidden="true" />
+        Accepted
+      </span>
+    );
+  }
+
+  if (decision === "declined") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-foreground/25 bg-destructive/25 px-2.5 py-1 type-helper font-medium text-primary-foreground">
+        <CircleAlert className="size-3.5 shrink-0" aria-hidden="true" />
+        Declined
+      </span>
+    );
+  }
+
+  if (decision === "pending") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-foreground/25 bg-primary-foreground/10 px-2.5 py-1 type-helper font-medium text-primary-foreground/85">
+        <Clock className="size-3.5 shrink-0" aria-hidden="true" />
+        Under review
+      </span>
+    );
+  }
+
+  if (!isVerified) return null;
+
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-foreground/25 bg-primary-foreground/10 px-2.5 py-1 type-helper font-medium text-accent">
+      <BadgeCheck className="size-3.5 shrink-0" aria-hidden="true" />
+      Verified HCP
+    </span>
+  );
+}
+
+/**
+ * A banner above the badge for the two states worth interrupting the page for:
+ * an outcome the clinician is waiting on, and a decline they can act on.
+ */
+function RequestOutcome({
+  decision,
+  reason,
+}: {
+  decision: ProfileRequestDecision;
+  reason?: string;
+}) {
+  if (decision === "none") return null;
+
+  const declined = decision === "declined";
+
+  return (
+    <section
+      aria-label="Verification outcome"
+      className={
+        declined
+          ? "rounded-2xl border border-destructive/25 bg-destructive/5 p-4"
+          : "rounded-2xl border border-border bg-card p-4 shadow-soft"
+      }
+    >
+      <p className={declined ? "type-h4 text-destructive" : "type-h4 text-primary"}>
+        {decision === "accepted"
+          ? "You're accepted"
+          : declined
+            ? "Your request was declined"
+            : "Your request is under review"}
+      </p>
+      <p className="mt-1 type-body text-pretty text-foreground">
+        {decision === "accepted"
+          ? "The admin team accepted your request. Patients can find you."
+          : declined
+            ? reason || "The admin team declined this request."
+            : "The admin team has your request. Accepted or declined will show here."}
+      </p>
+    </section>
+  );
+}

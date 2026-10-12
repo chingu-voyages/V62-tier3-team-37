@@ -42,7 +42,22 @@ export function ProfileVerification({ verification }: ProfileVerificationProps) 
     <ProfileCard
       title="Verification Status"
       icon={ShieldCheck}
-      action={verification ? <StatusBadge state={verification.overall} /> : undefined}
+      action={
+        verification ? (
+          <StatusBadge
+            state={verification.overall}
+            label={
+              verification.requestDecision === "accepted"
+                ? "Accepted"
+                : verification.requestDecision === "declined"
+                  ? "Declined"
+                  : verification.requestDecision === "pending"
+                    ? "Under review"
+                    : undefined
+            }
+          />
+        ) : undefined
+      }
     >
       {rows.length === 0 ? (
         <SectionEmptyState message="Verification information isn't available yet." />

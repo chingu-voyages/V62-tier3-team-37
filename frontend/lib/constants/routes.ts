@@ -44,6 +44,13 @@ export const ROUTES = {
   hcpMessages: "/hcp/messages",
   hcpSettings: "/hcp/settings",
 
+  admin: "/admin",
+  adminHome: "/admin/home",
+  adminClinicians: "/admin/clinicians",
+  adminPatients: "/admin/patients",
+  adminReports: "/admin/reports",
+  adminRequests: "/admin/requests",
+
   /** Legal. Referenced by the footer and the signup form; pages still to be authored. */
   terms: "/terms",
   privacy: "/privacy",

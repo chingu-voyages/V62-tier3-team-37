@@ -1,5 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminAccessRequestController;
+use App\Http\Controllers\Admin\AdminClinicianController;
+use App\Http\Controllers\Admin\AdminDeskController;
+use App\Http\Controllers\Admin\AdminDocumentController;
+use App\Http\Controllers\Admin\AdminPatientController;
+use App\Http\Controllers\Admin\AdminReportController;
 use App\Http\Controllers\Hcp\HcpAppointmentController;
 use App\Http\Controllers\Hcp\HcpOnboardingController;
 use App\Http\Controllers\Hcp\HcpProfileController;
@@ -10,17 +16,44 @@ use App\Http\Controllers\Patient\PatientHcpAvailabilityController;
 use App\Http\Controllers\Patient\PatientMedicalDocumentController;
 use App\Http\Controllers\Patient\PatientProfileController;
 use App\Http\Controllers\Profile\ProfilePhotoController;
+use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureEmailIsVerified;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', EnsureAccountIsActive::class])->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
+    Route::get('/admin/summary', [AdminDeskController::class, 'summary']);
+
+    Route::get('/admin/access-requests', [AdminAccessRequestController::class, 'index']);
+    Route::get('/admin/access-requests/mine', [AdminAccessRequestController::class, 'mine']);
+    Route::post('/admin/access-requests/{accessRequest}/approve', [AdminAccessRequestController::class, 'approve']);
+    Route::post('/admin/access-requests/{accessRequest}/decline', [AdminAccessRequestController::class, 'decline']);
+
+    Route::get('/admin/patients', [AdminPatientController::class, 'index']);
+    Route::post('/admin/patients/{user}/block', [AdminPatientController::class, 'block']);
+    Route::post('/admin/patients/{user}/unblock', [AdminPatientController::class, 'unblock']);
+
+    Route::get('/admin/reports', [AdminReportController::class, 'index']);
+    Route::post('/admin/reports/{report}/resolve', [AdminReportController::class, 'resolve']);
+    Route::post('/admin/reports/{report}/dismiss', [AdminReportController::class, 'dismiss']);
+
+    Route::get('/admin/documents/{document}', [AdminDocumentController::class, 'show']);
+
+    Route::get('/admin/clinicians', [AdminClinicianController::class, 'index']);
+    Route::get('/admin/clinicians/{user}', [AdminClinicianController::class, 'show']);
+    Route::post('/admin/clinicians/{user}/block', [AdminClinicianController::class, 'block']);
+    Route::post('/admin/clinicians/{user}/unblock', [AdminClinicianController::class, 'unblock']);
+    Route::post('/admin/clinicians/{user}/decision', [AdminClinicianController::class, 'decide']);
 });
 
-Route::middleware(['auth:sanctum', EnsureEmailIsVerified::class])->group(function () {
+Route::post('/admin/access-requests', [AdminAccessRequestController::class, 'store'])
+    ->middleware('throttle:6,1');
+
+Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, EnsureEmailIsVerified::class])->group(function () {
 
     /**************************PATIENT************************************** */
 
