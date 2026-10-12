@@ -12,6 +12,10 @@ class Document extends Model
 {
     use HasFactory;
 
+    protected $hidden = [
+        'storage_path',
+    ];
+
     protected $fillable = [
         'user_id',
         'appointment_id',

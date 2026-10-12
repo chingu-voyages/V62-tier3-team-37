@@ -1,0 +1,10 @@
+import type { Metadata } from "next";
+import { PatientRecords } from "@/components/features/Patient/records/PatientRecords";
+
+export const metadata: Metadata = {
+  title: "Health records",
+};
+
+export default function PatientRecordsPage() {
+  return <PatientRecords />;
+}

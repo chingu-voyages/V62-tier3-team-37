@@ -8,6 +8,7 @@ import { Callout } from "@/components/ui/callout";
 import { inlineLinkClassName } from "@/components/ui/inline-link";
 import { PasswordField, TextField } from "@/components/ui/text-field";
 import { useLoginMutation } from "@/hooks/use-auth-mutations";
+import { requestPasswordReset } from "@/lib/api/auth-client";
 import { getApiErrorMessage, getApiFieldError } from "@/lib/api/client";
 import { ROUTES } from "@/lib/constants/routes";
 import { emailSchema } from "@/lib/validation/email";
@@ -21,6 +22,9 @@ function revealFirstInvalid(form: HTMLFormElement) {
 
 export function LoginForm({ onCreateAccount }: { onCreateAccount?: () => void }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [resetNotice, setResetNotice] = useState<string | null>(null);
+  const [resetPending, setResetPending] = useState(false);
   const [serverFieldErrors, setServerFieldErrors] = useState<{
     email?: string;
     password?: string;
@@ -130,6 +134,48 @@ export function LoginForm({ onCreateAccount }: { onCreateAccount?: () => void })
           />
         )}
       </form.Field>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className={inlineLinkClassName}
+          onClick={() => {
+            setForgotOpen((open) => !open);
+            setResetNotice(null);
+          }}
+        >
+          Forgot password?
+        </button>
+      </div>
+
+      {forgotOpen ? (
+        <div className="flex flex-col gap-3 rounded-xl bg-muted p-4">
+          <p className="type-body text-muted-foreground">
+            We will email a reset link if this address has an account.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={resetPending}
+            onClick={() => {
+              const email = form.state.values.email.trim();
+              if (!email) {
+                setResetNotice("Enter your email address first.");
+                return;
+              }
+              setResetPending(true);
+              setResetNotice(null);
+              requestPasswordReset(email)
+                .then((response) => setResetNotice(response.message))
+                .catch((cause: unknown) => setResetNotice(getApiErrorMessage(cause)))
+                .finally(() => setResetPending(false));
+            }}
+          >
+            {resetPending ? "Sending…" : "Send reset link"}
+          </Button>
+          {resetNotice ? <p className="type-helper text-foreground">{resetNotice}</p> : null}
+        </div>
+      ) : null}
 
       {submitError ? (
         <Callout tone="danger" role="alert">

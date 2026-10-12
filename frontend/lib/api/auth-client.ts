@@ -50,3 +50,19 @@ export function resendOtp(): Promise<ApiMessageResponse> {
 export function logoutUser(): Promise<void> {
   return apiRequest<void>("/logout", { method: "POST" });
 }
+
+export function requestPasswordReset(email: string): Promise<ApiMessageResponse> {
+  return apiRequest<ApiMessageResponse>("/forgot-password", {
+    method: "POST",
+    body: { email },
+  });
+}
+
+export function resetPassword(payload: {
+  token: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+}): Promise<ApiMessageResponse> {
+  return apiRequest<ApiMessageResponse>("/reset-password", { method: "POST", body: payload });
+}

@@ -10,30 +10,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+/** Values `POST /hcp/onboarding` accepts. Labels are only what the clinician reads. */
 export const HCP_SPECIALTIES = [
-  "General Practitioner",
-  "Family Medicine",
-  "Internal Medicine",
-  "Pediatrics",
-  "Cardiology",
-  "Dermatology",
-  "Neurology",
-  "Orthopedics",
-  "Psychiatry",
-  "Obstetrics & Gynecology",
-  "Ophthalmology",
-  "ENT",
-  "Urology",
-  "Endocrinology",
-  "Pulmonology",
-  "Radiology",
-  "Pathology",
-  "Anesthesiology",
-  "Emergency Medicine",
-  "Other",
+  { value: "GENERAL_MEDICINE", label: "General Medicine" },
+  { value: "CARDIOLOGY", label: "Cardiology" },
+  { value: "DERMATOLOGY", label: "Dermatology" },
+  { value: "NEUROLOGY", label: "Neurology" },
+  { value: "PEDIATRICS", label: "Pediatrics" },
+  { value: "PSYCHIATRY", label: "Psychiatry" },
 ] as const;
 
-export type HcpSpecialty = (typeof HCP_SPECIALTIES)[number];
+export type HcpSpecialty = (typeof HCP_SPECIALTIES)[number]["value"];
 
 type SpecialtySelectProps = {
   id?: string;
@@ -68,8 +55,8 @@ export function SpecialtySelect({
         </SelectTrigger>
         <SelectContent>
           {HCP_SPECIALTIES.map((specialty) => (
-            <SelectItem key={specialty} value={specialty}>
-              {specialty}
+            <SelectItem key={specialty.value} value={specialty.value}>
+              {specialty.label}
             </SelectItem>
           ))}
         </SelectContent>

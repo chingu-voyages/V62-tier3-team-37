@@ -99,12 +99,16 @@ export function listDirectory(filters?: {
   city?: string;
   area?: string;
   specialty?: string;
+  gender?: "male" | "female";
+  minYears?: number;
 }): Promise<{ data: DirectoryClinician[] }> {
   const params = new URLSearchParams();
   if (filters?.search) params.set("search", filters.search);
   if (filters?.city) params.set("city", filters.city);
   if (filters?.area) params.set("area", filters.area);
   if (filters?.specialty) params.set("specialty", filters.specialty);
+  if (filters?.gender) params.set("gender", filters.gender);
+  if (filters?.minYears) params.set("min_years", String(filters.minYears));
   const query = params.toString();
   return apiRequest(`/api/patient/directory${query ? `?${query}` : ""}`);
 }

@@ -121,7 +121,7 @@ const SPECIALTIES = [
   "Dermatology",
   "Neurology",
   "Pediatrics",
-  "Orthopedics",
+  "Psychiatry",
   "General Medicine",
 ];
 const SPECIALTY_API: Record<string, string> = {
@@ -129,6 +129,7 @@ const SPECIALTY_API: Record<string, string> = {
   Dermatology: "DERMATOLOGY",
   Neurology: "NEUROLOGY",
   Pediatrics: "PEDIATRICS",
+  Psychiatry: "PSYCHIATRY",
   "General Medicine": "GENERAL_MEDICINE",
 };
 const INSURANCES = ["Medicare", "AXA", "Allianz", "Cigna", "BUPA"];
@@ -274,6 +275,8 @@ export function LandingSearch({
         city: city.trim() || undefined,
         area: area.trim() || undefined,
         specialty: SPECIALTY_API[specialty],
+        gender: gender === "female" || gender === "male" ? gender : undefined,
+        minYears: minExperience ? Number(minExperience) : undefined,
       });
       setLiveDoctors(response.data.map(toLandingDoctor));
     } catch (error) {
@@ -395,14 +398,16 @@ export function LandingSearch({
                   <option key={value} value={value} />
                 ))}
               </datalist>
-              <FilterSelect
-                id="landing-insurance"
-                label="Insurance"
-                placeholder="All insurance"
-                value={insurance}
-                options={INSURANCES}
-                onChange={setInsurance}
-              />
+              {signedIn ? null : (
+                <FilterSelect
+                  id="landing-insurance"
+                  label="Insurance"
+                  placeholder="All insurance"
+                  value={insurance}
+                  options={INSURANCES}
+                  onChange={setInsurance}
+                />
+              )}
             </div>
           </div>
 
@@ -450,18 +455,20 @@ export function LandingSearch({
                 ]}
                 onChange={setGender}
               />
-              <FilterSelect
-                id="landing-price"
-                label="Price"
-                placeholder="Any price"
-                value={maxPrice}
-                options={[
-                  { value: "300", label: "Up to 300 EGP" },
-                  { value: "400", label: "Up to 400 EGP" },
-                  { value: "500", label: "Up to 500 EGP" },
-                ]}
-                onChange={setMaxPrice}
-              />
+              {signedIn ? null : (
+                <FilterSelect
+                  id="landing-price"
+                  label="Price"
+                  placeholder="Any price"
+                  value={maxPrice}
+                  options={[
+                    { value: "300", label: "Up to 300 EGP" },
+                    { value: "400", label: "Up to 400 EGP" },
+                    { value: "500", label: "Up to 500 EGP" },
+                  ]}
+                  onChange={setMaxPrice}
+                />
+              )}
               <FilterSelect
                 id="landing-experience"
                 label="Years of experience"

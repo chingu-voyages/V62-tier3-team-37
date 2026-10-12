@@ -26,6 +26,8 @@ class PatientDirectoryController extends Controller
         $city = $request->string('city')->toString();
         $area = $request->string('area')->toString();
         $search = $request->string('search')->toString();
+        $gender = strtoupper($request->string('gender')->toString());
+        $minYears = $request->integer('min_years');
 
         $clinicians = User::query()
             ->where('role', UserRole::HCP)
@@ -33,9 +35,16 @@ class PatientDirectoryController extends Controller
             ->whereHas('hcpVerification', fn ($query) => $query->where('status', VerificationStatus::VERIFIED))
             ->whereHas('hcpProfile')
             ->with(['hcpProfile.availabilitySlots', 'hcpVerification'])
+            ->withAvg('reviewsReceived as rating', 'rating')
+            ->withCount('reviewsReceived as review_count')
             ->when($specialty !== '', fn ($query) => $query->whereHas(
                 'hcpProfile',
                 fn ($profile) => $profile->where('specialty', $specialty),
+            ))
+            ->when(in_array($gender, ['MALE', 'FEMALE'], true), fn ($query) => $query->where('gender', $gender))
+            ->when($minYears > 0, fn ($query) => $query->whereHas(
+                'hcpProfile',
+                fn ($profile) => $profile->where('years_of_experience', '>=', $minYears),
             ))
             ->when($city !== '', fn ($query) => $query->whereHas(
                 'hcpProfile',
@@ -47,8 +56,13 @@ class PatientDirectoryController extends Controller
             ))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
+                    $specialtyTerm = strtoupper(str_replace([' ', '-'], '_', $search));
                     $inner->where('first_name', 'like', '%'.$search.'%')
-                        ->orWhere('last_name', 'like', '%'.$search.'%');
+                        ->orWhere('last_name', 'like', '%'.$search.'%')
+                        ->orWhereHas('hcpProfile', function ($profile) use ($search, $specialtyTerm) {
+                            $profile->where('workplace_name', 'like', '%'.$search.'%')
+                                ->orWhere('specialty', 'like', '%'.$specialtyTerm.'%');
+                        });
                 });
             })
             ->orderBy('last_name')

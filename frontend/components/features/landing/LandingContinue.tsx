@@ -29,7 +29,7 @@ const PRACTICES = [
   "Dermatology",
   "Neurology",
   "Pediatrics",
-  "Orthopedics",
+  "Psychiatry",
   "General Medicine",
 ] as const;
 
