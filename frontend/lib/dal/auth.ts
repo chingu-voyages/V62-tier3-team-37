@@ -3,7 +3,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { serverRequest } from "@/lib/api/server-client";
-import { homePathForRole, isEmailVerified } from "@/lib/auth/permissions";
+import { ADMIN_ROLE, homePathForRole, isEmailVerified } from "@/lib/auth/permissions";
 import { ROUTES } from "@/lib/constants/routes";
 import type { AuthUser, SignupRole } from "@/types/auth";
 
@@ -69,5 +69,14 @@ export async function requireRole(
     redirect(ROUTES.otp);
   }
 
+  return user;
+}
+
+/** Redirect to the admin login unless the session is an admin. */
+export async function requireAdmin(): Promise<NonNullable<AuthUser>> {
+  const user = await getOptionalUser();
+  if (!user || user.role !== ADMIN_ROLE) {
+    redirect(ROUTES.admin);
+  }
   return user;
 }

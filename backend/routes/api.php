@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminAccessRequestController;
 use App\Http\Controllers\Hcp\HcpOnboardingController;
 use App\Http\Controllers\Hcp\HcpProfileController;
 use App\Http\Controllers\Patient\PatientMedicalDocumentController;
@@ -13,7 +14,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
+    Route::get('/admin/access-requests', [AdminAccessRequestController::class, 'index']);
+    Route::get('/admin/access-requests/mine', [AdminAccessRequestController::class, 'mine']);
 });
+
+Route::post('/admin/access-requests', [AdminAccessRequestController::class, 'store'])
+    ->middleware('throttle:6,1');
 
 Route::middleware(['auth:sanctum', EnsureEmailIsVerified::class])->group(function () {
 
