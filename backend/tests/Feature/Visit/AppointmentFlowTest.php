@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Enums\VerificationStatus;
 use App\Models\HcpAvailabilitySlot;
 use App\Models\HcpProfile;
+use App\Models\HcpReview;
 use App\Models\HcpVerification;
 use App\Models\User;
 use Carbon\Carbon;
@@ -171,6 +172,24 @@ class AppointmentFlowTest extends TestCase
             ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('phone');
+    }
+
+    public function test_featured_clinicians_are_the_ones_patients_rated_well(): void
+    {
+        [$patient, $clinician] = $this->pair();
+        HcpReview::query()->create([
+            'hcp_user_id' => $clinician->id,
+            'patient_user_id' => $patient->id,
+            'rating' => 5,
+            'comment' => 'Clear and kind.',
+        ]);
+
+        $this->actingAs($patient, 'sanctum')
+            ->getJson('/api/patient/directory/featured')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $clinician->id)
+            ->assertJsonPath('data.0.rating', 5)
+            ->assertJsonPath('data.0.review_count', 1);
     }
 
     /**

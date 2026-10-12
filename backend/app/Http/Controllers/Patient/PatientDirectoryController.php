@@ -80,6 +80,36 @@ class PatientDirectoryController extends Controller
         ]);
     }
 
+    public function featured(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->role === UserRole::PATIENT, 403);
+
+        $clinicians = User::query()
+            ->where('role', UserRole::HCP)
+            ->where('status', UserStatus::ACTIVE)
+            ->whereHas('hcpVerification', fn ($query) => $query->where('status', VerificationStatus::VERIFIED))
+            ->whereHas('hcpProfile')
+            ->with(['hcpProfile.availabilitySlots', 'hcpVerification'])
+            ->withAvg('reviewsReceived as rating', 'rating')
+            ->withCount('reviewsReceived as review_count')
+            ->orderBy('last_name')
+            ->get();
+
+        $wellRated = $clinicians
+            ->filter(fn (User $clinician) => (int) $clinician->review_count >= 1 && (float) $clinician->rating >= 4)
+            ->sortBy([
+                fn (User $clinician) => -1 * (float) $clinician->rating,
+                fn (User $clinician) => -1 * (int) $clinician->review_count,
+            ])
+            ->values();
+
+        $clinicians = ($wellRated->isNotEmpty() ? $wellRated : $clinicians)->take(6)->values();
+
+        return response()->json([
+            'data' => $clinicians->map(fn (User $clinician) => $this->card($clinician))->values(),
+        ]);
+    }
+
     public function slots(Request $request, User $user, AppointmentService $appointments): JsonResponse
     {
         abort_unless($request->user()->role === UserRole::PATIENT, 403);
@@ -116,6 +146,8 @@ class PatientDirectoryController extends Controller
                 ->map(fn ($slot) => $slot->day_of_week->value)
                 ->unique()
                 ->values(),
+            'rating' => $clinician->rating !== null ? round((float) $clinician->rating, 1) : null,
+            'review_count' => (int) ($clinician->review_count ?? 0),
         ];
     }
 

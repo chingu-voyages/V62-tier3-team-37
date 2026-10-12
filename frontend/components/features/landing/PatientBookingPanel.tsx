@@ -60,7 +60,7 @@ export function PatientBookingPanel({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="top-0 right-0 bottom-0 left-auto flex h-dvh max-h-dvh w-full max-w-lg translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none bg-muted p-0 ring-0 sm:max-w-lg sm:rounded-l-3xl sm:shadow-panel data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right">
+      <DialogContent className="top-0 right-0 bottom-0 left-auto flex h-dvh max-h-dvh w-full max-w-lg translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-l border-border bg-muted p-0 ring-0 sm:max-w-lg sm:rounded-l-3xl sm:p-0 data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right">
         {doctor ? (
           <BookingForm key={doctor.id} doctor={doctor} patient={patient} onClose={onClose} />
         ) : (
@@ -167,15 +167,19 @@ function BookingForm({
 
   return (
     <>
-      <div className="flex items-start justify-between bg-background px-5 py-4">
-        <div>
-          <DialogTitle className="type-h3">{booked ? "Visit requested" : "Book appointment"}</DialogTitle>
-          <p className="mt-0.5 type-helper text-muted-foreground">
-            {booked ? "Saved with your appointments." : live ? "A 30-minute visit on your account." : "A one-hour visit on your account."}
+      <div className="flex shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-5 py-4">
+        <div className="min-w-0">
+          <DialogTitle className="text-foreground">
+            {booked ? "Visit requested" : "Book appointment"}
+          </DialogTitle>
+          <p className="mt-0.5 truncate type-helper text-muted-foreground">
+            {booked
+              ? "Saved with your appointments."
+              : `${doctor.fullName} · ${live ? "30 minutes" : "1 hour"}`}
           </p>
         </div>
         <DialogClose asChild>
-          <Button type="button" variant="ghost" size="icon" aria-label="Close booking">
+          <Button type="button" variant="ghost" size="icon" className="shrink-0" aria-label="Close booking">
             <X aria-hidden="true" />
           </Button>
         </DialogClose>
@@ -301,7 +305,7 @@ function BookingForm({
         )}
       </div>
 
-      <div className="bg-background px-4 py-4 shadow-panel">
+      <div className="shrink-0 border-t border-border bg-background px-5 py-4">
         {error ? (
           <p role="alert" className="mb-3 type-helper text-destructive">
             {error}
@@ -324,13 +328,12 @@ function BookingForm({
                 "Choose an open day to continue."
               )}
             </p>
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" onClick={onClose}>
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" size="lg" onClick={onClose}>
                 Cancel
               </Button>
               <Button
                 type="button"
-                className="flex-1"
                 size="lg"
                 disabled={!selectedDate || !selectedTime || saving}
                 onClick={confirm}

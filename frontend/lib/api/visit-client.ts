@@ -55,6 +55,8 @@ export type DirectoryClinician = {
   profile_photo_url: string | null;
   clinic_photo_url: string | null;
   open_days: number[];
+  rating?: number | null;
+  review_count?: number;
 };
 
 export type MessageThread = {
@@ -109,6 +111,10 @@ export function listDirectory(filters?: {
 
 export function listDirectoryPlaces(): Promise<{ data: { cities: string[]; areas: string[] } }> {
   return apiRequest("/api/patient/directory/places");
+}
+
+export function listFeaturedClinicians(): Promise<{ data: DirectoryClinician[] }> {
+  return apiRequest("/api/patient/directory/featured");
 }
 
 export function clinicianSlots(clinicianId: string): Promise<{ data: Record<string, string[]> }> {

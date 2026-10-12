@@ -1,5 +1,7 @@
 import { CalendarCheck, SlidersHorizontal, UserRound } from "lucide-react";
 import Link from "next/link";
+import { FeaturedClinicians } from "@/components/features/landing/FeaturedClinicians";
+import type { BookingPatient } from "@/components/features/landing/PatientBookingPanel";
 import { Footer } from "@/components/layout/Footer";
 import { buttonVariants } from "@/components/ui/button";
 import { ROUTES } from "@/lib/constants/routes";
@@ -54,9 +56,18 @@ const STEPS = [
  * Sections under the existing landing search.
  * The search itself stays the way to book; these only explain it.
  */
-export function LandingContinue({ signedIn = false }: { signedIn?: boolean }) {
+export function LandingContinue({
+  signedIn = false,
+  patient,
+}: {
+  signedIn?: boolean;
+  patient?: BookingPatient;
+}) {
   return (
     <>
+      {signedIn && patient ? (
+        <FeaturedClinicians patient={patient} />
+      ) : (
       <section aria-labelledby="landing-starts" className="border-t border-border bg-background">
         <div className="w-full px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <h2 id="landing-starts" className="type-h2 text-foreground">
@@ -92,6 +103,7 @@ export function LandingContinue({ signedIn = false }: { signedIn?: boolean }) {
           </ul>
         </div>
       </section>
+      )}
 
       <section aria-labelledby="landing-practices" className="bg-muted">
         <div className="w-full px-4 py-12 sm:px-6 sm:py-16 lg:px-8">

@@ -59,6 +59,7 @@ Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, EnsureEmailIsVe
     /**************************PATIENT************************************** */
     Route::get('/patient/directory', [PatientDirectoryController::class, 'index']);
     Route::get('/patient/directory/places', [PatientDirectoryController::class, 'places']);
+    Route::get('/patient/directory/featured', [PatientDirectoryController::class, 'featured']);
     Route::get('/patient/clinicians/{user}/slots', [PatientDirectoryController::class, 'slots']);
     Route::get('/patient/appointments', [PatientAppointmentController::class, 'index']);
     Route::post('/patient/appointments', [PatientAppointmentController::class, 'store']);
