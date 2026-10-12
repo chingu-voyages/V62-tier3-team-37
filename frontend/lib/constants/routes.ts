@@ -46,6 +46,11 @@ export const ROUTES = {
 
   admin: "/admin",
   adminHome: "/admin/home",
+  adminClinicians: "/admin/clinicians",
+  adminPatients: "/admin/patients",
+  adminReports: "/admin/reports",
+  adminRequests: "/admin/requests",
+  patientFeedback: "/patient/feedback",
 
   /** Legal. Referenced by the footer and the signup form; pages still to be authored. */
   terms: "/terms",

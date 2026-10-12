@@ -4,6 +4,7 @@ import { VERIFICATION_STATE_PRESENTATION } from "./verification-status";
 
 type StatusBadgeProps = {
   state: ProfileVerificationState;
+  label?: string;
   className?: string;
 };
 
@@ -11,8 +12,11 @@ type StatusBadgeProps = {
  * Status pill that always carries a text label, so state is never conveyed by
  * colour or icon alone.
  */
-export function StatusBadge({ state, className }: StatusBadgeProps) {
-  const { label, icon: Icon, className: toneClassName } = VERIFICATION_STATE_PRESENTATION[state];
+export function StatusBadge({ state, label, className }: StatusBadgeProps) {
+  const presentation = VERIFICATION_STATE_PRESENTATION[state];
+  const Icon = presentation.icon;
+  const toneClassName = presentation.className;
+  const text = label ?? presentation.label;
 
   return (
     <span
@@ -23,7 +27,7 @@ export function StatusBadge({ state, className }: StatusBadgeProps) {
       )}
     >
       <Icon className="size-3.5" aria-hidden="true" />
-      {label}
+      {text}
     </span>
   );
 }

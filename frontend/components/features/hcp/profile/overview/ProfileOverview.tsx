@@ -11,6 +11,7 @@ import {
 import { ProfilePhotoControl } from "@/components/features/hcp/profile/shared/ProfilePhotoControl";
 import { calculateAge, formatCalendarDate } from "@/lib/format";
 import type { HcpProfileIdentity } from "@/types/hcp-profile";
+import type { ProfileRequestDecision } from "@/types/hcp-profile";
 import { ProfilePill } from "../shared";
 
 type ProfileOverviewProps = {
@@ -18,6 +19,8 @@ type ProfileOverviewProps = {
   /** Raw names, for the avatar initials when no photo is set. */
   firstName?: string;
   lastName?: string;
+  decision?: ProfileRequestDecision;
+  decisionReason?: string;
 };
 
 type MetaItem = {
@@ -35,7 +38,13 @@ function MetaPill({ icon: Icon, label }: MetaItem) {
   );
 }
 
-export function ProfileOverview({ profile, firstName, lastName }: ProfileOverviewProps) {
+export function ProfileOverview({
+  profile,
+  firstName,
+  lastName,
+  decision = "none",
+  decisionReason,
+}: ProfileOverviewProps) {
   const hasIdentity = Boolean(profile?.fullName || profile?.specialty);
 
   // Date of birth already implies age. Only fall back to a derived age when the
@@ -69,7 +78,9 @@ export function ProfileOverview({ profile, firstName, lastName }: ProfileOvervie
   );
 
   return (
-    <section className="rounded-2xl border border-secondary/20 bg-accent p-4 sm:rounded-3xl sm:p-5">
+    <div className="flex flex-col gap-4">
+      <RequestOutcome decision={decision} reason={decisionReason} />
+      <section className="rounded-2xl border border-secondary/20 bg-accent p-4 sm:rounded-3xl sm:p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
         <ProfilePhotoControl
           photoUrl={profile?.photoUrl}
@@ -91,12 +102,7 @@ export function ProfileOverview({ profile, firstName, lastName }: ProfileOvervie
               </p>
             </div>
 
-            {profile?.isVerified ? (
-              <ProfilePill tone="accent" className="shrink-0 font-medium">
-                <BadgeCheck className="size-3.5" aria-hidden="true" />
-                Verified HCP
-              </ProfilePill>
-            ) : null}
+            <DecisionPill decision={decision} />
           </div>
 
           {metaItems.length > 0 ? (
@@ -113,5 +119,61 @@ export function ProfileOverview({ profile, firstName, lastName }: ProfileOvervie
         </div>
       </div>
     </section>
+    </div>
   );
+}
+
+function RequestOutcome({ decision, reason }: { decision: ProfileRequestDecision; reason?: string }) {
+  if (decision === "none") return null;
+
+  const accepted = decision === "accepted";
+  const declined = decision === "declined";
+
+  return (
+    <section
+      className={
+        declined
+          ? "rounded-2xl bg-destructive/10 px-4 py-4 ring-1 ring-destructive/20"
+          : "rounded-2xl bg-background px-4 py-4 shadow-card ring-1 ring-secondary/25"
+      }
+    >
+      <p className={declined ? "type-h4 text-destructive" : "type-h4 text-primary"}>
+        {accepted ? "You're accepted" : declined ? "Your request was declined" : "Your request is under review"}
+      </p>
+      <p className="mt-1 type-body text-foreground">
+        {accepted
+          ? "The admin team accepted your request. Patients can find you."
+          : declined
+            ? reason || "The admin team declined this request."
+            : "The admin team has your request. Accepted or declined will show here."}
+      </p>
+    </section>
+  );
+}
+
+function DecisionPill({ decision }: { decision: ProfileRequestDecision }) {
+  if (decision === "accepted") {
+    return (
+      <ProfilePill tone="accent" className="shrink-0 font-medium">
+        <BadgeCheck className="size-3.5" aria-hidden="true" />
+        Accepted
+      </ProfilePill>
+    );
+  }
+
+  if (decision === "declined") {
+    return (
+      <span className="inline-flex shrink-0 items-center rounded-lg bg-destructive/10 px-2.5 py-1 type-helper font-medium text-destructive">
+        Declined
+      </span>
+    );
+  }
+
+  if (decision === "pending") {
+    return (
+      <ProfilePill className="shrink-0 font-medium">Under review</ProfilePill>
+    );
+  }
+
+  return null;
 }

@@ -5,6 +5,7 @@ import type {
   HcpProfessionalInformation,
   HcpProfessionalPreferences,
   HcpProfileIdentity,
+  ProfileRequestDecision,
   ProfileVerificationRequirement,
   ProfileVerificationRequirementKey,
   ProfileVerificationState,
@@ -172,6 +173,13 @@ export function toAvailability(slots: ApiAvailabilitySlot[] | undefined): HcpAva
   return { workingDays, ranges, slots: rawSlots };
 }
 
+function requestDecision(status: ApiVerification["status"]): ProfileRequestDecision {
+  if (status === "VERIFIED") return "accepted";
+  if (status === "REJECTED") return "declined";
+  if (status === "UNDER_REVIEW") return "pending";
+  return "none";
+}
+
 function overallState(verification: ApiVerification): ProfileVerificationState {
   switch (verification.status) {
     case "VERIFIED":
@@ -234,5 +242,6 @@ export function toVerificationSummary(profile: ApiHcpProfile): ProfileVerificati
     requirements: ordered,
     lastVerifiedAt: verification.reviewed_at ?? undefined,
     rejectionReason: verification.rejection_reason ?? undefined,
+    requestDecision: requestDecision(verification.status),
   };
 }

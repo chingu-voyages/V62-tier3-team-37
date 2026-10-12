@@ -90,5 +90,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Document::class);
     }
-    
+
+    public function reviewsReceived(): HasMany
+    {
+        return $this->hasMany(HcpReview::class, 'hcp_user_id');
+    }
+
+    public function reportsReceived(): HasMany
+    {
+        return $this->hasMany(HcpReport::class, 'hcp_user_id');
+    }
 }

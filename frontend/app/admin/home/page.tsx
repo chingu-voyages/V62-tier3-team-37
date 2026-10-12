@@ -1,67 +1,68 @@
 import type { Metadata } from "next";
-import { AdminSignOut } from "@/components/features/admin/AdminSignOut";
-import { HealthHubLogo } from "@/components/layout/HealthHubLogo";
+import Link from "next/link";
+import { AdminShell } from "@/components/features/admin/AdminShell";
 import { userDisplayName } from "@/lib/auth/display";
-import { formatDateTime } from "@/lib/format";
-import { getPendingAdminAccessRequests } from "@/lib/dal/admin";
+import { ROUTES } from "@/lib/constants/routes";
+import { getAdminDeskSummary } from "@/lib/dal/admin";
 import { requireAdmin } from "@/lib/dal/auth";
 
 export const metadata: Metadata = {
-  title: "Admin portal",
+  title: "Admin home",
   robots: { index: false, follow: false },
 };
 
 export default async function AdminHomePage() {
   const user = await requireAdmin();
-  const requests = await getPendingAdminAccessRequests();
-  const name = userDisplayName(user);
+  const summary = await getAdminDeskSummary();
+
+  const cards = [
+    {
+      href: `${ROUTES.adminClinicians}?view=waiting`,
+      count: summary.clinicians_waiting,
+      label: "Clinician requests",
+      detail: "Waiting for you to confirm or decline.",
+    },
+    {
+      href: ROUTES.adminReports,
+      count: summary.reports_open,
+      label: "Open reports",
+      detail: "Problems patients sent about a clinician.",
+    },
+    {
+      href: ROUTES.adminRequests,
+      count: summary.access_requests,
+      label: "Access requests",
+      detail: "People waiting to become an admin.",
+    },
+    {
+      href: ROUTES.adminPatients,
+      count: summary.patients,
+      label: "Patients",
+      detail: "Accounts you can block if needed.",
+    },
+  ];
 
   return (
-    <div className="flex min-h-dvh flex-col bg-muted">
-      <header className="flex items-center justify-between gap-4 bg-background px-4 py-4 sm:px-6">
-        <HealthHubLogo />
-        <div className="flex items-center gap-3">
-          <p className="hidden type-label text-foreground sm:block">{name}</p>
-          <AdminSignOut />
-        </div>
-      </header>
-
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-10 sm:px-6">
-        <p className="type-step text-primary">Admin</p>
-        <h1 className="mt-2 type-h1 text-foreground">Portal</h1>
-        <p className="mt-2 max-w-xl type-body text-muted-foreground">
-          Signed in as {name}. These are the people waiting to become an admin.
-        </p>
-
-        {requests.length === 0 ? (
-          <div className="mt-8 rounded-2xl bg-background px-5 py-10 text-center shadow-card ring-1 ring-border/70">
-            <p className="type-body text-muted-foreground">No one has asked to become an admin yet.</p>
-          </div>
-        ) : (
-          <ul className="mt-8 flex flex-col gap-3">
-            {requests.map((request) => {
-              const fullName = [request.first_name, request.last_name].filter(Boolean).join(" ");
-              return (
-                <li
-                  key={request.id}
-                  className="rounded-2xl bg-background px-5 py-4 shadow-card ring-1 ring-border/70"
-                >
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="type-h4 text-foreground">{fullName || request.email}</p>
-                    <p className="type-helper text-muted-foreground">
-                      {formatDateTime(request.created_at) ?? "Waiting"}
-                    </p>
-                  </div>
-                  <p className="mt-1 type-helper text-muted-foreground">{request.email}</p>
-                  {request.message ? (
-                    <p className="mt-3 type-body text-foreground">{request.message}</p>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </main>
-    </div>
+    <AdminShell name={userDisplayName(user)} section="home">
+      <p className="type-step text-primary">Admin</p>
+      <h1 className="mt-2 type-h1 text-foreground">What needs you</h1>
+      <p className="mt-2 max-w-xl type-body text-muted-foreground">
+        Start with the queues. The directories are there when you need a specific person.
+      </p>
+      <ul className="mt-8 grid gap-3 sm:grid-cols-2">
+        {cards.map((card) => (
+          <li key={card.href}>
+            <Link
+              href={card.href}
+              className="flex h-full flex-col rounded-2xl bg-background px-5 py-5 shadow-card ring-1 ring-border/70 transition-colors hover:bg-accent/40"
+            >
+              <p className="type-h1 text-primary">{card.count}</p>
+              <p className="mt-2 type-h4 text-foreground">{card.label}</p>
+              <p className="mt-1 type-body text-muted-foreground">{card.detail}</p>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </AdminShell>
   );
 }

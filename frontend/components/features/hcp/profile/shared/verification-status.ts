@@ -45,5 +45,5 @@ export const VERIFICATION_STATE_PRESENTATION: Record<
     icon: TriangleAlert,
     className: "text-amber-600",
   },
-  REJECTED: { label: "Rejected", icon: CircleAlert, className: "text-destructive" },
+  REJECTED: { label: "Declined", icon: CircleAlert, className: "text-destructive" },
 };

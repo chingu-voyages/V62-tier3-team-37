@@ -63,4 +63,47 @@ class AdminAccessRequestService
             ->latest()
             ->get();
     }
+
+    public function approve(AdminAccessRequest $request): AdminAccessRequest
+    {
+        $this->ensurePending($request);
+
+        $account = $request->user
+            ?? User::query()->where('email', $request->email)->first();
+
+        if (! $account) {
+            throw ValidationException::withMessages([
+                'request' => 'This person needs a HealthHub account before they can be an admin.',
+            ]);
+        }
+
+        if ($account->role !== UserRole::ADMIN) {
+            $account->forceFill(['role' => UserRole::ADMIN])->save();
+        }
+
+        $request->forceFill([
+            'user_id' => $account->id,
+            'status' => AdminAccessStatus::APPROVED,
+        ])->save();
+
+        return $request->refresh();
+    }
+
+    public function decline(AdminAccessRequest $request): AdminAccessRequest
+    {
+        $this->ensurePending($request);
+
+        $request->forceFill(['status' => AdminAccessStatus::REJECTED])->save();
+
+        return $request->refresh();
+    }
+
+    private function ensurePending(AdminAccessRequest $request): void
+    {
+        if ($request->status !== AdminAccessStatus::PENDING) {
+            throw ValidationException::withMessages([
+                'request' => 'This request has already been decided.',
+            ]);
+        }
+    }
 }

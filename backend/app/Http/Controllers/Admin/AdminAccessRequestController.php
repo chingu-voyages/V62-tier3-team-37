@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAdminAccessRequest;
+use App\Models\AdminAccessRequest;
 use App\Models\User;
 use App\Services\Admin\AdminAccessRequestService;
 use Illuminate\Http\JsonResponse;
@@ -48,6 +49,34 @@ class AdminAccessRequestController extends Controller
             'message' => 'Your request to become an admin was sent.',
             'data' => $record->toPortalArray(),
         ], 201);
+    }
+
+    public function approve(
+        Request $request,
+        AdminAccessRequest $accessRequest,
+        AdminAccessRequestService $requests,
+    ): JsonResponse {
+        $this->requireAdmin($request);
+        $updated = $requests->approve($accessRequest);
+
+        return response()->json([
+            'message' => 'This person is now an admin.',
+            'data' => $updated->toPortalArray(),
+        ]);
+    }
+
+    public function decline(
+        Request $request,
+        AdminAccessRequest $accessRequest,
+        AdminAccessRequestService $requests,
+    ): JsonResponse {
+        $this->requireAdmin($request);
+        $updated = $requests->decline($accessRequest);
+
+        return response()->json([
+            'message' => 'This request was declined.',
+            'data' => $updated->toPortalArray(),
+        ]);
     }
 
     private function requireAdmin(Request $request): User
