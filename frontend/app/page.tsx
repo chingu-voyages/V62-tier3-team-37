@@ -30,7 +30,7 @@ export default async function HomePage() {
   }
 
   if (user?.role === HCP_ROLE) {
-    redirect(ROUTES.hcpProfile);
+    redirect(ROUTES.hcpToday);
   }
 
   if (user && user.role === PATIENT_ROLE) {
@@ -74,7 +74,7 @@ function LandingBody({
 }): ReactNode {
   return (
     <>
-      <div className="mx-auto flex w-full max-w-5xl flex-col px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+      <div className="flex w-full flex-col px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <LandingSearch signedIn={signedIn} patientName={patientName} patient={patient} />
       </div>
       <LandingContinue signedIn={signedIn} />
@@ -89,6 +89,7 @@ async function bookingPatient(user: NonNullable<AuthUser>): Promise<BookingPatie
     email: user.email?.trim() || "",
     birthDate: null,
     gender: null,
+    phone: null,
   };
 
   try {
@@ -99,6 +100,7 @@ async function bookingPatient(user: NonNullable<AuthUser>): Promise<BookingPatie
       email: profile.email?.trim() || fallback.email,
       birthDate: profile.birth_date,
       gender: profile.gender,
+      phone: profile.phone,
     };
   } catch {
     return fallback;

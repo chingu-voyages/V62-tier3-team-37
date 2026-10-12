@@ -23,7 +23,7 @@ const FOOTER_LINKS = [
 export function Footer({ className }: { className?: string }) {
   return (
     <footer className={cn("border-t border-border/70 bg-background", className)}>
-      <div className="mx-auto flex w-full max-w-[100rem] flex-col items-center justify-between gap-2 px-4 py-4 text-center sm:px-6 sm:text-left lg:px-8 xl:px-10 2xl:px-14">
+      <div className="flex w-full flex-col items-center justify-between gap-2 px-4 py-4 text-center sm:px-6 sm:text-left lg:px-8 xl:px-10 2xl:px-14">
         <p className="type-helper text-muted-foreground">© 2026 HealthHub. All rights reserved.</p>
         <nav
           aria-label="Footer"

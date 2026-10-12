@@ -53,7 +53,7 @@ export function AdminShell({
           })}
         </nav>
       </header>
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-8 sm:px-6">{children}</main>
+      <main className="flex w-full flex-1 flex-col px-4 py-8 sm:px-6 lg:px-8">{children}</main>
     </div>
   );
 }

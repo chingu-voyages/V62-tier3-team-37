@@ -58,7 +58,7 @@ export function LandingContinue({ signedIn = false }: { signedIn?: boolean }) {
   return (
     <>
       <section aria-labelledby="landing-starts" className="border-t border-border bg-background">
-        <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="w-full px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <h2 id="landing-starts" className="type-h2 text-foreground">
             {signedIn ? "How booking works for you" : "Three ways people start"}
           </h2>
@@ -94,7 +94,7 @@ export function LandingContinue({ signedIn = false }: { signedIn?: boolean }) {
       </section>
 
       <section aria-labelledby="landing-practices" className="bg-muted">
-        <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="w-full px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <h2 id="landing-practices" className="type-h2 text-foreground">
             Practices already in the directory
           </h2>
@@ -117,7 +117,7 @@ export function LandingContinue({ signedIn = false }: { signedIn?: boolean }) {
       </section>
 
       <section aria-labelledby="landing-steps" className="border-t border-border bg-background">
-        <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        <div className="w-full px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <h2 id="landing-steps" className="type-h2 text-foreground">
             {signedIn ? "After you choose Book visit" : "After you choose Book as guest"}
           </h2>
@@ -151,7 +151,7 @@ export function LandingContinue({ signedIn = false }: { signedIn?: boolean }) {
       </section>
 
       <section aria-labelledby="landing-clinicians" className="bg-primary text-primary-foreground">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-12 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-16 lg:px-8">
+        <div className="flex w-full flex-col gap-5 px-4 py-12 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-16 lg:px-8">
           <div className="max-w-xl">
             <h2 id="landing-clinicians" className="type-h2">
               HealthHub for doctors

@@ -36,11 +36,9 @@ export function ProfileAvailabilitySection({ availability }: ProfileAvailability
       action={<EditAvailabilityForm slots={availability?.slots ?? []} />}
       className="h-full"
     >
-      <p className="type-helper text-muted-foreground">Set your working days and hours</p>
-
       {hasSchedule ? (
         <>
-          <ul className="mt-4 flex flex-wrap gap-1.5">
+          <ul className="flex flex-wrap gap-1.5">
             {DAY_PILL_LABELS.map((day) => {
               const isAvailable = workingDays.includes(day.key);
 
@@ -88,7 +86,7 @@ export function ProfileAvailabilitySection({ availability }: ProfileAvailability
           ) : null}
         </>
       ) : (
-        <SectionEmptyState message="Your availability hasn't been set up yet." className="mt-4" />
+        <SectionEmptyState message="Add the days and hours patients can book." />
       )}
     </ProfileCard>
   );

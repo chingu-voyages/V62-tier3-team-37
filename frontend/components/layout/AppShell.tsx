@@ -17,6 +17,8 @@ type AppShellProps = {
    * white tab rail with a single logo in the navbar.
    */
   floatingNav?: boolean;
+  /** Let the page fill the width beside the navigation. */
+  wide?: boolean;
   /**
    * Vertically centre short pages. Off by default: it made short routes float in
    * the middle of the viewport while long ones overflowed, and the HCP area had
@@ -41,6 +43,7 @@ export async function AppShell({
   aside,
   centerContent,
   floatingNav = false,
+  wide = false,
   children,
 }: AppShellProps) {
   const user = await getOptionalUser();
@@ -65,7 +68,9 @@ export async function AppShell({
         >
           <div
             className={cn(
-              "mx-auto flex w-full max-w-8xl flex-1 flex-col px-6 py-8 pb-24 md:pb-8 lg:px-8 xl:px-20",
+              wide
+                ? "flex w-full flex-1 flex-col px-4 py-6 pb-24 sm:px-6 md:pb-6 lg:px-8"
+                : "flex w-full flex-1 flex-col px-4 py-6 pb-24 sm:px-6 md:pb-6 lg:px-8",
               centerContent && "justify-center",
             )}
           >

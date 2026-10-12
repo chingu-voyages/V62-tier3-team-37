@@ -38,6 +38,7 @@ export const ROUTES = {
   patientAssistant: "/patient/assistant",
   patientSettings: "/patient/settings",
 
+  hcpToday: "/hcp/today",
   hcpProfile: "/hcp/profile",
   hcpPatients: "/hcp/patients",
   hcpAppointments: "/hcp/appointments",

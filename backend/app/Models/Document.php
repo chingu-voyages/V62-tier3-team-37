@@ -14,6 +14,7 @@ class Document extends Model
 
     protected $fillable = [
         'user_id',
+        'appointment_id',
         'category',
         'document_type',
         'title',
@@ -37,5 +38,10 @@ class Document extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function appointment(): BelongsTo
+    {
+        return $this->belongsTo(Appointment::class);
     }
 }

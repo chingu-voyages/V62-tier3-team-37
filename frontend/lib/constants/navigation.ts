@@ -40,7 +40,14 @@ export const patientNavigation: NavItem[] = [
     href: ROUTES.patientMessages,
     icon: "message",
     ariaLabel: "Navigate to Messages",
-    implemented: false,
+    implemented: true,
+  },
+  {
+    label: "Profile",
+    href: ROUTES.patientProfile,
+    icon: "user",
+    ariaLabel: "Navigate to profile",
+    implemented: true,
   },
   {
     label: "AI Assistant",
@@ -53,10 +60,17 @@ export const patientNavigation: NavItem[] = [
 
 export const hcpNavigation: NavItem[] = [
   {
+    label: "Today",
+    href: ROUTES.hcpToday,
+    icon: "calendar",
+    ariaLabel: "Navigate to today",
+    implemented: true,
+  },
+  {
     label: "Profile",
     href: ROUTES.hcpProfile,
     icon: "user",
-    ariaLabel: "Navigate to HCP Profile",
+    ariaLabel: "Navigate to profile",
     implemented: true,
   },
   {
@@ -64,13 +78,6 @@ export const hcpNavigation: NavItem[] = [
     href: ROUTES.hcpPatients,
     icon: "users",
     ariaLabel: "Navigate to Connected Patients",
-    implemented: true,
-  },
-  {
-    label: "Appointments",
-    href: ROUTES.hcpAppointments,
-    icon: "calendarDays",
-    ariaLabel: "Navigate to Appointments",
     implemented: true,
   },
   {

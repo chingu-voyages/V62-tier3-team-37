@@ -1,6 +1,5 @@
 import { UserRound } from "lucide-react";
 import { EditProfileForm } from "@/components/features/hcp/profile/shared/EditProfileForm";
-import { formatCalendarDate } from "@/lib/format";
 import type { HcpEditableProfile, HcpProfessionalInformation } from "@/types/hcp-profile";
 import { hasProfileField, ProfileCard, ProfileFieldRow, SectionEmptyState } from "../shared";
 
@@ -8,6 +7,7 @@ type ProfileProfessionalProps = {
   information?: HcpProfessionalInformation;
   /** Raw form values for the fields the API accepts. */
   editable: HcpEditableProfile;
+  identityLocked?: boolean;
 };
 
 type ProfessionalField = {
@@ -25,10 +25,10 @@ function pluraliseYears(count: number): string {
   return `${count} ${count === 1 ? "year" : "years"}`;
 }
 
-export function ProfileProfessional({ information, editable }: ProfileProfessionalProps) {
+export function ProfileProfessional({ information, editable, identityLocked = false }: ProfileProfessionalProps) {
   const identityFields = presentFields([
     { label: "Full Name", value: information?.fullName },
-    { label: "Date of Birth", value: formatCalendarDate(information?.dateOfBirth) },
+    { label: "Date of Birth", value: information?.dateOfBirth },
     { label: "Gender", value: information?.gender },
     { label: "Phone Number", value: information?.phone },
     { label: "Email", value: information?.email },
@@ -63,7 +63,7 @@ export function ProfileProfessional({ information, editable }: ProfileProfession
       // Specialty, years of experience and the license fields are set during
       // verification and rejected by the API, so the editor deliberately omits them
       // rather than offering inputs that could only ever 422.
-      action={<EditProfileForm values={editable} />}
+      action={<EditProfileForm values={editable} identityLocked={identityLocked} />}
       className="h-full"
     >
       {hasAnyField ? (

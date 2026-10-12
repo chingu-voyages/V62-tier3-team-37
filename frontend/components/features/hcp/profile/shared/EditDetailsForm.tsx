@@ -98,7 +98,7 @@ export function EditDetailsForm({ values }: EditDetailsFormProps) {
     <ProfileEditDialog
       title="Edit languages, consultation types and bio"
       description="Tell patients how you work and what you speak."
-      triggerLabel="Edit languages and bio"
+      triggerLabel="Edit about"
       error={formError}
       pending={mutation.isPending}
       onOpen={() => {

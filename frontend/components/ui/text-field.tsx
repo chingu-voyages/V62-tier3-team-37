@@ -30,6 +30,7 @@ export type TextFieldProps = {
   max?: number | string;
   maxLength?: number;
   autoFocus?: boolean;
+  list?: string;
   className?: string;
   /** Rendered inside the field, after the control (e.g. a visibility toggle). */
   trailing?: React.ReactNode;
@@ -64,6 +65,7 @@ export function TextField({
   max,
   maxLength,
   autoFocus,
+  list,
   className,
   trailing,
   onChange,
@@ -101,6 +103,7 @@ export function TextField({
             max={max}
             maxLength={maxLength}
             autoFocus={autoFocus}
+            list={list}
             aria-label={ariaLabel}
             aria-invalid={invalid || undefined}
             aria-describedby={describedBy}

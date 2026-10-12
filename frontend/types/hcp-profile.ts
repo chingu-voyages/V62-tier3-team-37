@@ -57,6 +57,7 @@ export type HcpProfileIdentity = {
   location?: string;
   workplaceName?: string;
   workplaceAddress?: string;
+  clinicPhotoUrl?: string;
 };
 
 export type HcpProfessionalInformation = {

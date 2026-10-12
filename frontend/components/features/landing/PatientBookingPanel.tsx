@@ -12,7 +12,8 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,16 +23,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { TextField } from "@/components/ui/text-field";
-import { formatCalendarDate, formatLongDate } from "@/lib/format";
+import { savePatientPhone } from "@/lib/api/patient-client";
+import { formatCalendarDate, formatClockTime, formatLongDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { bookVisit, clinicianSlots, getApiErrorMessage } from "@/lib/api/visit-client";
 import { useAppointmentStore } from "@/store/use-appointment-store";
 import type { HCP } from "@/types/hcp-directory";
 
@@ -41,18 +37,12 @@ export type BookingPatient = {
   email: string;
   birthDate: string | null;
   gender: string | null;
+  phone: string | null;
 };
-
-type BookingFor = "self" | "other";
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"] as const;
 
 const TIME_SLOTS = buildTimeSlots();
-
-const GENDERS = [
-  { value: "MALE", label: "Male" },
-  { value: "FEMALE", label: "Female" },
-] as const;
 
 export function PatientBookingPanel({
   doctor,
@@ -91,31 +81,47 @@ function BookingForm({
   onClose: () => void;
 }) {
   const addAppointment = useAppointmentStore((state) => state.addAppointment);
+  const live = /^\d+$/.test(doctor.id);
   const today = startOfDay(new Date());
   const [month, setMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
-  const [bookingFor, setBookingFor] = useState<BookingFor>("self");
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
-  const [otherFirst, setOtherFirst] = useState("");
-  const [otherLast, setOtherLast] = useState("");
-  const [otherEmail, setOtherEmail] = useState("");
-  const [otherBirth, setOtherBirth] = useState("");
-  const [otherGender, setOtherGender] = useState("");
+  const [phone, setPhone] = useState(patient.phone ?? "");
   const [error, setError] = useState<string | null>(null);
   const [booked, setBooked] = useState(false);
+  const [slots, setSlots] = useState<Record<string, string[]> | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!live) return;
+    let cancelled = false;
+    clinicianSlots(doctor.id)
+      .then((response) => {
+        if (!cancelled) setSlots(response.data);
+      })
+      .catch((cause) => {
+        if (!cancelled) setError(getApiErrorMessage(cause));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [doctor.id, live]);
 
   const location = [doctor.area, doctor.city].filter(Boolean).join(", ");
-  const timeLabel = TIME_SLOTS.find((slot) => slot.value === selectedTime)?.label;
+  const times = live
+    ? (selectedDate ? (slots?.[selectedDate] ?? []) : []).map((value) => ({
+        value,
+        label: formatClockTime(value),
+      }))
+    : TIME_SLOTS;
+  const timeLabel = times.find((slot) => slot.value === selectedTime)?.label;
   const patientName = [patient.firstName, patient.lastName].filter(Boolean).join(" ");
-  const otherName = [otherFirst.trim(), otherLast.trim()].filter(Boolean).join(" ");
-  const visitingName = bookingFor === "other" ? otherName : patientName || "you";
 
-  function confirm() {
-    const otherIncomplete =
-      !otherFirst.trim() || !otherLast.trim() || !otherEmail.trim() || !otherBirth || !otherGender;
-    if (bookingFor === "other" && otherIncomplete) {
-      setError("Enter the other person's name, email, date of birth, and gender.");
+  async function confirm() {
+    const phoneValue = phone.trim();
+    if (phoneValue.replace(/\D/g, "").length < 6) {
+      setError("Add a phone number so the clinic can call you.");
       return;
     }
     if (!selectedDate || !selectedTime) {
@@ -123,12 +129,29 @@ function BookingForm({
       return;
     }
 
-    const reason = [
-      bookingFor === "other" ? `Booked for ${otherName}.` : "Booked for you.",
-      notes.trim(),
-    ]
-      .filter(Boolean)
-      .join(" ");
+    const reason = notes.trim();
+
+    if (live) {
+      setSaving(true);
+      setError(null);
+      try {
+        if (phoneValue !== (patient.phone ?? "").trim()) {
+          await savePatientPhone(phoneValue);
+        }
+        await bookVisit({
+          clinicianId: Number(doctor.id),
+          date: selectedDate,
+          time: selectedTime,
+          reason,
+        });
+        setBooked(true);
+      } catch (cause) {
+        setError(getApiErrorMessage(cause));
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
 
     addAppointment({
       doctorName: doctor.fullName,
@@ -148,7 +171,7 @@ function BookingForm({
         <div>
           <DialogTitle className="type-h3">{booked ? "Visit requested" : "Book appointment"}</DialogTitle>
           <p className="mt-0.5 type-helper text-muted-foreground">
-            {booked ? "Saved with your appointments." : "A one-hour visit on your account."}
+            {booked ? "Saved with your appointments." : live ? "A 30-minute visit on your account." : "A one-hour visit on your account."}
           </p>
         </div>
         <DialogClose asChild>
@@ -169,7 +192,7 @@ function BookingForm({
             location={location}
             date={selectedDate}
             time={timeLabel}
-            who={bookingFor === "other" ? visitingName : "You"}
+            length={live ? "30 minutes" : "1 hour"}
             notes={notes.trim()}
           />
         ) : (
@@ -177,81 +200,23 @@ function BookingForm({
             <DoctorCard doctor={doctor} location={location} />
 
             <section className="rounded-2xl bg-background p-4 shadow-card ring-1 ring-border/70">
-              <h3 className="type-label text-foreground">Who is this for?</h3>
+              <h3 className="type-label text-foreground">Your details</h3>
               <p className="mt-1 type-helper text-muted-foreground">
-                The visit stays on your account either way.
+                The clinic uses your name and phone if they need to reach you.
               </p>
-              <div className="mt-3 grid grid-cols-2 gap-1 rounded-full bg-muted p-1">
-                <TabButton
-                  pressed={bookingFor === "self"}
-                  onClick={() => {
-                    setBookingFor("self");
-                    setError(null);
-                  }}
-                >
-                  Myself
-                </TabButton>
-                <TabButton
-                  pressed={bookingFor === "other"}
-                  onClick={() => {
-                    setBookingFor("other");
-                    setError(null);
-                  }}
-                >
-                  Someone else
-                </TabButton>
+              <IdentityCard patient={patient} name={patientName} />
+              <div className="mt-4">
+                <TextField
+                  id="booking-phone"
+                  label="Phone number"
+                  type="tel"
+                  autoComplete="tel"
+                  required
+                  value={phone}
+                  onChange={setPhone}
+                  placeholder="+961…"
+                />
               </div>
-
-              {bookingFor === "self" ? (
-                <IdentityCard patient={patient} name={patientName} />
-              ) : (
-                <div className="mt-4 grid gap-4">
-                  <p className="type-helper text-muted-foreground">
-                    We’ll send the visit details to this person.
-                  </p>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <TextField label="First name" value={otherFirst} onChange={setOtherFirst} required />
-                    <TextField label="Last name" value={otherLast} onChange={setOtherLast} required />
-                  </div>
-                  <TextField
-                    label="Email address"
-                    type="email"
-                    value={otherEmail}
-                    onChange={setOtherEmail}
-                    required
-                  />
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <TextField
-                      label="Date of birth"
-                      type="date"
-                      value={otherBirth}
-                      onChange={setOtherBirth}
-                      required
-                    />
-                    <div className="flex flex-col gap-1.5">
-                      <Label htmlFor="booking-gender">
-                        Gender
-                        <span aria-hidden="true" className="text-destructive">
-                          {" "}
-                          *
-                        </span>
-                      </Label>
-                      <Select value={otherGender || undefined} onValueChange={setOtherGender}>
-                        <SelectTrigger id="booking-gender" className="h-11 w-full bg-card type-body">
-                          <SelectValue placeholder="Gender" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {GENDERS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              )}
             </section>
 
             <section className="rounded-2xl bg-background p-4 shadow-card ring-1 ring-border/70">
@@ -265,6 +230,7 @@ function BookingForm({
                 month={month}
                 today={today}
                 selected={selectedDate}
+                openDates={live ? new Set(Object.keys(slots ?? {})) : undefined}
                 onMonth={setMonth}
                 onSelect={(value) => {
                   setSelectedDate(value);
@@ -276,9 +242,16 @@ function BookingForm({
                 {selectedDate ? (
                   <>
                     <p className="type-label text-foreground">Available times</p>
-                    <p className="mt-1 type-helper text-muted-foreground">Each visit lasts one hour.</p>
+                    <p className="mt-1 type-helper text-muted-foreground">
+                      {live ? "Each visit is 30 minutes, inside the clinic hours." : "Each visit lasts one hour."}
+                    </p>
                     <div className="mt-3 grid grid-cols-3 gap-2">
-                      {TIME_SLOTS.map((slot) => {
+                      {times.length === 0 ? (
+                        <p className="col-span-3 type-helper text-muted-foreground">
+                          No open times on this day.
+                        </p>
+                      ) : null}
+                      {times.map((slot) => {
                         const chosen = selectedTime === slot.value;
                         return (
                           <button
@@ -334,9 +307,9 @@ function BookingForm({
             {error}
           </p>
         ) : null}
-        {booked ? (
-          <Button type="button" className="w-full" size="lg" onClick={onClose}>
-            Done
+        {booked && selectedDate ? (
+          <Button type="button" className="w-full" size="lg" asChild>
+            <Link href={`/patient/home?day=${selectedDate}`}>See this visit</Link>
           </Button>
         ) : (
           <div className="flex flex-col gap-3">
@@ -359,10 +332,10 @@ function BookingForm({
                 type="button"
                 className="flex-1"
                 size="lg"
-                disabled={!selectedDate || !selectedTime}
+                disabled={!selectedDate || !selectedTime || saving}
                 onClick={confirm}
               >
-                Confirm visit
+                {saving ? "Booking…" : "Confirm visit"}
               </Button>
             </div>
           </div>
@@ -460,22 +433,21 @@ function Confirmation({
   location,
   date,
   time,
-  who,
+  length,
   notes,
 }: {
   doctor: HCP;
   location: string;
   date: string;
   time: string;
-  who: string;
+  length: string;
   notes: string;
 }) {
   const rows = [
     { label: "Clinician", value: doctor.fullName },
     { label: "When", value: `${formatLongDate(date)} · ${time}` },
-    { label: "Length", value: "1 hour" },
+    { label: "Length", value: length },
     { label: "Where", value: location || "Clinic" },
-    { label: "For", value: who },
   ];
 
   return (
@@ -507,40 +479,18 @@ function Confirmation({
   );
 }
 
-function TabButton({
-  pressed,
-  onClick,
-  children,
-}: {
-  pressed: boolean;
-  onClick: () => void;
-  children: string;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={pressed}
-      className={cn(
-        "rounded-full px-2 py-2 type-helper font-medium",
-        pressed ? "bg-background text-primary shadow-soft" : "text-muted-foreground",
-      )}
-      onClick={onClick}
-    >
-      {children}
-    </button>
-  );
-}
-
 function MonthCalendar({
   month,
   today,
   selected,
+  openDates,
   onMonth,
   onSelect,
 }: {
   month: Date;
   today: Date;
   selected: string | null;
+  openDates?: Set<string>;
   onMonth: (next: Date) => void;
   onSelect: (value: string) => void;
 }) {
@@ -583,7 +533,7 @@ function MonthCalendar({
           if (day === null) return <span key={`empty-${index}`} />;
           const date = new Date(month.getFullYear(), month.getMonth(), day);
           const value = toIsoDate(date);
-          const available = isBookable(date, today);
+          const available = openDates ? openDates.has(value) : isBookable(date, today);
           const isSelected = selected === value;
           const isToday = value === todayIso;
           return (

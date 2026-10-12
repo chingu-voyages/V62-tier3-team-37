@@ -11,7 +11,7 @@ export default async function PatientFeedbackPage() {
   const clinicians = await getFeedbackClinicians();
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col px-4 py-8 sm:px-6">
+    <div className="flex w-full flex-col">
       <p className="type-step text-primary">Your care</p>
       <h1 className="mt-2 type-h1 text-foreground">Share feedback</h1>
       <p className="mt-2 type-body text-muted-foreground">

@@ -59,57 +59,57 @@ export function ProfilePhotoControl({
 
   return (
     <div className={className}>
-      <div className="flex items-center gap-4">
-        <Avatar className="size-20 shrink-0">
+      <div className="flex flex-col items-start gap-3">
+        <Avatar className="size-24 shrink-0">
           {photoUrl ? <AvatarImage src={photoUrl} alt="" /> : null}
-          <AvatarFallback className="bg-accent type-h4 font-semibold text-primary">
+          <AvatarFallback className="bg-accent type-h3 font-semibold text-primary">
             {userInitials({ first_name: firstName, last_name: lastName })}
           </AvatarFallback>
         </Avatar>
 
-        <div className="flex flex-col gap-2">
-          <input
-            ref={inputRef}
-            type="file"
-            accept={PHOTO_ACCEPT}
-            onChange={handleFile}
-            className="sr-only"
-            aria-label="Choose a profile photo"
-          />
+        <input
+          ref={inputRef}
+          type="file"
+          accept={PHOTO_ACCEPT}
+          onChange={handleFile}
+          className="sr-only"
+          aria-label="Choose a profile photo"
+        />
 
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => inputRef.current?.click()}
+            disabled={pending}
+          >
+            <Camera className="mr-1.5 size-3.5" aria-hidden="true" />
+            {upload.isPending ? "Uploading…" : photoUrl ? "Replace" : "Add photo"}
+          </Button>
+
+          {photoUrl ? (
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="sm"
-              onClick={() => inputRef.current?.click()}
+              className="text-destructive hover:bg-destructive/10"
+              onClick={() =>
+                remove.mutate(undefined, { onError: (c) => setError(getApiErrorMessage(c)) })
+              }
               disabled={pending}
             >
-              <Camera className="mr-1.5 size-3.5" aria-hidden="true" />
-              {upload.isPending ? "Uploading…" : photoUrl ? "Replace photo" : "Upload photo"}
+              <Trash2 className="mr-1.5 size-3.5" aria-hidden="true" />
+              Remove
             </Button>
+          ) : null}
+        </div>
 
-            {photoUrl ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-destructive hover:bg-destructive/10"
-                onClick={() =>
-                  remove.mutate(undefined, { onError: (c) => setError(getApiErrorMessage(c)) })
-                }
-                disabled={pending}
-              >
-                <Trash2 className="mr-1.5 size-3.5" aria-hidden="true" />
-                Remove
-              </Button>
-            ) : null}
-          </div>
-
+        {photoUrl ? null : (
           <p className="type-helper text-muted-foreground">
             JPG, PNG or WebP up to {formatPhotoSize(PROFILE_LIMITS.photoBytes)}.
           </p>
-        </div>
+        )}
       </div>
 
       {error ? (

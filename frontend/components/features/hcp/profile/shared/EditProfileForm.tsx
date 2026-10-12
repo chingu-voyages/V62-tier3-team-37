@@ -30,6 +30,7 @@ type EditableProfile = {
 
 type EditProfileFormProps = {
   values: EditableProfile;
+  identityLocked?: boolean;
 };
 
 const GENDERS: { value: ApiGender; label: string }[] = [
@@ -47,7 +48,7 @@ const MAX_DATE_OF_BIRTH = new Date().toISOString().slice(0, 10);
  * guarantee a 422. The read-only section says so instead of pretending to be
  * editable.
  */
-export function EditProfileForm({ values }: EditProfileFormProps) {
+export function EditProfileForm({ values, identityLocked = false }: EditProfileFormProps) {
   const [draft, setDraft] = useState<EditableProfile>(values);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -69,10 +70,14 @@ export function EditProfileForm({ values }: EditProfileFormProps) {
     // it: the API would answer 422 for a blank string instead of leaving the
     // stored value untouched.
     const payload: UpdateHcpProfileInput = {
-      first_name: draft.firstName.trim(),
-      last_name: draft.lastName.trim(),
-      ...(birthDate ? { birth_date: birthDate } : {}),
-      ...(draft.gender === "" ? {} : { gender: draft.gender }),
+      ...(identityLocked
+        ? {}
+        : {
+            first_name: draft.firstName.trim(),
+            last_name: draft.lastName.trim(),
+            ...(birthDate ? { birth_date: birthDate } : {}),
+            ...(draft.gender === "" ? {} : { gender: draft.gender }),
+          }),
       phone: draft.phone.trim() || null,
       country: draft.country.trim() || null,
       sub_specialty: draft.subSpecialty.trim() || null,
@@ -116,10 +121,13 @@ export function EditProfileForm({ values }: EditProfileFormProps) {
       onSubmit={handleSubmit}
     >
       <Callout icon={Info}>
-        Specialty, years of experience and license details are set during verification and cannot be
-        changed here.
+        {identityLocked
+          ? "Name, date of birth, and gender were shared with the admin and stay as submitted. Specialty and license details stay locked too."
+          : "Specialty, years of experience and license details are set during verification and cannot be changed here."}
       </Callout>
 
+      {identityLocked ? null : (
+      <>
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField
           id="pf-first-name"
@@ -179,6 +187,8 @@ export function EditProfileForm({ values }: EditProfileFormProps) {
           </RadioGroup>
         </div>
       </div>
+      </>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField

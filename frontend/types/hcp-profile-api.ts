@@ -73,6 +73,7 @@ export type ApiProfessionalInformation = {
   workplace_name: string | null;
   workplace_address: string | null;
   city: string | null;
+  clinic_photo_url: string | null;
 };
 
 export type ApiPreferences = {

@@ -15,7 +15,7 @@ export function LandingHeader({ user }: { user: AuthUser }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-8xl items-center gap-3 px-4 sm:h-16 sm:px-6 lg:px-8">
+      <div className="flex h-14 w-full items-center gap-3 px-4 sm:h-16 sm:px-6 lg:px-8">
         <HealthHubLogo />
 
         {signedIn ? (

@@ -21,6 +21,7 @@ class HcpProfile extends Model
         'sub_specialty',
         'workplace_name',
         'workplace_address',
+        'clinic_photo_path',
         'city',
         'bio',
         'languages',

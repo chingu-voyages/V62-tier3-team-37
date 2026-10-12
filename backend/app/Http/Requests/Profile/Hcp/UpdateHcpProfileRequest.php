@@ -43,7 +43,7 @@ class UpdateHcpProfileRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $rules = [
             'first_name' => [
                 'sometimes',
                 'required',
@@ -147,5 +147,13 @@ class UpdateHcpProfileRequest extends FormRequest
             'liveness_status' => ['prohibited'],
             'consent' => ['prohibited'],
         ];
+
+        if ($this->user()?->hcpVerification !== null) {
+            foreach (['first_name', 'last_name', 'birth_date', 'gender'] as $field) {
+                $rules[$field] = ['prohibited'];
+            }
+        }
+
+        return $rules;
     }
 }

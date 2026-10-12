@@ -1,3 +1,6 @@
-export default function Page() {
-  return null;
+import { redirect } from "next/navigation";
+import { ROUTES } from "@/lib/constants/routes";
+
+export default function HcpAppointmentsPage() {
+  redirect(ROUTES.hcpToday);
 }

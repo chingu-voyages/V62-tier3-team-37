@@ -42,7 +42,7 @@ export function Navbar({ user, variant, className }: NavbarProps) {
       <div
         className={cn(
           "flex h-14 w-full items-center gap-3 px-4 sm:h-16 sm:px-6 lg:px-8",
-          variant === "app" ? null : "mx-auto max-w-8xl xl:px-10 2xl:px-14",
+          variant === "app" ? null : "xl:px-10 2xl:px-14",
         )}
       >
         <div className="flex min-w-0 items-center gap-2">

@@ -21,6 +21,13 @@ export type UpdatePatientProfileInput = {
   allergies: PatientAllergyInput[];
 };
 
+export function savePatientPhone(phone: string): Promise<PatientProfileResponse> {
+  return apiRequest<PatientProfileResponse>("/api/patient/profile", {
+    method: "PATCH",
+    body: { phone },
+  });
+}
+
 export function updatePatientProfile(
   input: UpdatePatientProfileInput,
 ): Promise<PatientProfileResponse> {

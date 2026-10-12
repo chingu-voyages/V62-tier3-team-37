@@ -1,5 +1,5 @@
 import { ProfileProfessional } from "@/components/features/hcp/profile/professional/ProfileProfessional";
-import { getHcpProfessionalSection } from "@/lib/dal/hcp";
+import { getHcpProfessionalSection, getHcpVerificationSummary } from "@/lib/dal/hcp";
 
 /**
  * Reads only this section's slice. See `lib/dal/hcp` for why the shared
@@ -9,7 +9,16 @@ import { getHcpProfessionalSection } from "@/lib/dal/hcp";
  * seeded by parsing a formatted name or date back apart.
  */
 export default async function ProfessionalPage() {
-  const { information, editable } = await getHcpProfessionalSection();
+  const [{ information, editable }, verification] = await Promise.all([
+    getHcpProfessionalSection(),
+    getHcpVerificationSummary(),
+  ]);
 
-  return <ProfileProfessional information={information} editable={editable} />;
+  return (
+    <ProfileProfessional
+      information={information}
+      editable={editable}
+      identityLocked={verification.requestDecision !== "none"}
+    />
+  );
 }

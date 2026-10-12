@@ -31,12 +31,13 @@ export function isEmailVerified(user: AuthUser): boolean {
  * Where a user lands immediately after authenticating.
  *
  * Patients return to the landing page, which is their home. Clinicians open
- * their profile. Unverified accounts are sent to the OTP screen by the route
- * guard before this destination renders.
+ * today's schedule. An account that is not accepted yet is sent on from that
+ * page to the profile. Unverified email accounts are sent to the OTP screen by
+ * the route guard before this destination renders.
  */
 export function homePathForRole(role: string | null | undefined): string {
   if (role === ADMIN_ROLE) return ROUTES.adminHome;
-  return isHcpRole(role) ? ROUTES.hcpProfile : ROUTES.home;
+  return isHcpRole(role) ? ROUTES.hcpToday : ROUTES.home;
 }
 
 function isPatientArea(pathname: string): boolean {

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Hcp;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Profile\HcpOnboardingRequest;
+use App\Http\Requests\Profile\Hcp\HcpOnboardingRequest;
 use App\Services\Hcp\HcpOnboardingService;
 use Illuminate\Http\JsonResponse;
 

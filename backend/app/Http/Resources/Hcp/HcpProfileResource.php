@@ -39,10 +39,19 @@ class HcpProfileResource extends JsonResource
             return null;
         }
 
+        return $this->publicUrl($user->profile_photo_path);
+    }
+
+    private function publicUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
         /** @var FilesystemAdapter $publicDisk */
         $publicDisk = Storage::disk('public');
 
-        return $publicDisk->url($user->profile_photo_path);
+        return $publicDisk->url($path);
     }
 
     private function isVerified(User $user): bool
@@ -80,6 +89,7 @@ class HcpProfileResource extends JsonResource
             'workplace_name' => $profile?->workplace_name,
             'workplace_address' => $profile?->workplace_address,
             'city' => $profile?->city,
+            'clinic_photo_url' => $this->publicUrl($profile?->clinic_photo_path),
         ];
     }
 

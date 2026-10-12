@@ -1,7 +1,4 @@
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { ROUTES } from "@/lib/constants/routes";
 
 type ProfileLayoutProps = {
   children: ReactNode;
@@ -23,26 +20,6 @@ export default function ProfileLayout({
   return (
     <div className="flex w-full min-w-0 flex-col gap-5">
       {children}
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          {/* A real link, so it is focusable, middle-clickable and prefetchable.
-              The previous handler-less <button aria-disabled> was focusable and
-              announced as available but did nothing. */}
-          <Link
-            href={ROUTES.hcpPatients}
-            className="inline-flex items-center gap-1.5 rounded-md text-muted-foreground transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          >
-            <ArrowLeft className="size-4 shrink-0" aria-hidden="true" />
-            <span className="type-label">Back</span>
-          </Link>
-
-          <h1 className="type-h1 mt-2 text-foreground">Health Care Provider Profile</h1>
-          <p className="mt-1 type-body text-muted-foreground">
-            Manage your professional information, credentials and availability.
-          </p>
-        </div>
-      </div>
 
       {/*
         Explicit grid placement, in DOM order at every breakpoint.

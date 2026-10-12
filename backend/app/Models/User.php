@@ -100,4 +100,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(HcpReport::class, 'hcp_user_id');
     }
+
+    public function appointmentsAsPatient(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'patient_user_id');
+    }
+
+    public function appointmentsAsClinician(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'hcp_user_id');
+    }
 }

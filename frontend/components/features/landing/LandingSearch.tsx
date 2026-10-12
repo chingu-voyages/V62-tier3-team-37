@@ -1,7 +1,7 @@
 "use client";
 
 import { BadgeCheck, ChevronDown, MapPin, Search, SlidersHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
 import {
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { TextField } from "@/components/ui/text-field";
 import { cn } from "@/lib/utils";
+import { getApiErrorMessage, listDirectory, listDirectoryPlaces, type DirectoryClinician } from "@/lib/api/visit-client";
 import type { HCP, HCPFilters } from "@/types/hcp-directory";
 import { PatientBookingPanel, type BookingPatient } from "./PatientBookingPanel";
 
@@ -123,14 +124,58 @@ const SPECIALTIES = [
   "Orthopedics",
   "General Medicine",
 ];
-const CITIES = ["Cairo", "Alexandria", "Giza", "Luxor", "Aswan"];
-const AREAS = ["Downtown", "Heliopolis", "Maadi", "Zamalek", "Mohandeseen"];
+const SPECIALTY_API: Record<string, string> = {
+  Cardiology: "CARDIOLOGY",
+  Dermatology: "DERMATOLOGY",
+  Neurology: "NEUROLOGY",
+  Pediatrics: "PEDIATRICS",
+  "General Medicine": "GENERAL_MEDICINE",
+};
 const INSURANCES = ["Medicare", "AXA", "Allianz", "Cigna", "BUPA"];
+
+function matchesLive(doctor: LandingDoctor, filters: LandingFilters): boolean {
+  if (filters.specialty && !doctor.specialties.includes(filters.specialty)) return false;
+  if (filters.city && !doctor.city?.toLowerCase().includes(filters.city.toLowerCase())) return false;
+  if (filters.area && !doctor.area?.toLowerCase().includes(filters.area.toLowerCase())) return false;
+  if (filters.gender && doctor.gender !== filters.gender) return false;
+  if (filters.minExperience !== undefined && doctor.yearsOfExperience < filters.minExperience) {
+    return false;
+  }
+  if (filters.availability && !doctor.availableOn.includes(filters.availability)) return false;
+  if (filters.search) {
+    const query = filters.search.trim().toLowerCase();
+    const haystack = `${doctor.fullName} ${doctor.title} ${doctor.specialties.join(" ")} ${doctor.city ?? ""}`.toLowerCase();
+    if (!haystack.includes(query)) return false;
+  }
+  return true;
+}
+
+function toLandingDoctor(row: DirectoryClinician): LandingDoctor {
+  const today = new Date().getDay();
+  const tomorrow = (today + 1) % 7;
+  const availableOn: Availability[] = [];
+  if (row.open_days.includes(today)) availableOn.push("today");
+  if (row.open_days.includes(tomorrow)) availableOn.push("tomorrow");
+
+  return {
+    id: String(row.id),
+    avatar: row.profile_photo_url ?? row.clinic_photo_url ?? undefined,
+    fullName: row.full_name,
+    title: row.workplace_name ?? row.specialty_label ?? "Clinician",
+    verified: true,
+    specialties: row.specialty_label ? [row.specialty_label] : [],
+    city: row.city ?? undefined,
+    area: row.workplace_address ?? undefined,
+    gender: row.gender === "FEMALE" ? "female" : "male",
+    yearsOfExperience: row.years_of_experience ?? 0,
+    availableOn,
+  };
+}
 
 function matches(doctor: LandingDoctor, filters: LandingFilters): boolean {
   if (filters.specialty && !doctor.specialties.includes(filters.specialty)) return false;
-  if (filters.city && doctor.city !== filters.city) return false;
-  if (filters.area && doctor.area !== filters.area) return false;
+  if (filters.city && !doctor.city?.toLowerCase().includes(filters.city.toLowerCase())) return false;
+  if (filters.area && !doctor.area?.toLowerCase().includes(filters.area.toLowerCase())) return false;
   if (filters.insurance && !doctor.insuranceAccepted?.includes(filters.insurance)) return false;
   if (filters.gender && doctor.gender !== filters.gender) return false;
   if (
@@ -174,6 +219,25 @@ export function LandingSearch({
   const [extraOpen, setExtraOpen] = useState(false);
   const [applied, setApplied] = useState(false);
   const [bookingDoctor, setBookingDoctor] = useState<HCP | null>(null);
+  const [liveDoctors, setLiveDoctors] = useState<LandingDoctor[] | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [places, setPlaces] = useState<{ cities: string[]; areas: string[] }>({ cities: [], areas: [] });
+
+  useEffect(() => {
+    if (!signedIn) return;
+    let cancelled = false;
+    listDirectoryPlaces()
+      .then((response) => {
+        if (!cancelled) setPlaces(response.data);
+      })
+      .catch(() => {
+        if (!cancelled) setPlaces({ cities: [], areas: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [signedIn]);
 
   const filters = useMemo<LandingFilters>(
     () => ({
@@ -193,13 +257,31 @@ export function LandingSearch({
 
   const results = useMemo(() => {
     if (!applied) return [];
+    if (signedIn) return (liveDoctors ?? []).filter((doctor) => matchesLive(doctor, filters));
     return SAMPLE_DOCTORS.filter((doctor) => matches(doctor, filters));
-  }, [applied, filters]);
+  }, [applied, filters, liveDoctors, signedIn]);
 
   const extraCount = [gender, maxPrice, minExperience, availability].filter(Boolean).length;
 
-  function search() {
+  async function search() {
     setApplied(true);
+    if (!signedIn) return;
+    setSearching(true);
+    setSearchError(null);
+    try {
+      const response = await listDirectory({
+        search: query.trim() || undefined,
+        city: city.trim() || undefined,
+        area: area.trim() || undefined,
+        specialty: SPECIALTY_API[specialty],
+      });
+      setLiveDoctors(response.data.map(toLandingDoctor));
+    } catch (error) {
+      setLiveDoctors([]);
+      setSearchError(getApiErrorMessage(error));
+    } finally {
+      setSearching(false);
+    }
   }
 
   function clearFilters() {
@@ -233,7 +315,7 @@ export function LandingSearch({
         </h1>
         <p className="mt-3 max-w-xl type-body text-muted-foreground">
           {signedIn
-            ? "Find a doctor by name or specialty. Any visit you request is booked on your account."
+            ? "Search accepted clinicians by name. Open times come from the days they set for their clinic."
             : "Search by name or specialty, then narrow the list. You can request a visit before you sign up."}
         </p>
       </div>
@@ -287,22 +369,32 @@ export function LandingSearch({
                 options={SPECIALTIES}
                 onChange={setSpecialty}
               />
-              <FilterSelect
+              <TextField
                 id="landing-city"
                 label="City"
-                placeholder="All cities"
+                placeholder="City"
                 value={city}
-                options={CITIES}
                 onChange={setCity}
+                list="landing-cities"
               />
-              <FilterSelect
+              <TextField
                 id="landing-area"
                 label="Area"
-                placeholder="All areas"
+                placeholder="Area or clinic address"
                 value={area}
-                options={AREAS}
                 onChange={setArea}
+                list="landing-areas"
               />
+              <datalist id="landing-cities">
+                {places.cities.map((value) => (
+                  <option key={value} value={value} />
+                ))}
+              </datalist>
+              <datalist id="landing-areas">
+                {places.areas.map((value) => (
+                  <option key={value} value={value} />
+                ))}
+              </datalist>
               <FilterSelect
                 id="landing-insurance"
                 label="Insurance"
@@ -398,12 +490,20 @@ export function LandingSearch({
         </form>
       </search>
 
+      {searchError ? (
+        <Callout tone="danger">{searchError}</Callout>
+      ) : null}
+
       {applied ? (
         <div id="landing-results" className="flex flex-col gap-4">
           <h2 className="type-h3 text-foreground">
-            {results.length === 1 ? "1 doctor" : `${results.length} doctors`}
+            {searching ? "Searching…" : results.length === 1 ? "1 doctor" : `${results.length} doctors`}
           </h2>
-          {results.length === 0 ? (
+          {searching ? (
+            <p className="rounded-2xl bg-card px-5 py-10 text-center type-body text-muted-foreground shadow-soft ring-1 ring-border">
+              Searching accepted clinicians…
+            </p>
+          ) : results.length === 0 ? (
             <div className="rounded-2xl bg-card px-5 py-10 text-center shadow-soft ring-1 ring-border">
               <p className="type-body text-muted-foreground">
                 No doctors match these filters. Clear one and search again.
@@ -444,6 +544,7 @@ export function LandingSearch({
               email: "",
               birthDate: null,
               gender: null,
+              phone: null,
             }
           }
           onClose={() => setBookingDoctor(null)}

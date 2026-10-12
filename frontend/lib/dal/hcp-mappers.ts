@@ -41,6 +41,17 @@ function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
+/** `DERMATOLOGY` and `GENERAL_MEDICINE` become words a person can read. */
+function formatSpecialty(value: string | null | undefined): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+
+  return trimmed
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function joinLocation(city: string | null | undefined, country: string | null | undefined) {
   const parts = [city, country].map((part) => part?.trim()).filter(Boolean);
   return parts.length > 0 ? parts.join(", ") : undefined;
@@ -59,7 +70,7 @@ export function toProfileIdentity(profile: ApiHcpProfile): HcpProfileIdentity {
   return {
     photoUrl: profile.profile_photo_url ?? undefined,
     fullName: personal.full_name || undefined,
-    specialty: professional.specialty || undefined,
+    specialty: formatSpecialty(professional.specialty),
     isVerified: profile.is_verified,
     dateOfBirth: calendarDate(personal.birth_date),
     age: personal.age ?? undefined,
@@ -69,6 +80,7 @@ export function toProfileIdentity(profile: ApiHcpProfile): HcpProfileIdentity {
     location: joinLocation(professional.city, personal.country),
     workplaceName: professional.workplace_name ?? undefined,
     workplaceAddress: professional.workplace_address ?? undefined,
+    clinicPhotoUrl: professional.clinic_photo_url ?? undefined,
   };
 }
 
@@ -82,7 +94,7 @@ export function toProfessionalInformation(profile: ApiHcpProfile): HcpProfession
     gender: formatGender(personal.gender),
     phone: personal.phone ?? undefined,
     email: personal.email || undefined,
-    specialty: professional.specialty || undefined,
+    specialty: formatSpecialty(professional.specialty),
     subSpecialty: professional.sub_specialty ?? undefined,
     yearsOfExperience: professional.years_of_experience ?? undefined,
     medicalLicenseNumber: professional.medical_license_number || undefined,

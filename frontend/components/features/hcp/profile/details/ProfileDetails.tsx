@@ -1,4 +1,4 @@
-import { FileText, Globe, Stethoscope } from "lucide-react";
+import { Stethoscope } from "lucide-react";
 import { EditDetailsForm } from "@/components/features/hcp/profile/shared/EditDetailsForm";
 import type { HcpProfessionalPreferences } from "@/types/hcp-profile";
 import type { ApiConsultationType } from "@/types/hcp-profile-api";
@@ -47,31 +47,41 @@ export function ProfileDetails({ preferences }: ProfileDetailsProps) {
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
-      <ProfileCard title="Languages" icon={Globe}>
-        <PillList values={preferences?.languages} emptyMessage="No languages added yet." />
-      </ProfileCard>
+    <ProfileCard
+      title="About"
+      icon={Stethoscope}
+      action={<EditDetailsForm values={editableValues} />}
+      className="h-full"
+    >
+      <div className="flex flex-col gap-5">
+        <div>
+          <h3 className="type-label text-muted-foreground">Languages</h3>
+          <div className="mt-2">
+            <PillList values={preferences?.languages} emptyMessage="No languages yet." />
+          </div>
+        </div>
 
-      <ProfileCard title="Consultation Type" icon={Stethoscope}>
-        <PillList
-          values={preferences?.consultationTypes?.map(consultationLabel)}
-          emptyMessage="No consultation types configured yet."
-        />
-      </ProfileCard>
+        <div>
+          <h3 className="type-label text-muted-foreground">Consultation</h3>
+          <div className="mt-2">
+            <PillList
+              values={preferences?.consultationTypes?.map(consultationLabel)}
+              emptyMessage="No consultation types yet."
+            />
+          </div>
+        </div>
 
-      <ProfileCard
-        title="Professional Bio"
-        icon={FileText}
-        action={<EditDetailsForm values={editableValues} />}
-      >
-        {preferences?.bio ? (
-          <p className="type-body leading-relaxed break-words whitespace-pre-line text-foreground">
-            {preferences.bio}
-          </p>
-        ) : (
-          <SectionEmptyState message="No professional bio has been added yet." />
-        )}
-      </ProfileCard>
-    </div>
+        <div>
+          <h3 className="type-label text-muted-foreground">Bio</h3>
+          {preferences?.bio ? (
+            <p className="mt-2 type-body leading-relaxed break-words whitespace-pre-line text-foreground">
+              {preferences.bio}
+            </p>
+          ) : (
+            <SectionEmptyState message="Add a short bio patients can read." className="mt-2" />
+          )}
+        </div>
+      </div>
+    </ProfileCard>
   );
 }
