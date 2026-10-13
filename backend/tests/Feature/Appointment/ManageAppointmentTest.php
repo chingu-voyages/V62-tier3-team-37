@@ -67,7 +67,7 @@ class ManageAppointmentTest extends TestCase
         [, , $otherAppointment] = $this->createAppointment('2030-01-08 10:00:00');
 
         $this->actingAs($hcp, 'sanctum')
-            ->getJson('/api/hcp/appointments')
+            ->getJson('/api/hcp/appointments?date=2030-01-07')
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $appointment->id);
@@ -82,7 +82,7 @@ class ManageAppointmentTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_a_patient_can_reschedule_a_confirmed_appointment(): void
+    public function test_a_patient_can_reschedule_a_booked_appointment(): void
     {
         [$patient, , $appointment] = $this->createAppointment();
 
@@ -92,21 +92,21 @@ class ManageAppointmentTest extends TestCase
             ])
             ->assertOk()
             ->assertJsonPath('data.scheduled_start_at', '2030-01-07T11:00:00.000000Z')
-            ->assertJsonPath('data.scheduled_end_at', '2030-01-07T12:00:00.000000Z')
+            ->assertJsonPath('data.scheduled_end_at', '2030-01-07T11:30:00.000000Z')
             ->assertJsonPath('data.rescheduled_by_user_id', $patient->id);
 
         $appointment->refresh();
         $this->assertSame($patient->id, $appointment->rescheduled_by_user_id);
         $this->assertNotNull($appointment->rescheduled_at);
-        $this->assertSame(AppointmentStatus::CONFIRMED, $appointment->status);
+        $this->assertSame(AppointmentStatus::RESCHEDULED, $appointment->status);
     }
 
-    public function test_a_verified_hcp_can_reschedule_a_confirmed_appointment(): void
+    public function test_a_verified_hcp_can_reschedule_a_booked_appointment(): void
     {
         [, $hcp, $appointment] = $this->createAppointment();
 
         $this->actingAs($hcp, 'sanctum')
-            ->patchJson("/api/hcp/appointments/{$appointment->id}/reschedule", [
+            ->postJson("/api/hcp/appointments/{$appointment->id}/reschedule", [
                 'scheduled_start_at' => '2030-01-07T11:00:00Z',
             ])
             ->assertOk()
@@ -128,34 +128,48 @@ class ManageAppointmentTest extends TestCase
             ->assertJsonPath('data.cancellation_reason', 'Plans changed');
 
         $this->actingAs($hcp, 'sanctum')
-            ->patchJson("/api/hcp/appointments/{$hcpAppointment->id}/cancel", [])
+            ->postJson("/api/hcp/appointments/{$hcpAppointment->id}/cancel", [
+                'reason' => 'Clinic emergency',
+            ])
             ->assertOk()
             ->assertJsonPath('data.status', AppointmentStatus::CANCELLED->value)
             ->assertJsonPath('data.cancelled_by_user_id', $hcp->id)
-            ->assertJsonPath('data.cancellation_reason', null);
+            ->assertJsonPath('data.cancellation_reason', 'Clinic emergency');
     }
 
-    public function test_a_verified_hcp_can_complete_an_appointment_after_it_ends(): void
+    public function test_a_verified_hcp_can_mark_arrived_and_save_a_summary(): void
     {
         [, $hcp, $appointment] = $this->createAppointment(
-            '2029-12-31 22:00:00',
+            '2030-01-01 10:00:00',
             createAvailability: false
         );
 
         $this->actingAs($hcp, 'sanctum')
-            ->patchJson("/api/hcp/appointments/{$appointment->id}/complete")
+            ->postJson("/api/hcp/appointments/{$appointment->id}/status", [
+                'status' => AppointmentStatus::ARRIVED->value,
+            ])
             ->assertOk()
-            ->assertJsonPath('data.status', AppointmentStatus::COMPLETED->value);
+            ->assertJsonPath('data.status', AppointmentStatus::ARRIVED->value);
+
+        $this->actingAs($hcp, 'sanctum')
+            ->postJson("/api/hcp/appointments/{$appointment->id}/summary", [
+                'summary' => 'Patient is improving.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', AppointmentStatus::COMPLETED->value)
+            ->assertJsonPath('data.medical_summary', 'Patient is improving.');
     }
 
-    public function test_a_future_or_cancelled_appointment_cannot_be_completed_or_rescheduled(): void
+    public function test_a_summary_requires_an_arrived_appointment_and_cancelled_cannot_be_rescheduled(): void
     {
         [$patient, $hcp, $appointment] = $this->createAppointment();
 
         $this->actingAs($hcp, 'sanctum')
-            ->patchJson("/api/hcp/appointments/{$appointment->id}/complete")
+            ->postJson("/api/hcp/appointments/{$appointment->id}/summary", [
+                'summary' => 'Not allowed yet.',
+            ])
             ->assertConflict()
-            ->assertJsonPath('message', 'An appointment cannot be completed before it ends.');
+            ->assertJsonPath('message', 'A summary can only be saved after the patient arrives.');
 
         $appointment->update(['status' => AppointmentStatus::CANCELLED]);
 
@@ -164,7 +178,7 @@ class ManageAppointmentTest extends TestCase
                 'scheduled_start_at' => '2030-01-07T11:00:00Z',
             ])
             ->assertConflict()
-            ->assertJsonPath('message', 'Only confirmed appointments can be rescheduled.');
+            ->assertJsonPath('message', 'Only booked or rescheduled appointments can be rescheduled.');
     }
 
     public function test_the_hcp_routes_require_an_active_verified_hcp(): void
@@ -212,7 +226,9 @@ class ManageAppointmentTest extends TestCase
             ->assertJsonPath('message', 'An appointment cannot be rescheduled after it starts.');
 
         $this->actingAs($patient, 'sanctum')
-            ->patchJson("/api/patient/appointments/{$appointment->id}/cancel")
+            ->patchJson("/api/patient/appointments/{$appointment->id}/cancel", [
+                'reason' => 'Cannot attend',
+            ])
             ->assertConflict()
             ->assertJsonPath('message', 'An appointment cannot be cancelled after it starts.');
     }
@@ -247,8 +263,8 @@ class ManageAppointmentTest extends TestCase
             ->for($hcp, 'hcp')
             ->create([
                 'scheduled_start_at' => $startAt,
-                'scheduled_end_at' => $startAt->addHour(),
-                'status' => AppointmentStatus::CONFIRMED,
+                'scheduled_end_at' => $startAt->addMinutes(Appointment::DURATION_MINUTES),
+                'status' => AppointmentStatus::BOOKED,
             ]);
 
         return [$patient, $hcp, $appointment];

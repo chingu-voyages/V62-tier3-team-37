@@ -31,8 +31,10 @@ class HcpProfileService
             $profileData = Arr::only($data, [
                 'sub_specialty',
                 'workplace_name',
-                'workplace_address',
-                'city',
+                'clinic_street',
+                'clinic_area',
+                'clinic_city',
+                'accepted_insurances',
                 'bio',
                 'languages',
                 'consultation_types',

@@ -32,8 +32,10 @@ class HcpProfileFactory extends Factory
                 'Preventive Medicine',
             ]),
             'workplace_name' => fake()->company(),
-            'workplace_address' => fake()->streetAddress(),
-            'city' => fake()->city(),
+            'clinic_street' => fake()->streetAddress(),
+            'clinic_area' => fake()->citySuffix(),
+            'clinic_city' => fake()->city(),
+            'accepted_insurances' => ['AXA', 'MetLife'],
             'bio' => fake()->paragraph(),
             'languages' => ['Arabic', 'English'],
             'consultation_types' => [

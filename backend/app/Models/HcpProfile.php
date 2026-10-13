@@ -20,8 +20,11 @@ class HcpProfile extends Model
         'license_issuing_authority',
         'sub_specialty',
         'workplace_name',
-        'workplace_address',
-        'city',
+        'clinic_street',
+        'clinic_area',
+        'clinic_city',
+        'accepted_insurances',
+        'clinic_photo_path',
         'bio',
         'languages',
         'consultation_types',
@@ -34,6 +37,7 @@ class HcpProfile extends Model
             'years_of_experience' => 'integer',
             'languages' => 'array',
             'consultation_types' => 'array',
+            'accepted_insurances' => 'array',
         ];
     }
 

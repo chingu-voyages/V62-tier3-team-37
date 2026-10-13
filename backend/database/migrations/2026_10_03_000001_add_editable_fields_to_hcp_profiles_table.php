@@ -17,17 +17,29 @@ return new class extends Migration
                 ->nullable()
                 ->after('license_issuing_authority');
 
-            $table->string('workplace_address', 500)
+            $table->string('clinic_street', 255)
                 ->nullable()
                 ->after('workplace_name');
 
-            $table->string('city', 100)
+            $table->string('clinic_area', 100)
                 ->nullable()
-                ->after('workplace_address');
+                ->after('clinic_street');
+
+            $table->string('clinic_city', 100)
+                ->nullable()
+                ->after('clinic_area');
+
+            $table->json('accepted_insurances')
+                ->nullable()
+                ->after('clinic_city');
+
+            $table->string('clinic_photo_path', 500)
+                ->nullable()
+                ->after('accepted_insurances');
 
             $table->text('bio')
                 ->nullable()
-                ->after('city');
+                ->after('clinic_photo_path');
 
             $table->json('languages')
                 ->nullable()
@@ -45,8 +57,11 @@ return new class extends Migration
             $table->dropColumn([
                 'sub_specialty',
                 'workplace_name',
-                'workplace_address',
-                'city',
+                'clinic_street',
+                'clinic_area',
+                'clinic_city',
+                'accepted_insurances',
+                'clinic_photo_path',
                 'bio',
                 'languages',
                 'consultation_types',

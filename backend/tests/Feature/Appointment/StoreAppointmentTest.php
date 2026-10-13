@@ -55,9 +55,9 @@ class StoreAppointmentTest extends TestCase
             ->assertJsonPath('message', 'Appointment booked successfully.')
             ->assertJsonPath('data.hcp.id', $hcp->id)
             ->assertJsonPath('data.scheduled_start_at', '2030-01-07T10:00:00.000000Z')
-            ->assertJsonPath('data.scheduled_end_at', '2030-01-07T11:00:00.000000Z')
-            ->assertJsonPath('data.duration_minutes', 60)
-            ->assertJsonPath('data.status', AppointmentStatus::CONFIRMED->value)
+            ->assertJsonPath('data.scheduled_end_at', '2030-01-07T10:30:00.000000Z')
+            ->assertJsonPath('data.duration_minutes', 30)
+            ->assertJsonPath('data.status', AppointmentStatus::BOOKED->value)
             ->assertJsonPath('data.booking_for', BookingFor::SELF->value)
             ->assertJsonPath('data.attendee.first_name', 'Ahmad')
             ->assertJsonPath('data.attendee.last_name', 'Ameen')
@@ -67,7 +67,7 @@ class StoreAppointmentTest extends TestCase
         $this->assertDatabaseHas('appointments', [
             'patient_user_id' => $patient->id,
             'hcp_user_id' => $hcp->id,
-            'status' => AppointmentStatus::CONFIRMED->value,
+            'status' => AppointmentStatus::BOOKED->value,
             'booking_for' => BookingFor::SELF->value,
             'attendee_first_name' => 'Ahmad',
             'attendee_last_name' => 'Ameen',
@@ -149,7 +149,7 @@ class StoreAppointmentTest extends TestCase
         Appointment::factory()->for($hcp, 'hcp')->create([
             'scheduled_start_at' => $start,
             'scheduled_end_at' => $start->addHour(),
-            'status' => AppointmentStatus::CONFIRMED,
+            'status' => AppointmentStatus::BOOKED,
         ]);
 
         $this->actingAs($patient, 'sanctum')

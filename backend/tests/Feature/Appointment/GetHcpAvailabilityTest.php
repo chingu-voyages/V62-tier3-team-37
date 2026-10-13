@@ -47,16 +47,16 @@ class GetHcpAvailabilityTest extends TestCase
         Appointment::factory()->for($hcp, 'hcp')->create([
             'scheduled_start_at' => $monday->setTime(10, 0),
             'scheduled_end_at' => $monday->setTime(11, 0),
-            'status' => AppointmentStatus::CONFIRMED,
+            'status' => AppointmentStatus::BOOKED,
         ]);
 
         $this->actingAs($patient, 'sanctum')
             ->getJson("/api/patient/hcps/{$hcp->id}/availability?from=2030-01-07&to=2030-01-08")
             ->assertOk()
             ->assertJsonPath('data.hcp_id', $hcp->id)
-            ->assertJsonPath('data.duration_minutes', 60)
+            ->assertJsonPath('data.duration_minutes', 30)
             ->assertJsonPath('data.dates.0.date', '2030-01-07')
-            ->assertJsonPath('data.dates.0.slots', ['09:00', '11:00'])
+            ->assertJsonPath('data.dates.0.slots', ['09:00', '09:30', '11:00', '11:30'])
             ->assertJsonPath('data.dates.1.date', '2030-01-08')
             ->assertJsonPath('data.dates.1.slots', []);
     }

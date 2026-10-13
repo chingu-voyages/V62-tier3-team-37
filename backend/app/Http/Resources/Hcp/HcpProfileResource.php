@@ -24,6 +24,7 @@ class HcpProfileResource extends JsonResource
         return [
             'id' => $user->id,
             'profile_photo_url' => $this->profilePhotoUrl($user),
+            'clinic_photo_url' => $this->clinicPhotoUrl($user->hcpProfile),
             'is_verified' => $this->isVerified($user),
             'personal_information' => $this->personalInformation($user),
             'professional_information' => $this->professionalInformation($user->hcpProfile),
@@ -48,6 +49,18 @@ class HcpProfileResource extends JsonResource
     private function isVerified(User $user): bool
     {
         return $user->hcpVerification?->status === VerificationStatus::VERIFIED;
+    }
+
+    private function clinicPhotoUrl(?HcpProfile $profile): ?string
+    {
+        if (! $profile?->clinic_photo_path) {
+            return null;
+        }
+
+        /** @var FilesystemAdapter $publicDisk */
+        $publicDisk = Storage::disk('public');
+
+        return $publicDisk->url($profile->clinic_photo_path);
     }
 
     private function personalInformation(User $user): array
@@ -78,8 +91,12 @@ class HcpProfileResource extends JsonResource
             'license_issuing_authority' => $profile?->license_issuing_authority,
             'sub_specialty' => $profile?->sub_specialty,
             'workplace_name' => $profile?->workplace_name,
-            'workplace_address' => $profile?->workplace_address,
-            'city' => $profile?->city,
+            'clinic_address' => [
+                'street' => $profile?->clinic_street,
+                'area' => $profile?->clinic_area,
+                'city' => $profile?->clinic_city,
+            ],
+            'accepted_insurances' => $profile?->accepted_insurances ?? [],
         ];
     }
 

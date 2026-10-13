@@ -60,8 +60,10 @@ class HcpProfileSeeder extends Seeder
             'license_issuing_authority' => 'Moroccan Medical Board',
             'sub_specialty' => 'Interventional Cardiology',
             'workplace_name' => 'Regional Medical Center',
-            'workplace_address' => '123 Health Street',
-            'city' => 'Casablanca',
+            'clinic_street' => '123 Health Street',
+            'clinic_area' => 'Maarif',
+            'clinic_city' => 'Casablanca',
+            'accepted_insurances' => ['AXA'],
             'bio' => 'Experienced cardiologist specializing in interventional cardiology and patient-centered care.',
             'languages' => ['Arabic', 'English', 'French'],
             'consultation_types' => [

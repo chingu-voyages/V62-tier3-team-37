@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Hcp\HcpAppointmentController;
+use App\Http\Controllers\Hcp\HcpClinicPhotoController;
 use App\Http\Controllers\Hcp\HcpOnboardingController;
+use App\Http\Controllers\Hcp\HcpPatientController;
 use App\Http\Controllers\Hcp\HcpProfileController;
 use App\Http\Controllers\Patient\HcpListingController;
 use App\Http\Controllers\Patient\PatientAppointmentController;
@@ -36,6 +38,8 @@ Route::middleware(['auth:sanctum', EnsureEmailIsVerified::class])->group(functio
 
     Route::patch('/patient/appointments/{appointment}/cancel', [PatientAppointmentController::class, 'cancel']);
 
+    Route::get('/patient/appointments/{appointment}/results/{document}', [PatientAppointmentController::class, 'downloadResult']);
+
     Route::get('/patient/hcps/{hcp}/availability', [PatientHcpAvailabilityController::class, 'index']);
 
     Route::get('/patient/hcps', [HcpListingController::class, 'index']);
@@ -60,16 +64,30 @@ Route::middleware(['auth:sanctum', EnsureEmailIsVerified::class])->group(functio
 
     Route::delete('/hcp/profile/availability/{availabilitySlot}', [HcpProfileController::class, 'destroyAvailability']);
 
+    Route::post('/hcp/profile/clinic-photo', [HcpClinicPhotoController::class, 'store']);
+
+    Route::delete('/hcp/profile/clinic-photo', [HcpClinicPhotoController::class, 'destroy']);
+
     Route::middleware('hcp.verified')->prefix('hcp')->group(function () {
         Route::get('/appointments', [HcpAppointmentController::class, 'index']);
 
         Route::get('/appointments/{appointment}', [HcpAppointmentController::class, 'show']);
 
-        Route::patch('/appointments/{appointment}/reschedule', [HcpAppointmentController::class, 'reschedule']);
+        Route::post('/appointments/{appointment}/reschedule', [HcpAppointmentController::class, 'reschedule']);
 
-        Route::patch('/appointments/{appointment}/cancel', [HcpAppointmentController::class, 'cancel']);
+        Route::post('/appointments/{appointment}/cancel', [HcpAppointmentController::class, 'cancel']);
 
-        Route::patch('/appointments/{appointment}/complete', [HcpAppointmentController::class, 'complete']);
+        Route::post('/appointments/{appointment}/status', [HcpAppointmentController::class, 'status']);
+
+        Route::post('/appointments/{appointment}/summary', [HcpAppointmentController::class, 'summary']);
+
+        Route::post('/appointments/{appointment}/results', [HcpAppointmentController::class, 'storeResult']);
+
+        Route::get('/appointments/{appointment}/results/{document}', [HcpAppointmentController::class, 'downloadResult']);
+
+        Route::post('/appointments/{appointment}/follow-up', [HcpAppointmentController::class, 'followUp']);
+
+        Route::get('/patients', [HcpPatientController::class, 'index']);
     });
 
     /**************************PROFILE PHOTO************************************** */

@@ -25,8 +25,9 @@ class UpdateHcpProfileRequest extends FormRequest
             'country',
             'sub_specialty',
             'workplace_name',
-            'workplace_address',
-            'city',
+            'clinic_street',
+            'clinic_area',
+            'clinic_city',
             'bio',
         ];
 
@@ -93,17 +94,32 @@ class UpdateHcpProfileRequest extends FormRequest
                 'string',
                 'max:255',
             ],
-            'workplace_address' => [
-                'sometimes',
-                'nullable',
+            'clinic_street' => [
+                'required_with:clinic_area,clinic_city',
                 'string',
-                'max:500',
+                'max:255',
             ],
-            'city' => [
-                'sometimes',
-                'nullable',
+            'clinic_area' => [
+                'required_with:clinic_street,clinic_city',
                 'string',
                 'max:100',
+            ],
+            'clinic_city' => [
+                'required_with:clinic_street,clinic_area',
+                'string',
+                'max:100',
+            ],
+            'accepted_insurances' => [
+                'sometimes',
+                'nullable',
+                'array',
+                'max:30',
+            ],
+            'accepted_insurances.*' => [
+                'required',
+                'string',
+                'max:100',
+                'distinct:ignore_case',
             ],
             'bio' => [
                 'sometimes',

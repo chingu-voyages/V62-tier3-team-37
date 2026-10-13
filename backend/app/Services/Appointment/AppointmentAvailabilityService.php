@@ -66,7 +66,11 @@ class AppointmentAvailabilityService
             ->get();
 
         $bookedAppointments = $hcp->hcpAppointments()
-            ->where('status', AppointmentStatus::CONFIRMED->value)
+            ->whereIn('status', [
+                AppointmentStatus::BOOKED->value,
+                AppointmentStatus::RESCHEDULED->value,
+                AppointmentStatus::ARRIVED->value,
+            ])
             ->when(
                 $excludeAppointmentId !== null,
                 fn ($query) => $query->where('id', '!=', $excludeAppointmentId)
@@ -123,12 +127,12 @@ class AppointmentAvailabilityService
                     continue;
                 }
 
-                $overlapsConfirmedAppointment = $bookedAppointments->contains(
+                $overlapsActiveAppointment = $bookedAppointments->contains(
                     fn (Appointment $appointment): bool => $appointment->scheduled_start_at->lessThan($slotEnd)
                         && $appointment->scheduled_end_at->greaterThan($slotStart)
                 );
 
-                if (! $overlapsConfirmedAppointment) {
+                if (! $overlapsActiveAppointment) {
                     $available[$slotStart->format('H:i')] = true;
                 }
             }

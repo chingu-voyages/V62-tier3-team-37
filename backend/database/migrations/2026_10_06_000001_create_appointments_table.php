@@ -24,7 +24,7 @@ return new class extends Migration
             $table->timestamp('scheduled_end_at');
 
             $table->string('status', 20)
-                ->default(AppointmentStatus::CONFIRMED->value);
+                ->default(AppointmentStatus::BOOKED->value);
 
             $table->string('booking_for', 20);
 
@@ -35,6 +35,11 @@ return new class extends Migration
             $table->string('attendee_gender', 20);
 
             $table->text('notes')->nullable();
+            $table->text('medical_summary')->nullable();
+
+            $table->timestamp('arrived_at')->nullable();
+            $table->timestamp('no_show_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
 
             $table->timestamp('cancelled_at')->nullable();
             $table->foreignId('cancelled_by_user_id')
@@ -49,6 +54,11 @@ return new class extends Migration
                 ->constrained('users')
                 ->nullOnDelete();
 
+            $table->foreignId('parent_appointment_id')
+                ->nullable()
+                ->constrained('appointments')
+                ->nullOnDelete();
+
             $table->timestamps();
 
             $table->index(
@@ -61,10 +71,22 @@ return new class extends Migration
             );
             $table->index('status');
         });
+
+        Schema::table('documents', function (Blueprint $table) {
+            $table->foreignId('appointment_id')
+                ->nullable()
+                ->after('user_id')
+                ->constrained('appointments')
+                ->cascadeOnDelete();
+        });
     }
 
     public function down(): void
     {
+        Schema::table('documents', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('appointment_id');
+        });
+
         Schema::dropIfExists('appointments');
     }
 };

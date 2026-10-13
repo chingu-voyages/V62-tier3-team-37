@@ -15,7 +15,9 @@ use App\Models\Document;
 use App\Models\HcpProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class HcpProfileTest extends TestCase
@@ -59,8 +61,10 @@ class HcpProfileTest extends TestCase
             'license_issuing_authority' => 'Medical Board',
             'sub_specialty' => 'Interventional Cardiology',
             'workplace_name' => 'Regional Medical Center',
-            'workplace_address' => '123 Health Street',
-            'city' => 'Casablanca',
+            'clinic_street' => '123 Health Street',
+            'clinic_area' => 'Maarif',
+            'clinic_city' => 'Casablanca',
+            'accepted_insurances' => ['AXA'],
             'bio' => 'Experienced cardiologist.',
             'languages' => ['Arabic', 'English'],
             'consultation_types' => [
@@ -144,8 +148,10 @@ class HcpProfileTest extends TestCase
                 'country' => 'Morocco',
                 'sub_specialty' => 'Clinical Cardiology',
                 'workplace_name' => 'City Hospital',
-                'workplace_address' => '45 Main Street',
-                'city' => 'Rabat',
+                'clinic_street' => '45 Main Street',
+                'clinic_area' => 'Agdal',
+                'clinic_city' => 'Rabat',
+                'accepted_insurances' => ['AXA', 'MetLife'],
                 'bio' => 'Updated professional biography.',
                 'languages' => ['Arabic', 'English'],
                 'consultation_types' => [
@@ -159,7 +165,9 @@ class HcpProfileTest extends TestCase
             ->assertJsonPath('message', 'HCP profile updated successfully.')
             ->assertJsonPath('data.personal_information.first_name', 'Jane')
             ->assertJsonPath('data.personal_information.gender', UserGender::FEMALE->value)
-            ->assertJsonPath('data.professional_information.city', 'Rabat')
+            ->assertJsonPath('data.professional_information.clinic_address.city', 'Rabat')
+            ->assertJsonPath('data.professional_information.clinic_address.area', 'Agdal')
+            ->assertJsonPath('data.professional_information.accepted_insurances.1', 'MetLife')
             ->assertJsonPath('data.preferences.languages.1', 'English')
             ->assertJsonPath(
                 'data.preferences.consultation_types.1',
@@ -234,6 +242,18 @@ class HcpProfileTest extends TestCase
                 'languages.1',
                 'consultation_types.1',
             ]);
+    }
+
+    public function test_clinic_address_requires_city_area_and_street_together(): void
+    {
+        $hcp = $this->createHcpWithProfile();
+
+        $this->actingAs($hcp, 'sanctum')
+            ->patchJson('/api/hcp/profile', [
+                'clinic_city' => 'Cairo',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['clinic_area', 'clinic_street']);
     }
 
     public function test_hcp_can_replace_availability(): void
@@ -398,6 +418,28 @@ class HcpProfileTest extends TestCase
         $this->assertDatabaseHas('hcp_availability_slots', [
             'id' => $otherSlot->id,
         ]);
+    }
+
+    public function test_hcp_can_upload_and_delete_a_clinic_photo(): void
+    {
+        Storage::fake('public');
+        $hcp = $this->createHcpWithProfile();
+
+        $this->actingAs($hcp, 'sanctum')
+            ->post('/api/hcp/profile/clinic-photo', [
+                'photo' => UploadedFile::fake()->image('clinic.jpg'),
+            ])
+            ->assertOk();
+
+        $path = $hcp->hcpProfile()->firstOrFail()->clinic_photo_path;
+        Storage::disk('public')->assertExists($path);
+
+        $this->actingAs($hcp, 'sanctum')
+            ->deleteJson('/api/hcp/profile/clinic-photo')
+            ->assertOk();
+
+        Storage::disk('public')->assertMissing($path);
+        $this->assertNull($hcp->hcpProfile()->firstOrFail()->clinic_photo_path);
     }
 
     private function createHcpWithProfile(): User

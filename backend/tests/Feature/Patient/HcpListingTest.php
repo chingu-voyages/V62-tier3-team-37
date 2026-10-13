@@ -42,6 +42,29 @@ class HcpListingTest extends TestCase
             ->assertUnauthorized();
     }
 
+    public function test_a_patient_can_filter_hcps_by_name_specialty_location_and_insurance(): void
+    {
+        $patient = User::factory()->create();
+        $matchingHcp = $this->createHcp();
+        $matchingHcp->update(['first_name' => 'Mona', 'last_name' => 'Sayed']);
+        $matchingHcp->hcpProfile->update([
+            'clinic_city' => 'Cairo',
+            'clinic_area' => 'Heliopolis',
+            'clinic_street' => 'Health Street',
+            'accepted_insurances' => ['AXA', 'MetLife'],
+        ]);
+        $this->createHcp();
+
+        $this->actingAs($patient, 'sanctum')
+            ->getJson('/api/patient/hcps?name=Mona%20Sayed&specialty=CARDIOLOGY&city=Cairo&area=Heliopolis&insurance=AXA')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $matchingHcp->id)
+            ->assertJsonPath('data.0.clinic.city', 'Cairo')
+            ->assertJsonPath('data.0.clinic.area', 'Heliopolis')
+            ->assertJsonPath('data.0.accepted_insurances.0', 'AXA');
+    }
+
     private function createHcp(
         VerificationStatus $verificationStatus = VerificationStatus::VERIFIED,
         UserStatus $userStatus = UserStatus::ACTIVE
