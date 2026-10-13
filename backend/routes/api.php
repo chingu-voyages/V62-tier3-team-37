@@ -12,6 +12,7 @@ use App\Http\Controllers\Hcp\HcpProfileController;
 use App\Http\Controllers\Patient\HcpFilterOptionsController;
 use App\Http\Controllers\Patient\HcpListingController;
 use App\Http\Controllers\Patient\PatientAppointmentController;
+use App\Http\Controllers\Patient\PatientFeedbackController;
 use App\Http\Controllers\Patient\PatientHcpAvailabilityController;
 use App\Http\Controllers\Patient\PatientMedicalDocumentController;
 use App\Http\Controllers\Patient\PatientProfileController;
@@ -84,6 +85,14 @@ Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, EnsureEmailIsVe
     Route::get('/patient/medical-examinations/{document}', [PatientMedicalDocumentController::class, 'show']);
 
     Route::delete('/patient/medical-examinations/{document}', [PatientMedicalDocumentController::class, 'destroy']);
+
+    /**************************PATIENT FEEDBACK****************************** */
+
+    Route::get('/patient/clinicians', [PatientFeedbackController::class, 'clinicians']);
+
+    Route::post('/patient/clinicians/{user}/reviews', [PatientFeedbackController::class, 'review']);
+
+    Route::post('/patient/clinicians/{user}/reports', [PatientFeedbackController::class, 'report']);
 
     /**************************HCP************************************** */
 

@@ -11,6 +11,7 @@ export type NavIconKey =
   | "calendarDays"
   | "clipboard"
   | "message"
+  | "messageSquareHeart"
   | "sparkles"
   | "user"
   | "users";
@@ -37,6 +38,7 @@ export const ROUTES = {
   patientSearch: "/patient/search",
   patientRecords: "/patient/records",
   patientMessages: "/patient/messages",
+  patientFeedback: "/patient/feedback",
   patientAssistant: "/patient/assistant",
   patientSettings: "/patient/settings",
 

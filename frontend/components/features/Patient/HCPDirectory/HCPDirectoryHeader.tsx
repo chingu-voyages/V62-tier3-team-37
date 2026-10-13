@@ -20,7 +20,7 @@ export function HCPDirectoryHeader() {
       <div className="items-center gap-5 hidden sm:flex">
         <Image
           className=" md:h-65 md:w-75 scale-120 md:scale-95 lg:w-65 lg:scale-115 xl:scale-135 object-cover"
-          src="/images/patient/hcp-search.webp"
+          src="/images/Patient/hcp-search.webp"
           alt=""
           width={300}
           height={300}

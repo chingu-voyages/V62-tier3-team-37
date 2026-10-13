@@ -40,7 +40,14 @@ export const patientNavigation: NavItem[] = [
     href: ROUTES.patientRecords,
     icon: "clipboard",
     ariaLabel: "Navigate to Health Records",
-    implemented: false,
+    implemented: true,
+  },
+  {
+    label: "Feedback",
+    href: ROUTES.patientFeedback,
+    icon: "messageSquareHeart",
+    ariaLabel: "Navigate to Feedback",
+    implemented: true,
   },
   {
     label: "Messages",
