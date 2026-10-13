@@ -7,9 +7,10 @@ function notFound() {
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 md:flex-row md:gap-8">
       <Image
         src="/not-found.svg"
-        width={300}
-        height={50}
+        width={200}
+        height={200}
         alt="Not Found"
+        loading="eager"
         className="w-3/4 max-w-xs h-auto md:w-[40%] md:max-w-lg"
       />
       <div className="flex flex-col items-center gap-3 text-center md:items-start md:text-left">

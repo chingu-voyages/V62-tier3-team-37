@@ -29,6 +29,8 @@ export const ROUTES = {
   auth: "/auth",
   otp: "/auth/otp",
   hcpVerification: "/auth/hcp/verification",
+  /** Dynamic. Built from the emailed link: `/auth/password-reset/{token}?email=…`. */
+  passwordReset: "/auth/password-reset",
 
   patientAppointments: "/patient/appointments",
   patientProfile: "/patient/profile",

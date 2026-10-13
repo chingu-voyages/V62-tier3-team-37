@@ -3,6 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { ForgotPasswordPanel } from "@/components/features/auth/ForgotPasswordPanel";
 import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
 import { inlineLinkClassName } from "@/components/ui/inline-link";
@@ -20,6 +21,7 @@ function revealFirstInvalid(form: HTMLFormElement) {
 
 export function LoginForm({ onCreateAccount }: { onCreateAccount?: () => void }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [forgotOpen, setForgotOpen] = useState(false);
   const [serverFieldErrors, setServerFieldErrors] = useState<{
     email?: string;
     password?: string;
@@ -134,6 +136,19 @@ export function LoginForm({ onCreateAccount }: { onCreateAccount?: () => void })
           />
         )}
       </form.Field>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className={inlineLinkClassName}
+          aria-expanded={forgotOpen}
+          onClick={() => setForgotOpen((open) => !open)}
+        >
+          Forgot password?
+        </button>
+      </div>
+
+      {forgotOpen ? <ForgotPasswordPanel email={form.state.values.email} /> : null}
 
       {submitError ? (
         <Callout tone="danger" role="alert">
