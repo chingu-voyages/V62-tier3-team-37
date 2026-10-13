@@ -1,4 +1,4 @@
-import { PatientAllergies } from "@/components/features/patient/profile/allergies/PatientAllergies";
+import { PatientAllergies } from "@/components/features/Patient/profile/allergies/PatientAllergies";
 import { getPatientAllergies } from "@/lib/dal/patient";
 
 /**

@@ -1,4 +1,4 @@
-import { PatientProfileOverview } from "@/components/features/patient/profile/overview/PatientProfileOverview";
+import { PatientProfileOverview } from "@/components/features/Patient/profile/overview/PatientProfileOverview";
 import { getPatientProfileOverview } from "@/lib/dal/patient";
 
 /**

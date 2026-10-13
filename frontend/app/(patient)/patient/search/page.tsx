@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { toBookingPatient } from "@/components/features/patient/Booking/booking-identity";
-import { PatientSearch } from "@/components/features/patient/HCPDirectory/PatientSearch";
+import { toBookingPatient } from "@/components/features/Patient/Booking/booking-identity";
+import { PatientSearch } from "@/components/features/Patient/HCPDirectory/PatientSearch";
 import { getOptionalUser } from "@/lib/dal/auth";
 
 /**

@@ -1,4 +1,4 @@
-import { PatientHealthProfile } from "@/components/features/patient/profile/health/PatientHealthProfile";
+import { PatientHealthProfile } from "@/components/features/Patient/profile/health/PatientHealthProfile";
 import { getPatientHealthSection } from "@/lib/dal/patient";
 
 /**

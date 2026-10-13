@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
-import { HCPDirectory } from "@/components/features/patient/HCPDirectory/HCPDirectory";
+import { HCPDirectory } from "@/components/features/Patient/HCPDirectory/HCPDirectory";
 import { useHcpsQuery } from "@/hooks/use-hcps-query";
 import { HCP_PAGE_SIZE, type HcpSort } from "@/lib/api/patient-hcps-client";
 import type { HCPFilters } from "@/types/hcp-directory";
