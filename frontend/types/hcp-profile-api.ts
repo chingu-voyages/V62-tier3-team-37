@@ -73,6 +73,8 @@ export type ApiProfessionalInformation = {
   workplace_name: string | null;
   workplace_address: string | null;
   city: string | null;
+  clinic_area: string | null;
+  accepted_insurances: string[];
   clinic_photo_url: string | null;
 };
 
@@ -118,6 +120,8 @@ export type UpdateHcpProfileInput = {
   workplace_name?: string | null;
   workplace_address?: string | null;
   city?: string | null;
+  clinic_area?: string | null;
+  accepted_insurances?: string[] | null;
   bio?: string | null;
   languages?: string[];
   consultation_types?: ApiConsultationType[];

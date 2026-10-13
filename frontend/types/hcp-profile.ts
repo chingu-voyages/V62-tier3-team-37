@@ -101,6 +101,8 @@ export type HcpEditableProfile = {
   workplaceName: string;
   workplaceAddress: string;
   city: string;
+  clinicArea: string;
+  insurancePlans: string;
 };
 
 export type WorkingDayKey = "MON" | "TUE" | "WED" | "THU" | "FRI" | "SAT" | "SUN";

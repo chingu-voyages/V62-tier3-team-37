@@ -33,6 +33,8 @@ class HcpProfileService
                 'workplace_name',
                 'workplace_address',
                 'city',
+                'clinic_area',
+                'accepted_insurances',
                 'bio',
                 'languages',
                 'consultation_types',

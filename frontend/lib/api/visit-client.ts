@@ -51,6 +51,8 @@ export type DirectoryClinician = {
   city: string | null;
   workplace_name: string | null;
   workplace_address: string | null;
+  clinic_area?: string | null;
+  accepted_insurances?: string[];
   bio: string | null;
   profile_photo_url: string | null;
   clinic_photo_url: string | null;
@@ -101,6 +103,7 @@ export function listDirectory(filters?: {
   specialty?: string;
   gender?: "male" | "female";
   minYears?: number;
+  insurance?: string;
 }): Promise<{ data: DirectoryClinician[] }> {
   const params = new URLSearchParams();
   if (filters?.search) params.set("search", filters.search);
@@ -109,6 +112,7 @@ export function listDirectory(filters?: {
   if (filters?.specialty) params.set("specialty", filters.specialty);
   if (filters?.gender) params.set("gender", filters.gender);
   if (filters?.minYears) params.set("min_years", String(filters.minYears));
+  if (filters?.insurance) params.set("insurance", filters.insurance);
   const query = params.toString();
   return apiRequest(`/api/patient/directory${query ? `?${query}` : ""}`);
 }

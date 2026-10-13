@@ -192,6 +192,26 @@ class AppointmentFlowTest extends TestCase
             ->assertJsonPath('data.0.review_count', 1);
     }
 
+    public function test_directory_search_can_filter_by_insurance_and_clinic_area(): void
+    {
+        [$patient, $clinician] = $this->pair();
+        $clinician->hcpProfile->update([
+            'clinic_area' => 'Hamra',
+            'accepted_insurances' => ['AXA', 'Allianz'],
+        ]);
+
+        $this->actingAs($patient, 'sanctum')
+            ->getJson('/api/patient/directory?insurance=AXA&area=Hamra')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $clinician->id)
+            ->assertJsonPath('data.0.accepted_insurances.0', 'AXA');
+
+        $this->actingAs($patient, 'sanctum')
+            ->getJson('/api/patient/directory?insurance=Cigna')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
     /**
      * @return array{0: User, 1: User}
      */

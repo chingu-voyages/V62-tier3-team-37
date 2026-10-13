@@ -23,6 +23,8 @@ class HcpProfile extends Model
         'workplace_address',
         'clinic_photo_path',
         'city',
+        'clinic_area',
+        'accepted_insurances',
         'bio',
         'languages',
         'consultation_types',
@@ -35,6 +37,7 @@ class HcpProfile extends Model
             'years_of_experience' => 'integer',
             'languages' => 'array',
             'consultation_types' => 'array',
+            'accepted_insurances' => 'array',
         ];
     }
 

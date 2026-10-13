@@ -26,6 +26,8 @@ type EditableProfile = {
   workplaceName: string;
   workplaceAddress: string;
   city: string;
+  clinicArea: string;
+  insurancePlans: string;
 };
 
 type EditProfileFormProps = {
@@ -84,6 +86,11 @@ export function EditProfileForm({ values, identityLocked = false }: EditProfileF
       workplace_name: draft.workplaceName.trim() || null,
       workplace_address: draft.workplaceAddress.trim() || null,
       city: draft.city.trim() || null,
+      clinic_area: draft.clinicArea.trim() || null,
+      accepted_insurances: draft.insurancePlans
+        .split(",")
+        .map((plan) => plan.trim())
+        .filter(Boolean),
     };
 
     try {
@@ -100,6 +107,8 @@ export function EditProfileForm({ values, identityLocked = false }: EditProfileF
         workplaceName: getApiFieldError(error, "workplace_name") ?? "",
         workplaceAddress: getApiFieldError(error, "workplace_address") ?? "",
         city: getApiFieldError(error, "city") ?? "",
+        clinicArea: getApiFieldError(error, "clinic_area") ?? "",
+        insurancePlans: getApiFieldError(error, "accepted_insurances") ?? "",
       });
       setFormError(getApiErrorMessage(error));
       throw error;
@@ -247,6 +256,24 @@ export function EditProfileForm({ values, identityLocked = false }: EditProfileF
         value={draft.city}
         error={fieldErrors.city || undefined}
         onChange={(value) => set("city", value)}
+      />
+
+      <TextField
+        id="pf-clinic-area"
+        label="Clinic area"
+        maxLength={PROFILE_LIMITS.city}
+        value={draft.clinicArea}
+        error={fieldErrors.clinicArea || undefined}
+        onChange={(value) => set("clinicArea", value)}
+      />
+
+      <TextField
+        id="pf-insurance"
+        label="Insurance plans"
+        placeholder="AXA, Allianz"
+        value={draft.insurancePlans}
+        error={fieldErrors.insurancePlans || undefined}
+        onChange={(value) => set("insurancePlans", value)}
       />
     </ProfileEditDialog>
   );

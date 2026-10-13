@@ -25,6 +25,7 @@ class PatientDirectoryController extends Controller
         $specialty = $request->string('specialty')->toString();
         $city = $request->string('city')->toString();
         $area = $request->string('area')->toString();
+        $insurance = $request->string('insurance')->toString();
         $search = $request->string('search')->toString();
         $gender = strtoupper($request->string('gender')->toString());
         $minYears = $request->integer('min_years');
@@ -52,7 +53,14 @@ class PatientDirectoryController extends Controller
             ))
             ->when($area !== '', fn ($query) => $query->whereHas(
                 'hcpProfile',
-                fn ($profile) => $profile->where('workplace_address', 'like', '%'.$area.'%'),
+                fn ($profile) => $profile->where(function ($place) use ($area) {
+                    $place->where('workplace_address', 'like', '%'.$area.'%')
+                        ->orWhere('clinic_area', 'like', '%'.$area.'%');
+                }),
+            ))
+            ->when($insurance !== '', fn ($query) => $query->whereHas(
+                'hcpProfile',
+                fn ($profile) => $profile->whereJsonContains('accepted_insurances', $insurance),
             ))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
@@ -84,12 +92,17 @@ class PatientDirectoryController extends Controller
                     ->where('status', UserStatus::ACTIVE)
                     ->whereHas('hcpVerification', fn ($verification) => $verification->where('status', VerificationStatus::VERIFIED));
             })
-            ->get(['city', 'workplace_address']);
+            ->get(['city', 'workplace_address', 'clinic_area']);
 
         return response()->json([
             'data' => [
                 'cities' => $profiles->pluck('city')->filter()->unique()->sort()->values(),
-                'areas' => $profiles->pluck('workplace_address')->filter()->unique()->sort()->values(),
+                'areas' => $profiles->pluck('workplace_address')
+                    ->merge($profiles->pluck('clinic_area'))
+                    ->filter()
+                    ->unique()
+                    ->sort()
+                    ->values(),
             ],
         ]);
     }
@@ -149,8 +162,10 @@ class PatientDirectoryController extends Controller
             'specialty_label' => $specialty ? $this->label($specialty) : null,
             'years_of_experience' => $profile?->years_of_experience,
             'city' => $profile?->city,
+            'clinic_area' => $profile?->clinic_area,
             'workplace_name' => $profile?->workplace_name,
             'workplace_address' => $profile?->workplace_address,
+            'accepted_insurances' => $profile?->accepted_insurances ?? [],
             'bio' => $profile?->bio,
             'languages' => $profile?->languages ?? [],
             'consultation_types' => $profile?->consultation_types ?? [],

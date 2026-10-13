@@ -27,6 +27,7 @@ class UpdateHcpProfileRequest extends FormRequest
             'workplace_name',
             'workplace_address',
             'city',
+            'clinic_area',
             'bio',
         ];
 
@@ -36,6 +37,13 @@ class UpdateHcpProfileRequest extends FormRequest
             if ($this->has($field) && is_string($this->input($field))) {
                 $normalized[$field] = trim($this->input($field));
             }
+        }
+
+        if ($this->has('accepted_insurances') && is_array($this->input('accepted_insurances'))) {
+            $normalized['accepted_insurances'] = array_values(array_map(
+                fn ($plan) => is_string($plan) ? trim($plan) : $plan,
+                $this->input('accepted_insurances'),
+            ));
         }
 
         $this->merge($normalized);
@@ -104,6 +112,24 @@ class UpdateHcpProfileRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:100',
+            ],
+            'clinic_area' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:100',
+            ],
+            'accepted_insurances' => [
+                'sometimes',
+                'nullable',
+                'array',
+                'max:30',
+            ],
+            'accepted_insurances.*' => [
+                'required',
+                'string',
+                'max:100',
+                'distinct:ignore_case',
             ],
             'bio' => [
                 'sometimes',

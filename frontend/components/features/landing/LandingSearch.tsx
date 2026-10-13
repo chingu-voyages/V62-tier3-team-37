@@ -138,6 +138,7 @@ function matchesLive(doctor: LandingDoctor, filters: LandingFilters): boolean {
   if (filters.specialty && !doctor.specialties.includes(filters.specialty)) return false;
   if (filters.city && !doctor.city?.toLowerCase().includes(filters.city.toLowerCase())) return false;
   if (filters.area && !doctor.area?.toLowerCase().includes(filters.area.toLowerCase())) return false;
+  if (filters.insurance && !doctor.insuranceAccepted?.includes(filters.insurance)) return false;
   if (filters.gender && doctor.gender !== filters.gender) return false;
   if (filters.minExperience !== undefined && doctor.yearsOfExperience < filters.minExperience) {
     return false;
@@ -166,7 +167,8 @@ function toLandingDoctor(row: DirectoryClinician): LandingDoctor {
     verified: true,
     specialties: row.specialty_label ? [row.specialty_label] : [],
     city: row.city ?? undefined,
-    area: row.workplace_address ?? undefined,
+    area: row.clinic_area ?? row.workplace_address ?? undefined,
+    insuranceAccepted: row.accepted_insurances ?? [],
     gender: row.gender === "FEMALE" ? "female" : "male",
     yearsOfExperience: row.years_of_experience ?? 0,
     availableOn,
@@ -277,6 +279,7 @@ export function LandingSearch({
         specialty: SPECIALTY_API[specialty],
         gender: gender === "female" || gender === "male" ? gender : undefined,
         minYears: minExperience ? Number(minExperience) : undefined,
+        insurance: insurance || undefined,
       });
       setLiveDoctors(response.data.map(toLandingDoctor));
     } catch (error) {
@@ -398,16 +401,14 @@ export function LandingSearch({
                   <option key={value} value={value} />
                 ))}
               </datalist>
-              {signedIn ? null : (
-                <FilterSelect
-                  id="landing-insurance"
-                  label="Insurance"
-                  placeholder="All insurance"
-                  value={insurance}
-                  options={INSURANCES}
-                  onChange={setInsurance}
-                />
-              )}
+              <FilterSelect
+                id="landing-insurance"
+                label="Insurance"
+                placeholder="All insurance"
+                value={insurance}
+                options={INSURANCES}
+                onChange={setInsurance}
+              />
             </div>
           </div>
 

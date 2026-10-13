@@ -89,6 +89,8 @@ class HcpProfileResource extends JsonResource
             'workplace_name' => $profile?->workplace_name,
             'workplace_address' => $profile?->workplace_address,
             'city' => $profile?->city,
+            'clinic_area' => $profile?->clinic_area,
+            'accepted_insurances' => $profile?->accepted_insurances ?? [],
             'clinic_photo_url' => $this->publicUrl($profile?->clinic_photo_path),
         ];
     }

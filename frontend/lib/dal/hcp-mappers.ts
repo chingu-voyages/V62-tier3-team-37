@@ -152,6 +152,8 @@ export function toEditableProfile(profile: ApiHcpProfile): HcpEditableProfile {
     workplaceName: professional.workplace_name ?? "",
     workplaceAddress: professional.workplace_address ?? "",
     city: professional.city ?? "",
+    clinicArea: professional.clinic_area ?? "",
+    insurancePlans: (professional.accepted_insurances ?? []).join(", "),
   };
 }
 
