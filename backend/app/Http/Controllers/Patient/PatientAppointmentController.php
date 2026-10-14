@@ -3,19 +3,24 @@
 namespace App\Http\Controllers\Patient;
 
 use App\Enums\BookingFor;
+use App\Enums\DocumentType;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Patient\StoreAppointmentRequest;
 use App\Http\Resources\Patient\AppointmentResource;
 use App\Models\Appointment;
+use App\Models\Document;
 use App\Models\User;
 use App\Services\Appointment\AppointmentBookingService;
 use App\Services\Appointment\AppointmentManagementService;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PatientAppointmentController extends Controller
 {
@@ -25,7 +30,7 @@ class PatientAppointmentController extends Controller
 
         $appointments = $request->user()
             ->patientAppointments()
-            ->with(['hcp.hcpProfile', 'patient'])
+            ->with(['hcp.hcpProfile', 'patient', 'results'])
             ->orderByDesc('scheduled_start_at')
             ->paginate(15);
 
@@ -96,18 +101,34 @@ class PatientAppointmentController extends Controller
         $this->ensurePatient($request);
 
         $validated = $request->validate([
-            'reason' => ['nullable', 'string', 'max:1000'],
+            'reason' => ['required', 'string', 'max:1000'],
         ]);
 
         $managedAppointment = $managementService->cancel(
             $request->user(),
             $this->patientAppointment($request, $appointment),
-            $validated['reason'] ?? null
+            $validated['reason']
         );
 
         return new AppointmentResource(
             $managedAppointment->load(['hcp.hcpProfile', 'patient'])
         );
+    }
+
+    public function downloadResult(Request $request, int $appointment, Document $document): StreamedResponse
+    {
+        $appointmentModel = $this->patientAppointment($request, $appointment);
+
+        abort_unless(
+            $document->appointment_id === $appointmentModel->id
+                && $document->document_type === DocumentType::APPOINTMENT_RESULT,
+            404
+        );
+
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('local');
+
+        return $disk->download($document->storage_path, $document->original_file_name);
     }
 
     private function patientAppointment(Request $request, int $appointment): Appointment
@@ -116,7 +137,7 @@ class PatientAppointmentController extends Controller
 
         return $request->user()
             ->patientAppointments()
-            ->with(['hcp.hcpProfile', 'patient'])
+            ->with(['hcp.hcpProfile', 'patient', 'results'])
             ->whereKey($appointment)
             ->firstOrFail();
     }

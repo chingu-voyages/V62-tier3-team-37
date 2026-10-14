@@ -3,18 +3,33 @@ import type { Appointment } from "@/types/appointment";
 
 import { appointmentStatusLabel } from "./appointment-facts";
 
-/** The three visual states a status pill can take. */
-type StatusTone = "upcoming" | "past" | "cancelled";
+/** The visual states a status pill can take. */
+type StatusTone = "upcoming" | "active" | "past" | "cancelled";
 
 const TONE_CLASS: Record<StatusTone, string> = {
   upcoming: "bg-accent text-primary",
+  active: "bg-secondary/10 text-secondary",
   past: "bg-muted text-muted-foreground",
   cancelled: "bg-destructive/10 text-destructive",
 };
 
+/**
+ * `ARRIVED` is the only live state: the patient is at the clinic and the visit has
+ * not been closed. It gets its own tone so it does not read as "upcoming", which is
+ * what it would fall through to otherwise.
+ */
 function toneFor(appointment: Appointment): StatusTone {
-  if (appointment.status === "CANCELLED") return "cancelled";
-  return appointment.status === "COMPLETED" ? "past" : "upcoming";
+  switch (appointment.status) {
+    case "CANCELLED":
+      return "cancelled";
+    case "COMPLETED":
+    case "NO_SHOW":
+      return "past";
+    case "ARRIVED":
+      return "active";
+    default:
+      return "upcoming";
+  }
 }
 
 /**

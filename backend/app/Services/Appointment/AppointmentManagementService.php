@@ -17,7 +17,8 @@ use Illuminate\Support\Facades\DB;
 class AppointmentManagementService
 {
     public function __construct(
-        private readonly AppointmentAvailabilityService $availabilityService
+        private readonly AppointmentAvailabilityService $availabilityService,
+        private readonly AppointmentBookingService $bookingService
     ) {}
 
     public function reschedule(
@@ -40,7 +41,11 @@ class AppointmentManagementService
                 ->firstOrFail();
 
             $this->ensureParticipant($actor, $lockedAppointment);
-            $this->ensureConfirmed($lockedAppointment, 'Only confirmed appointments can be rescheduled.');
+            $this->ensureOneOf(
+                $lockedAppointment,
+                [AppointmentStatus::BOOKED, AppointmentStatus::RESCHEDULED],
+                'Only booked or rescheduled appointments can be rescheduled.'
+            );
             $this->ensureNotStarted($lockedAppointment, 'An appointment cannot be rescheduled after it starts.');
 
             $availableSlots = $this->availabilityService->availableSlots(
@@ -59,7 +64,11 @@ class AppointmentManagementService
 
             $patientHasConflict = $patient->patientAppointments()
                 ->whereKeyNot($lockedAppointment->id)
-                ->where('status', AppointmentStatus::CONFIRMED->value)
+                ->whereIn('status', [
+                    AppointmentStatus::BOOKED->value,
+                    AppointmentStatus::RESCHEDULED->value,
+                    AppointmentStatus::ARRIVED->value,
+                ])
                 ->where('scheduled_start_at', '<', $endAtUtc)
                 ->where('scheduled_end_at', '>', $startAtUtc)
                 ->exists();
@@ -71,6 +80,7 @@ class AppointmentManagementService
             $lockedAppointment->update([
                 'scheduled_start_at' => $startAtUtc,
                 'scheduled_end_at' => $endAtUtc,
+                'status' => AppointmentStatus::RESCHEDULED,
                 'rescheduled_at' => now(),
                 'rescheduled_by_user_id' => $actor->id,
             ]);
@@ -82,7 +92,7 @@ class AppointmentManagementService
     public function cancel(
         User $actor,
         Appointment $appointment,
-        ?string $reason = null
+        string $reason
     ): Appointment {
         return DB::transaction(function () use ($actor, $appointment, $reason): Appointment {
             $lockedAppointment = Appointment::query()
@@ -91,7 +101,11 @@ class AppointmentManagementService
                 ->firstOrFail();
 
             $this->ensureParticipant($actor, $lockedAppointment);
-            $this->ensureConfirmed($lockedAppointment, 'Only confirmed appointments can be cancelled.');
+            $this->ensureOneOf(
+                $lockedAppointment,
+                [AppointmentStatus::BOOKED, AppointmentStatus::RESCHEDULED],
+                'Only booked or rescheduled appointments can be cancelled.'
+            );
             $this->ensureNotStarted($lockedAppointment, 'An appointment cannot be cancelled after it starts.');
 
             $lockedAppointment->update([
@@ -105,30 +119,94 @@ class AppointmentManagementService
         });
     }
 
-    public function complete(User $hcp, Appointment $appointment): Appointment
-    {
-        return DB::transaction(function () use ($hcp, $appointment): Appointment {
+    public function updateAttendanceStatus(
+        User $hcp,
+        Appointment $appointment,
+        AppointmentStatus $status
+    ): Appointment {
+        return DB::transaction(function () use ($hcp, $appointment, $status): Appointment {
             $lockedAppointment = Appointment::query()
                 ->whereKey($appointment->id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($hcp->role !== UserRole::HCP || $lockedAppointment->hcp_user_id !== $hcp->id) {
-                throw new AuthorizationException('You are not authorized to complete this appointment.');
-            }
+            $this->ensureOwningHcp($hcp, $lockedAppointment);
+            $this->ensureOneOf(
+                $lockedAppointment,
+                [AppointmentStatus::BOOKED, AppointmentStatus::RESCHEDULED],
+                'Only booked or rescheduled appointments can have attendance recorded.'
+            );
 
-            $this->ensureConfirmed($lockedAppointment, 'Only confirmed appointments can be completed.');
-
-            if ($lockedAppointment->scheduled_end_at->isFuture()) {
-                throw new AppointmentStateException('An appointment cannot be completed before it ends.');
+            if (! in_array($status, [AppointmentStatus::ARRIVED, AppointmentStatus::NO_SHOW], true)) {
+                throw new AppointmentStateException('Status must be ARRIVED or NO_SHOW.');
             }
 
             $lockedAppointment->update([
-                'status' => AppointmentStatus::COMPLETED,
+                'status' => $status,
+                'arrived_at' => $status === AppointmentStatus::ARRIVED ? now() : null,
+                'no_show_at' => $status === AppointmentStatus::NO_SHOW ? now() : null,
             ]);
 
             return $lockedAppointment->refresh();
         });
+    }
+
+    public function saveSummary(User $hcp, Appointment $appointment, string $summary): Appointment
+    {
+        return DB::transaction(function () use ($hcp, $appointment, $summary): Appointment {
+            $lockedAppointment = Appointment::query()
+                ->whereKey($appointment->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $this->ensureOwningHcp($hcp, $lockedAppointment);
+            $this->ensureOneOf(
+                $lockedAppointment,
+                [AppointmentStatus::ARRIVED],
+                'A summary can only be saved after the patient arrives.'
+            );
+
+            $lockedAppointment->update([
+                'medical_summary' => $summary,
+                'status' => AppointmentStatus::COMPLETED,
+                'completed_at' => now(),
+            ]);
+
+            return $lockedAppointment->refresh();
+        });
+    }
+
+    public function createFollowUp(
+        User $hcp,
+        Appointment $appointment,
+        CarbonInterface $start
+    ): Appointment {
+        $this->ensureOwningHcp($hcp, $appointment);
+
+        if ($appointment->status !== AppointmentStatus::COMPLETED) {
+            throw new AppointmentStateException('A follow-up can only be booked after a completed appointment.');
+        }
+
+        $patient = $appointment->patient()->firstOrFail();
+        $attendee = [
+            'first_name' => $appointment->attendee_first_name,
+            'last_name' => $appointment->attendee_last_name,
+            'email' => $appointment->attendee_email,
+            'birth_date' => $appointment->attendee_birth_date->toDateString(),
+            'gender' => $appointment->attendee_gender,
+        ];
+
+        $followUp = $this->bookingService->book(
+            $patient,
+            $hcp,
+            $start,
+            $appointment->booking_for,
+            $attendee
+        );
+
+        $followUp->update(['parent_appointment_id' => $appointment->id]);
+
+        return $followUp->refresh();
     }
 
     private function ensureParticipant(User $actor, Appointment $appointment): void
@@ -141,10 +219,20 @@ class AppointmentManagementService
         }
     }
 
-    private function ensureConfirmed(Appointment $appointment, string $message): void
+    /**
+     * @param  list<AppointmentStatus>  $statuses
+     */
+    private function ensureOneOf(Appointment $appointment, array $statuses, string $message): void
     {
-        if ($appointment->status !== AppointmentStatus::CONFIRMED) {
+        if (! in_array($appointment->status, $statuses, true)) {
             throw new AppointmentStateException($message);
+        }
+    }
+
+    private function ensureOwningHcp(User $hcp, Appointment $appointment): void
+    {
+        if ($hcp->role !== UserRole::HCP || $appointment->hcp_user_id !== $hcp->id) {
+            throw new AuthorizationException('You are not authorized to manage this appointment.');
         }
     }
 

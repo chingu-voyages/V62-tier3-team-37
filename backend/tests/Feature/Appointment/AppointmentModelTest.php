@@ -38,7 +38,7 @@ class AppointmentModelTest extends TestCase
             'attendee_gender' => $patient->gender,
         ])->refresh();
 
-        $this->assertSame(AppointmentStatus::CONFIRMED, $appointment->status);
+        $this->assertSame(AppointmentStatus::BOOKED, $appointment->status);
         $this->assertSame(BookingFor::SELF, $appointment->booking_for);
         $this->assertSame(UserGender::MALE, $appointment->attendee_gender);
         $this->assertEquals(

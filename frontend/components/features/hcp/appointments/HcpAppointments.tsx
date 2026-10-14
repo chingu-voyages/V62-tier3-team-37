@@ -4,13 +4,10 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
   AppointmentCard,
-  AppointmentCount,
   AppointmentListSkeleton,
   AppointmentsEmptyState,
   AppointmentsErrorState,
   AppointmentsGatedState,
-  AppointmentViewFilter,
-  appointmentView,
   BookedForSomeoneElseChip,
   Pagination,
 } from "@/components/features/shared/appointments";
@@ -18,15 +15,42 @@ import { useHcpAppointmentsQuery } from "@/hooks/use-hcp-appointments-query";
 import { APPOINTMENTS_PAGE_SIZE, isForbidden } from "@/lib/api/appointments-contract";
 import { getApiErrorMessage } from "@/lib/api/client";
 import { ROUTES } from "@/lib/constants/routes";
-import type { Appointment, AppointmentView } from "@/types/appointment";
-
-import {
-  CancelHcpAppointmentDialog,
-  CompleteHcpAppointmentDialog,
-  HcpAppointmentDetailDialog,
-  RescheduleHcpAppointmentDialog,
-} from "./HcpAppointmentDialogs";
+import type { Appointment, HcpAppointmentView } from "@/types/appointment";
+import { HcpAppointmentActionDialog } from "./HcpAppointmentActionDialog";
+import { HcpAppointmentDetailDialog } from "./HcpAppointmentDialogs";
+import { HcpAppointmentCount, HcpAppointmentFilter } from "./HcpAppointmentFilter";
 import { PatientIdentity } from "./PatientIdentity";
+
+/** Shown while the API has not answered, so no tab renders `undefined`. */
+const EMPTY_FACETS = {
+  upcoming: 0,
+  in_progress: 0,
+  no_show: 0,
+  history: 0,
+};
+
+/**
+ * Per-stage empty copy. "No past visits" would be wrong for an empty In progress
+ * tab, and the default two-view wording only knows about upcoming and past.
+ */
+const EMPTY_COPY: Record<HcpAppointmentView, { label: string; body: string }> = {
+  upcoming: {
+    label: "No upcoming visits",
+    body: "As soon as a visit is booked with you it will appear here, with the patient, the date and the time.",
+  },
+  in_progress: {
+    label: "Nobody is checked in",
+    body: "Mark a patient as arrived and they will appear here, ready for you to close the visit.",
+  },
+  no_show: {
+    label: "No missed visits",
+    body: "Visits you mark as a no show are collected here.",
+  },
+  history: {
+    label: "No closed visits yet",
+    body: "Completed and cancelled visits are kept here.",
+  },
+};
 
 /**
  * The clinician's schedule, read from `GET /hcp/appointments`.
@@ -47,32 +71,26 @@ import { PatientIdentity } from "./PatientIdentity";
  */
 export function HcpAppointments() {
   const router = useRouter();
-  const [view, setView] = useState<AppointmentView>("upcoming");
+  const [view, setView] = useState<HcpAppointmentView>("upcoming");
   const [page, setPage] = useState(1);
 
   const [detailId, setDetailId] = useState<number | null>(null);
-  const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
-  const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
-  const [completeTarget, setCompleteTarget] = useState<Appointment | null>(null);
+  const [actionTarget, setActionTarget] = useState<Appointment | null>(null);
 
-  const query = useHcpAppointmentsQuery(page);
+  const query = useHcpAppointmentsQuery(view, page);
 
   const grouped = useMemo(() => {
     const appointments = query.data?.appointments ?? [];
 
-    // One `now` for the whole pass, so a clock tick between two rows cannot split the
-    // list down the middle.
-    const now = new Date();
-
-    return appointments
-      .filter((appointment) => appointmentView(appointment, now) === view)
-      .sort((left, right) => {
-        const delta =
-          new Date(left.scheduled_start_at).getTime() -
-          new Date(right.scheduled_start_at).getTime();
-        // Past reads newest-first: the most recent visit is the one worth seeing.
-        return view === "past" ? -delta : delta;
-      });
+    // The stage is chosen by the API, so nothing is filtered out here - only sorted.
+    // Past-facing stages read newest-first: the most recent visit is the one worth
+    // seeing. Upcoming keeps chronological order because the next patient is what
+    // matters.
+    return [...appointments].sort((left, right) => {
+      const delta =
+        new Date(left.scheduled_start_at).getTime() - new Date(right.scheduled_start_at).getTime();
+      return view === "upcoming" || view === "in_progress" ? delta : -delta;
+    });
   }, [query.data?.appointments, view]);
 
   const isFirstLoad = query.isPending;
@@ -92,11 +110,12 @@ export function HcpAppointments() {
         </p>
       </div>
 
-      <AppointmentViewFilter
+      <HcpAppointmentFilter
         value={view}
+        counts={query.data?.facets ?? EMPTY_FACETS}
         onChange={(next) => {
           setView(next);
-          // Page 4 of the previous view means nothing against a different one.
+          // Page 4 of the previous stage means nothing against a different one.
           setPage(1);
         }}
       />
@@ -118,10 +137,15 @@ export function HcpAppointments() {
           onRetry={() => void query.refetch()}
         />
       ) : grouped.length === 0 ? (
-        <AppointmentsEmptyState view={view} noun="visits" />
+        <AppointmentsEmptyState
+          view={view === "upcoming" ? "upcoming" : "past"}
+          noun="visits"
+          emptyLabel={EMPTY_COPY[view].label}
+          emptyBody={EMPTY_COPY[view].body}
+        />
       ) : (
         <>
-          <AppointmentCount
+          <HcpAppointmentCount
             count={grouped.length}
             view={view}
             isUpdating={query.isFetching && !isFirstLoad}
@@ -137,9 +161,7 @@ export function HcpAppointments() {
                     appointment.booking_for === "OTHER" ? <BookedForSomeoneElseChip /> : undefined
                   }
                   onView={() => setDetailId(appointment.id)}
-                  onReschedule={() => setRescheduleTarget(appointment)}
-                  onCancel={() => setCancelTarget(appointment)}
-                  onComplete={() => setCompleteTarget(appointment)}
+                  onAction={() => setActionTarget(appointment)}
                 >
                   <PatientIdentity appointment={appointment} />
                 </AppointmentCard>
@@ -161,34 +183,16 @@ export function HcpAppointments() {
         onOpenChange={(open) => {
           if (!open) setDetailId(null);
         }}
-        onCancel={(appointment) => {
+        onAction={(appointment) => {
           setDetailId(null);
-          setCancelTarget(appointment);
-        }}
-        onComplete={(appointment) => {
-          setDetailId(null);
-          setCompleteTarget(appointment);
+          setActionTarget(appointment);
         }}
       />
 
-      <CancelHcpAppointmentDialog
-        appointment={cancelTarget}
+      <HcpAppointmentActionDialog
+        appointment={actionTarget}
         onOpenChange={(open) => {
-          if (!open) setCancelTarget(null);
-        }}
-      />
-
-      <RescheduleHcpAppointmentDialog
-        appointment={rescheduleTarget}
-        onOpenChange={(open) => {
-          if (!open) setRescheduleTarget(null);
-        }}
-      />
-
-      <CompleteHcpAppointmentDialog
-        appointment={completeTarget}
-        onOpenChange={(open) => {
-          if (!open) setCompleteTarget(null);
+          if (!open) setActionTarget(null);
         }}
       />
     </section>

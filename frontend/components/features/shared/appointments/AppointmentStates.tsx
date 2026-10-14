@@ -107,7 +107,21 @@ type AppointmentsEmptyStateProps = {
  * "Nothing here" is a success state, so it is styled as an invitation rather than as
  * a fault - and it names the action that fills the list, when there is one.
  */
-export function AppointmentsEmptyState({ view, noun, action }: AppointmentsEmptyStateProps) {
+export function AppointmentsEmptyState({
+  view,
+  noun,
+  action,
+  emptyLabel,
+  emptyBody,
+}: AppointmentsEmptyStateProps & {
+  /**
+   * Overrides the copy for a screen with more than two stages. The patient screen
+   * keeps the defaults; a clinician's four-stage filter passes its own, because
+   * "No past visits" would be wrong for an empty In progress tab.
+   */
+  emptyLabel?: string;
+  emptyBody?: string;
+}) {
   const isUpcoming = view === "upcoming";
 
   return (
@@ -121,13 +135,14 @@ export function AppointmentsEmptyState({ view, noun, action }: AppointmentsEmpty
       </div>
 
       <h2 className="type-h2 text-foreground">
-        {isUpcoming ? `No upcoming ${noun}` : `No past ${noun}`}
+        {emptyLabel ?? (isUpcoming ? `No upcoming ${noun}` : `No past ${noun}`)}
       </h2>
 
       <p className="mt-2 max-w-md type-body text-muted-foreground">
-        {isUpcoming
-          ? "As soon as a visit is booked with you it will appear here, with the patient, the date and the time."
-          : "Once a visit has taken place it moves here, so you have the full history in one place."}
+        {emptyBody ??
+          (isUpcoming
+            ? "As soon as a visit is booked with you it will appear here, with the patient, the date and the time."
+            : "Once a visit has taken place it moves here, so you have the full history in one place.")}
       </p>
 
       {isUpcoming && action ? (

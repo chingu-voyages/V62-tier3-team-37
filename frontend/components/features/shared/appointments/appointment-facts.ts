@@ -1,5 +1,5 @@
 import { formatDateTime, formatLongDate } from "@/lib/format";
-import type { Appointment, AppointmentView } from "@/types/appointment";
+import type { Appointment, AppointmentStatus, AppointmentView } from "@/types/appointment";
 
 /**
  * What an appointment's record implies, derived once for both roles.
@@ -23,46 +23,64 @@ export function hasEndedAppointment(appointment: Appointment, now = new Date()):
 }
 
 /**
+ * Statuses a visit can still be rescheduled or cancelled from.
+ *
+ * Mirrors the `[BOOKED, RESCHEDULED]` guard in `AppointmentManagementService`.
+ * Once attendance has been recorded the visit is locked: a patient who already
+ * arrived cannot cancel, and a clinician who marked a no-show cannot reopen it.
+ */
+const MANAGEABLE_STATUSES: readonly AppointmentStatus[] = ["BOOKED", "RESCHEDULED"];
+
+/**
  * How the API's status and start time combine into one label.
  *
- * `CONFIRMED` alone is ambiguous: it covers both a visit next month and one that
- * already happened but has not been marked complete. The backend only moves an
- * appointment to `COMPLETED` explicitly, so the start time is what tells the two
- * apart - showing only `CONFIRMED` would tell someone with a visit from last week
- * that it is still confirmed.
+ * The backend only closes a visit when a clinician writes a summary, so an
+ * un-closed past visit reads as "Awaiting summary" rather than silently claiming
+ * to be completed.
  */
 export function appointmentStatusLabel(appointment: Appointment, now = new Date()): string {
-  if (appointment.status === "CANCELLED") return "Cancelled";
-  if (appointment.status === "COMPLETED") return "Completed";
-  return isPastAppointment(appointment, now) ? "Completed" : "Upcoming";
+  switch (appointment.status) {
+    case "CANCELLED":
+      return "Cancelled";
+    case "COMPLETED":
+      return "Completed";
+    case "NO_SHOW":
+      return "No show";
+    case "ARRIVED":
+      return "In progress";
+    case "RESCHEDULED":
+      return "Rescheduled";
+    default:
+      return isPastAppointment(appointment, now) ? "Awaiting summary" : "Upcoming";
+  }
 }
 
 /** Whether the visit belongs in the "past" group. */
 export function appointmentView(appointment: Appointment, now = new Date()): AppointmentView {
-  return isPastAppointment(appointment, now) || appointment.status !== "CONFIRMED"
-    ? "past"
-    : "upcoming";
+  return MANAGEABLE_STATUSES.includes(appointment.status) && !isPastAppointment(appointment, now)
+    ? "upcoming"
+    : "past";
 }
 
 /**
- * Only a confirmed, not-yet-started visit can still be rescheduled or cancelled.
+ * Only a booked or rescheduled, not-yet-started visit can still be changed.
  *
- * Mirrors `ensureConfirmed` + `ensureNotStarted` in `AppointmentManagementService`, so
- * the buttons are hidden rather than left to fail with a validation error.
+ * Mirrors the status guard in `AppointmentManagementService`, so the buttons are
+ * hidden rather than left to fail with a validation error.
  */
 export function canManageAppointment(appointment: Appointment, now = new Date()): boolean {
-  return appointment.status === "CONFIRMED" && !isPastAppointment(appointment, now);
+  return MANAGEABLE_STATUSES.includes(appointment.status) && !isPastAppointment(appointment, now);
 }
 
 /**
- * Only a confirmed visit that has *ended* can be marked complete.
+ * Only an *arrived* visit can be closed with a summary.
  *
- * The opposite half of `canManageAppointment`: `complete` refuses anything whose
- * `scheduled_end_at` is still in the future, so a visit in progress is neither
- * cancellable nor completable - it is simply left alone.
+ * The opposite half of `canManageAppointment`: `saveSummary` refuses anything
+ * that has not been marked as arrived, so a visit in progress or already closed
+ * is left alone.
  */
-export function canCompleteAppointment(appointment: Appointment, now = new Date()): boolean {
-  return appointment.status === "CONFIRMED" && hasEndedAppointment(appointment, now);
+export function canSummariseAppointment(appointment: Appointment): boolean {
+  return appointment.status === "ARRIVED";
 }
 
 /** `2026-10-11T09:00:00.000000Z` -> `11 October 2026`. */

@@ -4,21 +4,28 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { APPOINTMENTS_PAGE_SIZE } from "@/lib/api/appointments-contract";
 import { fetchHcpAppointment, fetchHcpAppointments } from "@/lib/api/hcp-appointments-client";
 import { hcpAppointmentKeys } from "@/lib/query-keys";
+import { type HcpAppointmentView, statusesForHcpView } from "@/types/appointment";
 
 /**
- * The clinician's own appointments, one page at a time.
+ * One workflow stage of the clinician's own appointments, one page at a time.
  *
- * The API owns the scope, so there is no owner input here - the session cookie is
- * the whole thing, and `page` is the only variable. The `hcp.verified` gate answers a
- * 403 for an unverified account, which the screen reports as a state to explain
- * rather than as a fault to retry.
+ * The view is part of the cache key, not a client-side filter over one shared list:
+ * each tab is a different question to the API, so "page 3 of History" and "page 3
+ * of Upcoming" are different rows and must never overwrite each other in the cache.
+ *
+ * `placeholderData` keeps the previous tab's rows on screen while the new ones load,
+ * so switching does not collapse the list back to a skeleton.
  */
-export function useHcpAppointmentsQuery(page: number, perPage: number = APPOINTMENTS_PAGE_SIZE) {
+export function useHcpAppointmentsQuery(
+  view: HcpAppointmentView,
+  page: number,
+  perPage: number = APPOINTMENTS_PAGE_SIZE,
+) {
+  const statuses = statusesForHcpView(view);
+
   return useQuery({
-    queryKey: hcpAppointmentKeys.list(page),
-    queryFn: () => fetchHcpAppointments(page, perPage),
-    // Keeps the current page on screen while the next one loads, so paging does not
-    // collapse the list back into a skeleton and lose the clinician's place.
+    queryKey: [...hcpAppointmentKeys.list(page), view],
+    queryFn: () => fetchHcpAppointments(statuses, page, perPage),
     placeholderData: keepPreviousData,
   });
 }

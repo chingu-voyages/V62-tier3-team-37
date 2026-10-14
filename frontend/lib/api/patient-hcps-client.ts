@@ -126,6 +126,32 @@ export function fetchHcpAvailability(
   ).then((response) => response.data);
 }
 
+/**
+ * The signed-in clinician's own free slots.
+ *
+ * Not the endpoint above: that one is patient-only by design, so a clinician
+ * calling it is refused with a 403. The id comes from the session rather than the
+ * URL, so no clinician can read another's diary.
+ *
+ * `excludeAppointmentId` releases the slot the visit currently occupies, which is
+ * what makes the result usable for a reschedule - otherwise the one time the
+ * clinician might want to move to reads as taken by the visit itself.
+ */
+export function fetchOwnAvailability(
+  from: string,
+  to: string,
+  excludeAppointmentId?: number | null,
+): Promise<HcpAvailabilityResponse> {
+  const params = new URLSearchParams({ from, to });
+  if (excludeAppointmentId) {
+    params.set("exclude_appointment", String(excludeAppointmentId));
+  }
+
+  return apiRequest<HcpAvailabilityEnvelope>(
+    `/api/hcp/profile/availability?${params.toString()}`,
+  ).then((response) => response.data);
+}
+
 function mapApiHcp(api: ApiHcp): HCP {
   const specialties = api.specialty ? [api.specialty_label ?? api.specialty] : [];
 

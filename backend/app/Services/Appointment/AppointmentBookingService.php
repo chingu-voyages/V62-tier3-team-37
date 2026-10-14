@@ -71,7 +71,11 @@ class AppointmentBookingService
             $endAtUtc = $endAt->utc();
 
             $patientHasConflict = $lockedPatient->patientAppointments()
-                ->where('status', AppointmentStatus::CONFIRMED->value)
+                ->whereIn('status', [
+                    AppointmentStatus::BOOKED->value,
+                    AppointmentStatus::RESCHEDULED->value,
+                    AppointmentStatus::ARRIVED->value,
+                ])
                 ->where('scheduled_start_at', '<', $endAtUtc)
                 ->where('scheduled_end_at', '>', $startAtUtc)
                 ->exists();
@@ -87,7 +91,7 @@ class AppointmentBookingService
                 'hcp_user_id' => $lockedHcp->id,
                 'scheduled_start_at' => $startAtUtc,
                 'scheduled_end_at' => $endAtUtc,
-                'status' => AppointmentStatus::CONFIRMED,
+                'status' => AppointmentStatus::BOOKED,
                 'booking_for' => $bookingFor,
                 ...$attendeeData,
                 'notes' => $notes,

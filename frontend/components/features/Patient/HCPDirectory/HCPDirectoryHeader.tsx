@@ -10,7 +10,7 @@ export function HCPDirectoryHeader() {
     <div className="flex lg:max-w-7xl flex-row items-center bg-primary px-5 py-3 md:py-2 md:justify-center gap-5 xl:gap-15 md:flex-row-reverse md:items-center rounded-4xl pointer-none:">
       <div className="max-w-2xl">
         <p className="type-label font-medium text-primary-foreground">Find a Doctor</p>
-        <h1 className="mt-2 type-h4 md:type-h1 text-accent">
+        <h1 className="mt-2 type-h3 md:type-h1 text-accent">
           Find the right doctor for your needs
         </h1>
         <p className="mt-3 type-helper md:type-body text-primary-foreground">

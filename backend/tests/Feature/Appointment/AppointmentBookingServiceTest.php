@@ -46,7 +46,7 @@ class AppointmentBookingServiceTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_it_books_a_one_hour_appointment_for_the_patient(): void
+    public function test_it_books_a_thirty_minute_appointment_for_the_patient(): void
     {
         $patient = User::factory()->create([
             'first_name' => 'Ahmad',
@@ -73,7 +73,7 @@ class AppointmentBookingServiceTest extends TestCase
             notes: 'First consultation',
         )->refresh();
 
-        $this->assertSame(AppointmentStatus::CONFIRMED, $appointment->status);
+        $this->assertSame(AppointmentStatus::BOOKED, $appointment->status);
         $this->assertSame(BookingFor::SELF, $appointment->booking_for);
         $this->assertSame('Ahmad', $appointment->attendee_first_name);
         $this->assertSame('Ameen', $appointment->attendee_last_name);
@@ -154,7 +154,7 @@ class AppointmentBookingServiceTest extends TestCase
         Appointment::factory()->for($hcp, 'hcp')->create([
             'scheduled_start_at' => $start,
             'scheduled_end_at' => $start->addHour(),
-            'status' => AppointmentStatus::CONFIRMED,
+            'status' => AppointmentStatus::BOOKED,
         ]);
 
         $this->expectException(AppointmentSlotUnavailableException::class);
@@ -178,7 +178,7 @@ class AppointmentBookingServiceTest extends TestCase
         Appointment::factory()->for($patient, 'patient')->for($otherHcp, 'hcp')->create([
             'scheduled_start_at' => $start->subMinutes(30),
             'scheduled_end_at' => $start->addMinutes(30),
-            'status' => AppointmentStatus::CONFIRMED,
+            'status' => AppointmentStatus::BOOKED,
         ]);
 
         $this->expectException(AppointmentSlotUnavailableException::class);
@@ -212,7 +212,7 @@ class AppointmentBookingServiceTest extends TestCase
             bookingFor: BookingFor::SELF,
         );
 
-        $this->assertSame(AppointmentStatus::CONFIRMED, $appointment->status);
+        $this->assertSame(AppointmentStatus::BOOKED, $appointment->status);
         $this->assertDatabaseCount('appointments', 2);
     }
 

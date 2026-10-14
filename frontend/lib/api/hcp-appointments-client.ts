@@ -4,11 +4,21 @@ import type {
   Appointment,
   AppointmentEnvelope,
   AppointmentPageResponse,
+  AppointmentStatus,
   CancelAppointmentRequest,
+  HcpAppointmentView,
   RescheduleAppointmentRequest,
 } from "@/types/appointment";
 
 const APPOINTMENTS_ENDPOINT = "/api/hcp/appointments";
+
+/** Used before the API answers, so the filter never renders `undefined` counts. */
+const EMPTY_FACETS: Record<HcpAppointmentView, number> = {
+  upcoming: 0,
+  in_progress: 0,
+  no_show: 0,
+  history: 0,
+};
 
 /**
  * One page of the clinician's own appointments.
@@ -31,9 +41,24 @@ export type HcpAppointmentsPage = {
   currentPage: number;
   totalPages: number;
   total: number;
+  /** Per-tab counts, so the filter can show what is waiting in each group. */
+  facets: Record<HcpAppointmentView, number>;
 };
 
+/**
+ * One page of the clinician's own appointments, scoped to a workflow stage.
+ *
+ * `statuses` is sent to the API rather than filtered here on purpose. Filtering a
+ * paginated page locally is what made the old screen drop rows: the server chose
+ * the page, the client then threw away whatever did not match, and a page could
+ * come back empty with more pages behind it. Letting the API scope means page 1 of
+ * "In progress" is the first page of in-progress visits.
+ *
+ * Cancelled appointments are only ever returned when the caller asks for them,
+ * which is what makes the "History" tab work.
+ */
 export function fetchHcpAppointments(
+  statuses: readonly AppointmentStatus[],
   page = 1,
   perPage: number = APPOINTMENTS_PAGE_SIZE,
 ): Promise<HcpAppointmentsPage> {
@@ -41,6 +66,7 @@ export function fetchHcpAppointments(
     page: String(page),
     per_page: String(perPage),
   });
+  for (const status of statuses) params.append("status[]", status);
 
   return apiRequest<AppointmentPageResponse>(`${APPOINTMENTS_ENDPOINT}?${params.toString()}`).then(
     (response) => ({
@@ -48,6 +74,8 @@ export function fetchHcpAppointments(
       currentPage: response.meta.current_page,
       totalPages: response.meta.last_page,
       total: response.meta.total,
+      facets: EMPTY_FACETS,
+      ...(response.facets as Partial<Record<HcpAppointmentView, number>>),
     }),
   );
 }
@@ -81,13 +109,13 @@ export function rescheduleHcpAppointment(
   request: RescheduleAppointmentRequest,
 ): Promise<Appointment> {
   return apiRequest<AppointmentEnvelope>(`${APPOINTMENTS_ENDPOINT}/${id}/reschedule`, {
-    method: "PATCH",
+    method: "POST",
     body: request,
   }).then((response) => response.data);
 }
 
 /**
- * `PATCH /api/hcp/appointments/{appointment}/cancel`.
+ * `POST /api/hcp/appointments/{appointment}/cancel`.
  *
  * `reason` is optional. Refused once the visit has started, which is a business rule
  * only the backend knows.
@@ -97,20 +125,66 @@ export function cancelHcpAppointment(
   request: CancelAppointmentRequest = {},
 ): Promise<Appointment> {
   return apiRequest<AppointmentEnvelope>(`${APPOINTMENTS_ENDPOINT}/${id}/cancel`, {
-    method: "PATCH",
+    method: "POST",
     body: request,
   }).then((response) => response.data);
 }
 
 /**
- * `PATCH /api/hcp/appointments/{appointment}/complete`.
+ * `POST /api/hcp/appointments/{appointment}/status`.
  *
- * Clinician-only, and only once the visit has *ended*: `complete` refuses a
- * confirmed appointment whose `scheduled_end_at` is still in the future. Takes no
- * body, so it is sent without one.
+ * Attendance only: ARRIVED or NO_SHOW. Both are refused unless the visit is
+ * currently BOOKED or RESCHEDULED, so a closed visit cannot be reopened.
  */
-export function completeHcpAppointment(id: number): Promise<Appointment> {
-  return apiRequest<AppointmentEnvelope>(`${APPOINTMENTS_ENDPOINT}/${id}/complete`, {
-    method: "PATCH",
+export function setHcpAttendanceStatus(
+  id: number,
+  status: "ARRIVED" | "NO_SHOW",
+): Promise<Appointment> {
+  return apiRequest<AppointmentEnvelope>(`${APPOINTMENTS_ENDPOINT}/${id}/status`, {
+    method: "POST",
+    body: { status },
+  }).then((response) => response.data);
+}
+
+/**
+ * `POST /api/hcp/appointments/{appointment}/summary`.
+ *
+ * The closing note, and what actually moves an ARRIVED visit to COMPLETED.
+ * Requires the patient to have been marked as arrived first.
+ */
+export function summariseHcpAppointment(id: number, summary: string): Promise<Appointment> {
+  return apiRequest<AppointmentEnvelope>(`${APPOINTMENTS_ENDPOINT}/${id}/summary`, {
+    method: "POST",
+    body: { summary },
+  }).then((response) => response.data);
+}
+
+/** A result file attached to a visit, as the endpoint returns it. */
+export type AppointmentResult = {
+  id: number;
+  title: string | null;
+  original_file_name: string;
+};
+
+/**
+ * `POST /api/hcp/appointments/{appointment}/results`.
+ *
+ * `apiRequest` is used after all: it detects a `FormData` body and leaves the
+ * content type to the browser, which has to set the multipart boundary itself.
+ * Sent from the action dialog rather than after the visit closes, because the
+ * endpoint accepts ARRIVED as well as COMPLETED.
+ */
+export function uploadAppointmentResult(
+  id: number,
+  file: File,
+  title?: string,
+): Promise<AppointmentResult> {
+  const body = new FormData();
+  body.append("file", file);
+  if (title?.trim()) body.append("title", title.trim());
+
+  return apiRequest<{ data: AppointmentResult }>(`${APPOINTMENTS_ENDPOINT}/${id}/results`, {
+    method: "POST",
+    body,
   }).then((response) => response.data);
 }

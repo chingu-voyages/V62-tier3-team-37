@@ -30,7 +30,7 @@ class AppointmentFactory extends Factory
             ]),
             'scheduled_start_at' => $start,
             'scheduled_end_at' => $start->copy()->addMinutes(Appointment::DURATION_MINUTES),
-            'status' => AppointmentStatus::CONFIRMED,
+            'status' => AppointmentStatus::BOOKED,
             'booking_for' => BookingFor::SELF,
             'attendee_first_name' => fake()->firstName(),
             'attendee_last_name' => fake()->lastName(),

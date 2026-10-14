@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import { CalendarCheck, Check, Loader2, X } from "lucide-react";
 import { type FC, type ReactNode, useMemo } from "react";
 import { toast } from "sonner";
+import { TimeSlots } from "@/components/features/shared/booking/TimeSlots";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -337,7 +338,7 @@ const BookingForm: FC<BookingFormProps> = ({ doctor, patient, onClose, onRequest
                 {createAppointment.isPending ? (
                   <>
                     <Loader2 className="animate-spin" aria-hidden="true" />
-                    Booking…
+                    Bookingâ€¦
                   </>
                 ) : (
                   "Confirm visit"
@@ -455,7 +456,7 @@ const SlotsLoading: FC<SlotsLoadingProps> = ({ count = 6 }) => {
     <div className="flex flex-col gap-2">
       <p className="flex items-center gap-2 type-label text-muted-foreground">
         <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-        Checking available times…
+        Checking available timesâ€¦
       </p>
       <div className="grid grid-cols-3 gap-2" aria-hidden="true">
         {skeletonKeys(count).map((key) => (
@@ -479,74 +480,6 @@ const AvailabilityError: FC<AvailabilityErrorProps> = ({ onRetry }) => {
         Try again
       </Button>
     </div>
-  );
-};
-
-type TimeSlotsProps = {
-  /** The slots the API reported as free for the selected day. */
-  slots: HcpAvailabilitySlot[];
-  selected: string | null;
-  onSelect: (time: string) => void;
-};
-
-/**
- * The free times for the selected day, exactly as the API listed them.
- *
- * Nothing is generated here: the list is the backend's, so a slot that is already
- * booked simply is not present.
- */
-const TimeSlots: FC<TimeSlotsProps> = ({ slots, selected, onSelect }) => {
-  // Mounts once when the first day is picked, so the enter plays then and not on every date change.
-  return (
-    <div className="motion-safe:animate-in motion-safe:duration-300 motion-safe:fade-in motion-safe:slide-in-from-bottom-3">
-      <p className="type-label text-foreground">Available times</p>
-      <p className="mt-1 type-helper text-muted-foreground">Each visit lasts one hour.</p>
-
-      {/*
-        A fieldset rather than `div role="group"`: these are one control group, and
-        the legend is what names them. Same shape as the appointment filters in
-        `PatientAppointments`.
-      */}
-      <fieldset className="mt-3 border-0 p-0">
-        <legend className="sr-only">Available times</legend>
-        <div className="grid grid-cols-3 gap-2">
-          {slots.map((slot) => (
-            <TimeSlotButton
-              key={slot}
-              label={formatClockTime(slot)}
-              isSelected={selected === slot}
-              onClick={() => onSelect(slot)}
-            />
-          ))}
-        </div>
-      </fieldset>
-    </div>
-  );
-};
-
-type TimeSlotButtonProps = {
-  label: string;
-  isSelected: boolean;
-  onClick: () => void;
-};
-
-const TimeSlotButton: FC<TimeSlotButtonProps> = ({ label, isSelected, onClick }) => {
-  return (
-    <button
-      type="button"
-      aria-pressed={isSelected}
-      onClick={onClick}
-      className={cn(
-        "min-h-11 rounded-lg border px-2 type-label tabular-nums outline-none",
-        "transition-[background-color,border-color,color,transform] duration-150 ease-out active:scale-[0.96]",
-        "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card",
-        isSelected
-          ? "border-primary bg-primary font-medium text-primary-foreground"
-          : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent",
-      )}
-    >
-      {label}
-    </button>
   );
 };
 
@@ -579,7 +512,7 @@ const SelectionSummary: FC<SelectionSummaryProps> = ({ date, slotLabel, pending 
   return (
     <p aria-live="polite" className="type-label text-muted-foreground">
       {pending
-        ? "Booking your visit…"
+        ? "Booking your visitâ€¦"
         : date
           ? "Choose a time for this day."
           : "Choose an open day to continue."}

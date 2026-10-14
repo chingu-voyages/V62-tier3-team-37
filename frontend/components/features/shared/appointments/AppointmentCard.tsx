@@ -6,8 +6,8 @@ import { AppointmentStatusChip } from "./AppointmentStatusChip";
 import {
   appointmentDate,
   appointmentTime,
-  canCompleteAppointment,
   canManageAppointment,
+  canSummariseAppointment,
 } from "./appointment-facts";
 
 type AppointmentCardProps = {
@@ -29,11 +29,11 @@ type AppointmentCardProps = {
   onReschedule?: () => void;
   onCancel?: () => void;
   /**
-   * Marks the visit as done. Rendered only once the visit has ended, and omitted
-   * entirely when the handler is absent, so the patient screen never grows a
-   * clinician-only action by accident.
+   * Opens the unified update dialog. When given it replaces the per-outcome buttons
+   * above, because a clinician picks the outcome inside the dialog rather than
+   * being offered five buttons and having to know which one they want.
    */
-  onComplete?: () => void;
+  onAction?: () => void;
 };
 
 /**
@@ -54,10 +54,12 @@ export function AppointmentCard({
   onView,
   onReschedule,
   onCancel,
-  onComplete,
+  onAction,
 }: AppointmentCardProps) {
   const manageable = canManageAppointment(appointment);
-  const completable = canCompleteAppointment(appointment);
+  // Anything the API will still accept: reschedule/cancel/attendance need a
+  // BOOKED or RESCHEDULED visit, closing needs an ARRIVED one.
+  const actionable = manageable || canSummariseAppointment(appointment);
 
   return (
     <article className="flex flex-col gap-4 rounded-2xl bg-card p-5 shadow-soft sm:flex-row sm:items-start sm:justify-between">
@@ -89,16 +91,20 @@ export function AppointmentCard({
           View
         </Button>
 
-        {/* The visit in progress is deliberately inert: it is neither cancellable
-            nor completable until it has ended. */}
-        {completable && onComplete ? (
-          <Button type="button" size="sm" variant="secondary" onClick={onComplete}>
+        {/* The clinician's single entry point. Every change the API accepts is
+            chosen inside the dialog, so the card carries one button instead of
+            one per outcome - and the set of legal changes changes with the
+            status, which a static row of buttons cannot express. */}
+        {onAction && actionable ? (
+          <Button type="button" size="sm" variant="secondary" onClick={onAction}>
             <CheckCircle2 className="mr-1.5 size-3.5" aria-hidden="true" />
-            Mark done
+            Update visit
           </Button>
         ) : null}
 
-        {manageable ? (
+        {/* The per-outcome buttons are the fallback for a caller that has not moved
+            to the unified dialog - the patient's screen still uses these. */}
+        {!onAction && manageable ? (
           <>
             {onReschedule ? (
               <Button type="button" size="sm" variant="secondary" onClick={onReschedule}>

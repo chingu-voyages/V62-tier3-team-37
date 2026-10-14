@@ -147,7 +147,6 @@ const HCPRating: FC<HCPRatingProps> = ({ rating, reviewCount }) => {
  */
 export const HCPListItem: FC<HCPListItemProps> = ({ hcp, patient, onViewProfile }) => {
   const { summary, isBookingOpen, openBooking, closeBooking } = useHCPListItem(hcp);
-
   return (
     <>
       <article className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-[border-color] duration-200 ease-out focus-within:border-primary/40 hover:border-primary/30">
@@ -206,7 +205,11 @@ export const HCPListItem: FC<HCPListItemProps> = ({ hcp, patient, onViewProfile 
 
         <dl className="grid auto-cols-fr grid-flow-col divide-x divide-border border-t border-border bg-accent/40 py-3 pr-4 pl-5 md:py-4 md:pr-6 md:pl-7">
           {summary.experience ? <HCPStat label="Experience">{summary.experience}</HCPStat> : null}
-          {summary.fee ? <HCPStat label="Consultation fee">{summary.fee}</HCPStat> : null}
+          {summary.fee !== null ? (
+            <HCPStat label="Consultation fee">{summary.fee}</HCPStat>
+          ) : (
+            <HCPStat label="Consultation fee">No fees posted</HCPStat>
+          )}
           <HCPStat label="Rating">
             <HCPRating rating={hcp.rating} reviewCount={hcp.reviewCount} />
           </HCPStat>

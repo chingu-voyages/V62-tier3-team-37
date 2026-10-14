@@ -14,8 +14,24 @@
 /**
  * Backend appointment status. Distinct from `bookingFor`, which says *who* the
  * visit is for.
+ *
+ * Mirrors `App\Enums\AppointmentStatus`:
+ *
+ *   BOOKED / RESCHEDULED --attendance ARRIVED--> ARRIVED --summary--> COMPLETED
+ *   BOOKED / RESCHEDULED --attendance NO_SHOW--> NO_SHOW
+ *   BOOKED / RESCHEDULED --cancel-------------> CANCELLED
+ *
+ * A visit only reaches COMPLETED once a clinician has written a summary, so
+ * COMPLETED means "closed", not merely "the clock ran out".
  */
-export const APPOINTMENT_STATUSES = ["CONFIRMED", "COMPLETED", "CANCELLED"] as const;
+export const APPOINTMENT_STATUSES = [
+  "BOOKED",
+  "ARRIVED",
+  "RESCHEDULED",
+  "NO_SHOW",
+  "COMPLETED",
+  "CANCELLED",
+] as const;
 
 export type AppointmentStatus = (typeof APPOINTMENT_STATUSES)[number];
 
@@ -116,6 +132,11 @@ export type AppointmentPageResponse = {
     per_page: number;
     total: number;
   };
+  /**
+   * Per-tab counts. Only the clinician endpoint sends this; the patient's list is
+   * filtered client-side and has no tabs to count for.
+   */
+  facets?: Partial<Record<HcpAppointmentView, number>>;
 };
 
 /** `{ data: {...} }`, which `show`, `reschedule` and `cancel` all return. */
@@ -207,12 +228,15 @@ export type HcpAvailabilityEnvelope = {
 /* -------------------------------------------------------------------------- */
 
 /**
- * How an appointment is grouped on the "Your appointments" screen.
+ * How an appointment is grouped on the *patient's* "Your appointments" screen.
  *
- * This is a *view* concern, not a backend one: the API returns a flat, newest-first
- * list with three statuses and no notion of "past". Deriving the split here keeps
- * the filter honest - a cancelled visit in the future is history, and a confirmed
- * visit whose start has passed is history too, whichever way the backend stores it.
+ * This is a *view* concern, not a backend one, and deliberately coarse: a patient
+ * has no business seeing "arrived" or "no show", so their screen keeps the two
+ * groups they can act on. A clinician's screen uses `HcpAppointmentView` below.
+ *
+ * The split is derived here rather than asked of the API, so a cancelled visit in
+ * the future still reads as history and a visit whose start has passed does too,
+ * whichever way the backend stores it.
  */
 export type AppointmentView = "upcoming" | "past";
 
@@ -220,3 +244,36 @@ export const APPOINTMENT_VIEWS: { value: AppointmentView; label: string }[] = [
   { value: "upcoming", label: "Upcoming" },
   { value: "past", label: "Past" },
 ];
+
+/**
+ * A clinician's workflow stages, as shown on their appointments screen.
+ *
+ * Six statuses would be six tabs, and three of them are read-only. These four
+ * answer "what do I do next" instead: the visits still in my control, the one
+ * happening now, the one that did not happen, and everything already closed.
+ *
+ * `ARRIVED` gets its own tab because it is the only state with a blocking action -
+ * without a summary the visit never closes - and burying it is how appointments
+ * get stuck.
+ *
+ * Mirrors `HcpAppointmentController::STATUS_GROUPS` on the API. The backend sends
+ * `facets` counts for exactly these keys.
+ */
+export type HcpAppointmentView = "upcoming" | "in_progress" | "no_show" | "history";
+
+export const HCP_APPOINTMENT_VIEWS: {
+  value: HcpAppointmentView;
+  label: string;
+  statuses: readonly AppointmentStatus[];
+}[] = [
+  { value: "upcoming", label: "Upcoming", statuses: ["BOOKED", "RESCHEDULED"] },
+  { value: "in_progress", label: "In progress", statuses: ["ARRIVED"] },
+  { value: "no_show", label: "No show", statuses: ["NO_SHOW"] },
+  { value: "history", label: "History", statuses: ["COMPLETED", "CANCELLED"] },
+];
+
+/** The statuses a given clinician tab asks the API for. */
+export function statusesForHcpView(view: HcpAppointmentView): AppointmentStatus[] {
+  const found = HCP_APPOINTMENT_VIEWS.find((item) => item.value === view);
+  return found ? [...found.statuses] : [...HCP_APPOINTMENT_VIEWS[0].statuses];
+}

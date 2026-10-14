@@ -36,7 +36,7 @@ class AppointmentAvailabilityServiceTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_it_generates_only_complete_one_hour_slots(): void
+    public function test_it_generates_only_complete_thirty_minute_slots(): void
     {
         [$hcp, $profile] = $this->createHcp();
         $date = CarbonImmutable::parse('2030-01-07');
@@ -48,7 +48,7 @@ class AppointmentAvailabilityServiceTest extends TestCase
         ]);
 
         $this->assertSame(
-            ['09:30', '10:30'],
+            ['09:30', '10:00', '10:30', '11:00', '11:30'],
             $this->service->availableSlots($hcp, $date)
         );
     }
@@ -71,7 +71,7 @@ class AppointmentAvailabilityServiceTest extends TestCase
         ]);
 
         $this->assertSame(
-            ['09:00', '10:00', '14:00', '15:00'],
+            ['09:00', '09:30', '10:00', '10:30', '14:00', '14:30', '15:00', '15:30'],
             $this->service->availableSlots($hcp, $date)
         );
     }
@@ -89,7 +89,7 @@ class AppointmentAvailabilityServiceTest extends TestCase
         Appointment::factory()->for($hcp, 'hcp')->create([
             'scheduled_start_at' => $date->setTime(10, 0),
             'scheduled_end_at' => $date->setTime(11, 0),
-            'status' => AppointmentStatus::CONFIRMED,
+            'status' => AppointmentStatus::BOOKED,
         ]);
         Appointment::factory()->for($hcp, 'hcp')->create([
             'scheduled_start_at' => $date->setTime(11, 0),
@@ -98,7 +98,7 @@ class AppointmentAvailabilityServiceTest extends TestCase
         ]);
 
         $this->assertSame(
-            ['09:00', '11:00', '12:00'],
+            ['09:00', '09:30', '11:00', '11:30', '12:00', '12:30'],
             $this->service->availableSlots($hcp, $date)
         );
     }
@@ -116,7 +116,7 @@ class AppointmentAvailabilityServiceTest extends TestCase
         ]);
 
         $this->assertSame(
-            ['11:00', '12:00'],
+            ['11:00', '11:30', '12:00', '12:30'],
             $this->service->availableSlots($hcp, $date)
         );
     }

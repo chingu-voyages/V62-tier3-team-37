@@ -76,6 +76,9 @@ Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, EnsureEmailIsVe
 
     Route::patch('/patient/appointments/{appointment}/cancel', [PatientAppointmentController::class, 'cancel']);
 
+    // Results a clinician attached to the visit, downloadable by the patient.
+    Route::get('/patient/appointments/{appointment}/results/{document}', [PatientAppointmentController::class, 'downloadResult']);
+
     Route::get('/patient/hcps/{hcp}/availability', [PatientHcpAvailabilityController::class, 'index']);
 
     Route::get('/patient/medical-examinations', [PatientMedicalDocumentController::class, 'index']);
@@ -102,6 +105,10 @@ Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, EnsureEmailIsVe
 
     Route::patch('/hcp/profile', [HcpProfileController::class, 'update']);
 
+    // Read side of the same diary. Separate from /patient/hcps/{hcp}/availability,
+    // which is patient-only: a clinician may only ever read their own.
+    Route::get('/hcp/profile/availability', [HcpProfileController::class, 'availabilitySlots']);
+
     Route::put('/hcp/profile/availability', [HcpProfileController::class, 'updateAvailability']);
 
     Route::delete('/hcp/profile/availability/{availabilitySlot}', [HcpProfileController::class, 'destroyAvailability']);
@@ -111,11 +118,24 @@ Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, EnsureEmailIsVe
 
         Route::get('/appointments/{appointment}', [HcpAppointmentController::class, 'show']);
 
-        Route::patch('/appointments/{appointment}/reschedule', [HcpAppointmentController::class, 'reschedule']);
+        // Attendance: ARRIVED / NO_SHOW. Only valid from BOOKED or RESCHEDULED.
+        Route::post('/appointments/{appointment}/status', [HcpAppointmentController::class, 'status']);
 
-        Route::patch('/appointments/{appointment}/cancel', [HcpAppointmentController::class, 'cancel']);
+        // Closing note. Moves ARRIVED -> COMPLETED.
+        Route::post('/appointments/{appointment}/summary', [HcpAppointmentController::class, 'summary']);
 
-        Route::patch('/appointments/{appointment}/complete', [HcpAppointmentController::class, 'complete']);
+        Route::post('/appointments/{appointment}/results', [HcpAppointmentController::class, 'storeResult']);
+
+        Route::get('/appointments/{appointment}/results/{document}', [HcpAppointmentController::class, 'downloadResult']);
+
+        Route::post('/appointments/{appointment}/follow-up', [HcpAppointmentController::class, 'followUp']);
+
+        // Patient reschedule/cancel stay PATCH; the HCP side is POST because
+        // those actions carry a payload (cancel reason, status, summary) rather
+        // than being a bare state toggle.
+        Route::post('/appointments/{appointment}/reschedule', [HcpAppointmentController::class, 'reschedule']);
+
+        Route::post('/appointments/{appointment}/cancel', [HcpAppointmentController::class, 'cancel']);
     });
 
     /**************************PROFILE PHOTO************************************** */
