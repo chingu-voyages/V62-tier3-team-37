@@ -35,6 +35,9 @@ class HcpProfile extends Model
         return [
             'specialty' => Specialty::class,
             'years_of_experience' => 'integer',
+            'fees' => 'integer',
+            'rating' => 'float',
+            'review_count' => 'integer',
             'languages' => 'array',
             'consultation_types' => 'array',
             'accepted_insurances' => 'array',

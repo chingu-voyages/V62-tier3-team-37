@@ -1,10 +1,8 @@
 import "server-only";
 
 import { cookies, headers } from "next/headers";
+import { API_ORIGIN } from "./base-url";
 import { NetworkError, readJsonBody, toApiError } from "./response";
-
-const API_BASE_URL =
-  process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const CSRF_COOKIE = "XSRF-TOKEN";
 const CSRF_COOKIE_URL = "/sanctum/csrf-cookie";
@@ -77,7 +75,7 @@ export async function serverRequest<T>(
 
   const send = async (headers: Headers): Promise<Response> => {
     try {
-      return await fetch(`${API_BASE_URL}${path}`, {
+      return await fetch(`${API_ORIGIN}${path}`, {
         ...rest,
         method: rest.method ?? "GET",
         cache: "no-store",
@@ -95,7 +93,7 @@ export async function serverRequest<T>(
   if (response.status === 419) {
     const cookieHeader = await buildCookieHeader();
     const origin = await appOrigin();
-    await fetch(`${API_BASE_URL}${CSRF_COOKIE_URL}`, {
+    await fetch(`${API_ORIGIN}${CSRF_COOKIE_URL}`, {
       headers: {
         accept: "application/json",
         origin,

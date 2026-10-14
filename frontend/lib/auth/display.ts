@@ -11,7 +11,11 @@ import type { AuthUser } from "@/types/auth";
  */
 
 /** Anything carrying the two name fields — a full user record or just the names. */
-type NamedLike = { first_name?: string | null; last_name?: string | null } | null | undefined;
+type NamedLike = {
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+} | null | undefined;
 
 export function userFirstName(user: NamedLike): string {
   return user?.first_name?.trim() || "";
@@ -22,7 +26,7 @@ export function userLastName(user: NamedLike): string {
 }
 
 /** "Ada Lovelace". Falls back to the email local part, then to "Account". */
-export function userDisplayName(user: AuthUser): string {
+export function userDisplayName(user: NamedLike): string {
   const full = [userFirstName(user), userLastName(user)].filter(Boolean).join(" ");
   if (full) return full;
 

@@ -5,9 +5,8 @@
  * access to `document.cookie`. Use `@/lib/api/server-client` there instead.
  */
 
+import { API_ORIGIN } from "./base-url";
 import { NetworkError, readJsonBody, toApiError } from "./response";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const CSRF_COOKIE = "XSRF-TOKEN";
 const CSRF_COOKIE_URL = "/sanctum/csrf-cookie";
@@ -35,7 +34,7 @@ async function fetchCsrfCookie(): Promise<void> {
     return;
   }
 
-  csrfRequest = fetch(`${API_BASE_URL}${CSRF_COOKIE_URL}`, {
+  csrfRequest = fetch(`${API_ORIGIN}${CSRF_COOKIE_URL}`, {
     credentials: "include",
     headers: { accept: "application/json" },
   })
@@ -92,7 +91,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     }
 
     try {
-      return await fetch(`${API_BASE_URL}${path}`, {
+      return await fetch(`${API_ORIGIN}${path}`, {
         ...options,
         method,
         credentials: "include",

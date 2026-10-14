@@ -85,11 +85,11 @@ Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, EnsureEmailIsVe
 
     /**************************HCP************************************** */
 
-    Route::post('/hcp/onboarding',[HcpOnboardingController::class, 'store']);
+    Route::post('/hcp/onboarding', [HcpOnboardingController::class, 'store']);
 
     Route::get('/hcp/profile', [HcpProfileController::class, 'show']);
 
-    Route::patch('/hcp/profile',[HcpProfileController::class, 'update']);
+    Route::patch('/hcp/profile', [HcpProfileController::class, 'update']);
 
     Route::put('/hcp/profile/availability', [HcpProfileController::class, 'updateAvailability']);
 

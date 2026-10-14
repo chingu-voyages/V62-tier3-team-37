@@ -172,6 +172,11 @@ class UpdateHcpProfileRequest extends FormRequest
             'qualification' => ['prohibited'],
             'liveness_status' => ['prohibited'],
             'consent' => ['prohibited'],
+
+            // Aggregates of patient reviews. A clinician must never be able to
+            // set these, so they are refused rather than merely ignored.
+            'rating' => ['prohibited'],
+            'review_count' => ['prohibited'],
         ];
 
         if ($this->user()?->hcpVerification !== null) {

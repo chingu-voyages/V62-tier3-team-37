@@ -30,10 +30,9 @@ export function isEmailVerified(user: AuthUser): boolean {
 /**
  * Where a user lands immediately after authenticating.
  *
- * Patients return to the landing page, which is their home. Clinicians open
- * today's schedule. An account that is not accepted yet is sent on from that
- * page to the profile. Unverified email accounts are sent to the OTP screen by
- * the route guard before this destination renders.
+ * Patients open their home, which holds visits and the clinician search.
+ * Unverified accounts are sent to the OTP screen by the route guard before
+ * this destination renders.
  */
 export function homePathForRole(role: string | null | undefined): string {
   if (role === ADMIN_ROLE) return ROUTES.adminHome;
@@ -48,18 +47,10 @@ function isHcpArea(pathname: string): boolean {
   return pathname.startsWith(`${NAV_BASE_PATHS.hcp}/`);
 }
 
-/** Routes only an unauthenticated visitor may reach. */
 function isGuestOnlyPath(pathname: string): boolean {
   return pathname === ROUTES.auth;
 }
 
-/**
- * Reachable without a session.
- *
- * The landing page stays public. `/auth/otp` qualifies because the OTP endpoints
- * are authenticated but the account is not verified yet, which is exactly the
- * state the user is in when they land there.
- */
 function isPubliclyReachableWhileGuest(pathname: string): boolean {
   return isGuestOnlyPath(pathname) || pathname === ROUTES.otp || pathname === ROUTES.home;
 }

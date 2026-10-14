@@ -38,7 +38,6 @@ class HcpProfileSeeder extends Seeder
             'email_verified_at' => now(),
             'password' => Hash::make(self::DEMO_PASSWORD),
             'phone' => '+212612345678',
-            'country' => 'Morocco',
             'role' => UserRole::HCP,
             'status' => UserStatus::ACTIVE,
             'terms_accepted' => true,

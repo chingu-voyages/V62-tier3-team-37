@@ -1,3 +1,4 @@
+import { API_ORIGIN } from "@/lib/api/base-url";
 import { apiRequest } from "@/lib/api/client";
 import type { AdminAccessRequestRecord, AdminClinicianDetail } from "@/types/admin";
 
@@ -30,8 +31,6 @@ export function unblockClinician(id: number): Promise<{ data: AdminClinicianDeta
   return apiRequest(`/api/admin/clinicians/${id}/unblock`, { method: "POST" });
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
 export function approveAdminAccess(id: number): Promise<{ data: AdminAccessRequestRecord }> {
   return apiRequest(`/api/admin/access-requests/${id}/approve`, { method: "POST" });
 }
@@ -57,7 +56,7 @@ export function dismissReport(id: number): Promise<{ data: { status: string } }>
 }
 
 export async function openAdminDocument(id: number): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/admin/documents/${id}`, {
+  const response = await fetch(`${API_ORIGIN}/api/admin/documents/${id}`, {
     credentials: "include",
     headers: { accept: "*/*" },
   });

@@ -51,18 +51,25 @@ export function logoutUser(): Promise<void> {
   return apiRequest<void>("/logout", { method: "POST" });
 }
 
+/**
+ * Ask the API to email a reset link.
+ *
+ * The server answers 200 whether or not the address has an account, so the
+ * message is deliberately non-committal and must not be used to reveal that an
+ * email is registered.
+ */
 export function requestPasswordReset(email: string): Promise<ApiMessageResponse> {
-  return apiRequest<ApiMessageResponse>("/forgot-password", {
-    method: "POST",
-    body: { email },
-  });
+  return apiRequest<ApiMessageResponse>("/forgot-password", { method: "POST", body: { email } });
 }
 
-export function resetPassword(payload: {
+export type ResetPasswordPayload = {
+  /** The `token` query parameter from the emailed link. */
   token: string;
   email: string;
   password: string;
   password_confirmation: string;
-}): Promise<ApiMessageResponse> {
+};
+
+export function resetPassword(payload: ResetPasswordPayload): Promise<ApiMessageResponse> {
   return apiRequest<ApiMessageResponse>("/reset-password", { method: "POST", body: payload });
 }

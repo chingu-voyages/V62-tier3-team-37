@@ -1,6 +1,9 @@
 <?php
 
 use App\Console\Commands\ServeCommand;
+use App\Exceptions\AppointmentSlotUnavailableException;
+use App\Exceptions\AppointmentStateException;
+use App\Http\Middleware\EnsureHcpIsVerified;
 use App\Http\Middleware\RedirectIfAuthenticatedToJson;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,11 +20,21 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->alias([
             'guest' => RedirectIfAuthenticatedToJson::class,
+            'hcp.verified' => EnsureHcpIsVerified::class,
         ]);
     })
     ->withCommands([
         ServeCommand::class,
     ])
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(
+            fn (AppointmentSlotUnavailableException $exception) => response()->json([
+                'message' => $exception->getMessage(),
+            ], 409)
+        );
+        $exceptions->render(
+            fn (AppointmentStateException $exception) => response()->json([
+                'message' => $exception->getMessage(),
+            ], 409)
+        );
     })->create();

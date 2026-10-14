@@ -7,6 +7,11 @@ export type HCP = {
   specialties: string[];
   city?: string;
   area?: string;
+  nextAvailable?: string;
+  subSpecialty?: string;
+  workplaceName?: string;
+  workplaceAddress?: string;
+  yearsOfExperience?: number;
   fees?: number;
   currency?: string;
   waitingTime?: string;
@@ -23,6 +28,14 @@ export type HCPFilters = {
   search?: string;
 };
 
+/**
+ * Paging state as the directory API reports it.
+ *
+ * `total` is the hit count for the whole query, not the page; the pager itself only
+ * needs the first two, so `Pagination` declares its own props rather than spreading
+ * this type - a control that has no business knowing about a result count should not
+ * receive it.
+ */
 export type HCPPagination = {
   currentPage: number;
   totalPages: number;
