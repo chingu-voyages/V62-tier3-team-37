@@ -10,6 +10,7 @@ use App\Models\Appointment;
 use App\Models\Document;
 use App\Models\User;
 use App\Services\Visit\AppointmentService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -30,6 +31,19 @@ class HcpAppointmentController extends Controller
             ->get();
 
         return AppointmentResource::collection($appointments)->response();
+    }
+
+    public function slots(Request $request, AppointmentService $appointments): JsonResponse
+    {
+        abort_unless($request->user()->role === UserRole::HCP, 403);
+
+        $clinician = $request->user()->load(['hcpProfile.availabilitySlots', 'hcpVerification']);
+        $from = Carbon::parse($request->input('from', now()->toDateString()))->startOfDay();
+        $to = Carbon::parse($request->input('to', now()->addDays(28)->toDateString()))->startOfDay();
+
+        return response()->json([
+            'data' => $appointments->openSlots($clinician, $from, $to),
+        ]);
     }
 
     public function patients(Request $request): JsonResponse
@@ -80,6 +94,18 @@ class HcpAppointmentController extends Controller
         $moved = $appointments->move($appointment, $data['date'], substr($data['time'], 0, 5), true);
 
         return new AppointmentResource($moved->load(['clinician.hcpProfile', 'patient', 'results']));
+    }
+
+    public function cancel(Request $request, Appointment $appointment, AppointmentService $appointments): AppointmentResource
+    {
+        $this->owns($request, $appointment);
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        return new AppointmentResource(
+            $appointments->cancel($appointment, $data['reason'])->load(['clinician.hcpProfile', 'patient', 'results'])
+        );
     }
 
     public function summary(Request $request, Appointment $appointment, AppointmentService $appointments): AppointmentResource

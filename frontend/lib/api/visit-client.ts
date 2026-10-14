@@ -22,6 +22,7 @@ export type Visit = {
   date: string;
   time: string;
   reason: string | null;
+  cancellation_reason: string | null;
   summary: string | null;
   follow_up_of_id: number | null;
   clinician: {
@@ -129,6 +130,10 @@ export function clinicianSlots(clinicianId: string): Promise<{ data: Record<stri
   return apiRequest(`/api/patient/clinicians/${clinicianId}/slots`);
 }
 
+export function ownClinicSlots(): Promise<{ data: Record<string, string[]> }> {
+  return apiRequest("/api/hcp/appointments/slots");
+}
+
 export function bookVisit(input: {
   clinicianId: number;
   date: string;
@@ -181,6 +186,10 @@ export function postponeClinicianVisit(id: number, date: string, time: string): 
     method: "POST",
     body: { date, time: time.slice(0, 5) },
   });
+}
+
+export function cancelClinicianVisit(id: number, reason: string): Promise<{ data: Visit }> {
+  return apiRequest(`/api/hcp/appointments/${id}/cancel`, { method: "POST", body: { reason } });
 }
 
 export function saveVisitSummary(id: number, summary: string): Promise<{ data: Visit }> {

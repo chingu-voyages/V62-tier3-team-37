@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { VisitTimePicker } from "@/components/features/visits/VisitTimeSheet";
 import { Callout } from "@/components/ui/callout";
 import { TextField } from "@/components/ui/text-field";
 import { ROUTES } from "@/lib/constants/routes";
@@ -369,7 +370,6 @@ export function PatientAppointments({ initialDay = "" }: { initialDay?: string }
                   await reload();
                 }}
                 onCancel={() => setCancelId(selected.id)}
-                onError={(message) => setActionError(message)}
               />
             ) : (
               <p className="rounded-2xl bg-card px-5 py-8 type-body text-muted-foreground shadow-soft">
@@ -406,48 +406,16 @@ function VisitPanel({
   appointment,
   onPostpone,
   onCancel,
-  onError,
 }: {
   appointment: Appointment;
   onPostpone: (date: string, time: string) => Promise<void>;
   onCancel: () => void;
-  onError: (message: string) => void;
 }) {
   const [postponeOpen, setPostponeOpen] = useState(false);
-  const [slots, setSlots] = useState<Record<string, string[]> | null>(null);
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [pending, setPending] = useState(false);
-  const [slotError, setSlotError] = useState<string | null>(null);
-  const openDays = Object.keys(slots ?? {});
-  const openTimes = date ? (slots?.[date] ?? []) : [];
 
   useEffect(() => {
     setPostponeOpen(false);
-    setSlots(null);
-    setDate("");
-    setTime("");
-    setSlotError(null);
   }, [appointment.id, appointment.date, appointment.time, appointment.status]);
-
-  useEffect(() => {
-    if (!postponeOpen || !appointment.clinicianId) return;
-    let cancelled = false;
-    clinicianSlots(String(appointment.clinicianId))
-      .then((response) => {
-        if (cancelled) return;
-        const days = Object.keys(response.data);
-        setSlots(response.data);
-        setDate(days[0] ?? "");
-        setTime("");
-      })
-      .catch((cause: unknown) => {
-        if (!cancelled) setSlotError(getApiErrorMessage(cause));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [postponeOpen, appointment.clinicianId]);
 
   return (
     <article className="flex flex-col gap-4 rounded-2xl bg-card p-5 shadow-soft">
@@ -499,63 +467,13 @@ function VisitPanel({
           <Button type="button" variant="outline" onClick={() => setPostponeOpen((open) => !open)}>
             Postpone
           </Button>
-          {postponeOpen ? (
-            <form
-              className="flex flex-col gap-3"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (!date || !time) return;
-                setPending(true);
-                onPostpone(date, time)
-                  .then(() => setPostponeOpen(false))
-                  .catch((cause: unknown) => onError(getApiErrorMessage(cause)))
-                  .finally(() => setPending(false));
-              }}
-            >
-              <p className="type-helper text-muted-foreground">You will come on another day. Pick an open time.</p>
-              {slotError ? <p className="type-helper text-destructive">{slotError}</p> : null}
-              {slots === null ? <p className="type-body text-muted-foreground">Loading open times…</p> : null}
-              {slots && openDays.length === 0 ? (
-                <p className="type-body text-muted-foreground">No open times in the next four weeks.</p>
-              ) : null}
-              {openDays.length > 0 ? (
-                <label className="flex flex-col gap-1.5">
-                  <span className="type-label text-foreground">Open day</span>
-                  <select
-                    className="h-11 rounded-xl border border-input bg-card px-3 type-body text-foreground"
-                    value={date}
-                    onChange={(event) => {
-                      setDate(event.target.value);
-                      setTime("");
-                    }}
-                  >
-                    {openDays.map((day) => (
-                      <option key={day} value={day}>
-                        {formatLongDate(day)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
-              {openTimes.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2">
-                  {openTimes.map((slot) => (
-                    <button
-                      key={slot}
-                      type="button"
-                      aria-pressed={time === slot}
-                      className={`rounded-full border px-2 py-2 type-helper ${time === slot ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground"}`}
-                      onClick={() => setTime(slot)}
-                    >
-                      {formatClockTime(slot)}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-              <Button type="submit" disabled={pending || !date || !time}>
-                Save new time
-              </Button>
-            </form>
+          {appointment.clinicianId && postponeOpen ? (
+            <VisitTimePicker
+              confirmLabel="Move visit"
+              loadSlots={() => clinicianSlots(String(appointment.clinicianId))}
+              onClose={() => setPostponeOpen(false)}
+              onConfirm={onPostpone}
+            />
           ) : null}
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel visit

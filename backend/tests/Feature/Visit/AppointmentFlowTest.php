@@ -212,6 +212,49 @@ class AppointmentFlowTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
+    public function test_a_clinician_can_read_the_same_open_times_patients_book(): void
+    {
+        [, $clinician] = $this->pair();
+
+        $this->actingAs($clinician, 'sanctum')
+            ->getJson('/api/hcp/appointments/slots?from=2026-10-12&to=2026-10-12')
+            ->assertOk()
+            ->assertJsonPath('data.2026-10-12.0', '09:00');
+    }
+
+    public function test_a_clinician_cancel_keeps_the_visit_and_stores_the_reason(): void
+    {
+        [$patient, $clinician] = $this->pair();
+
+        $booked = $this->actingAs($patient, 'sanctum')
+            ->postJson('/api/patient/appointments', [
+                'clinician_id' => $clinician->id,
+                'date' => '2026-10-12',
+                'time' => '09:00',
+                'reason' => 'Skin check',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->actingAs($clinician, 'sanctum')
+            ->postJson("/api/hcp/appointments/{$booked}/cancel", [])
+            ->assertUnprocessable();
+
+        $this->actingAs($clinician, 'sanctum')
+            ->postJson("/api/hcp/appointments/{$booked}/cancel", [
+                'reason' => 'The clinic is closed that morning.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'CANCELLED')
+            ->assertJsonPath('data.cancellation_reason', 'The clinic is closed that morning.');
+
+        $this->actingAs($clinician, 'sanctum')
+            ->getJson('/api/hcp/appointments')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $booked)
+            ->assertJsonPath('data.0.status', 'CANCELLED');
+    }
+
     /**
      * @return array{0: User, 1: User}
      */

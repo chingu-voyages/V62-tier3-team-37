@@ -17,6 +17,7 @@ class Appointment extends Model
         'start_time',
         'reason',
         'status',
+        'cancellation_reason',
         'summary',
     ];
 

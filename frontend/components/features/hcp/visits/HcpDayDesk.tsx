@@ -1,15 +1,26 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { VisitTimePicker } from "@/components/features/visits/VisitTimeSheet";
 import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TextField } from "@/components/ui/text-field";
 import {
   getApiErrorMessage,
+  cancelClinicianVisit,
   listClinicianVisits,
   offerFollowUp,
   openVisitResult,
+  ownClinicSlots,
   postponeClinicianVisit,
   saveVisitSummary,
   setVisitStatus,
@@ -24,7 +35,7 @@ const STATUS_LABEL: Record<VisitStatus, string> = {
   ARRIVED: "Showed up",
   NO_SHOW: "No-show",
   POSTPONED: "Postponed",
-  COMPLETED: "Visit went well",
+  COMPLETED: "Showed up",
   CANCELLED: "Cancelled",
 };
 
@@ -113,7 +124,7 @@ export function HcpDayDesk() {
   const dayVisits = useMemo(
     () =>
       (visits ?? [])
-        .filter((visit) => visit.date === day && visit.status !== "CANCELLED")
+        .filter((visit) => visit.date === day)
         .sort((left, right) => visitClock(left.time).localeCompare(visitClock(right.time))),
     [visits, day],
   );
@@ -130,7 +141,6 @@ export function HcpDayDesk() {
   const bookedDays = useMemo(() => {
     const counts = new Map<string, number>();
     for (const visit of visits ?? []) {
-      if (visit.status === "CANCELLED") continue;
       counts.set(visit.date, (counts.get(visit.date) ?? 0) + 1);
     }
     return [...counts.entries()].sort(([left], [right]) => left.localeCompare(right));
@@ -419,9 +429,14 @@ function VisitPanel({
   onRun: (action: () => Promise<unknown>, prefer?: number) => void;
 }) {
   const [postponeOpen, setPostponeOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const [resultOpen, setResultOpen] = useState(false);
   const [followOpen, setFollowOpen] = useState(false);
   const [summaryEdit, setSummaryEdit] = useState(false);
+  const [resultFile, setResultFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const movable = visit.status === "BOOKED" || visit.status === "POSTPONED";
   const arrived = visit.status === "ARRIVED";
   const missed = visit.status === "NO_SHOW";
@@ -431,9 +446,13 @@ function VisitPanel({
 
   useEffect(() => {
     setPostponeOpen(false);
+    setCancelOpen(false);
+    setCancelReason("");
     setResultOpen(false);
     setFollowOpen(false);
     setSummaryEdit(false);
+    setResultFile(null);
+    setFileError(null);
   }, [visit.id, visit.status]);
 
   return (
@@ -443,46 +462,96 @@ function VisitPanel({
         <p className="mt-1 type-body text-muted-foreground">
           {formatClockTime(visitClock(visit.time))} · {visit.reason || "Visit"} · {STATUS_LABEL[visit.status]}
         </p>
+        {visit.status === "CANCELLED" && visit.cancellation_reason ? (
+          <p className="mt-2 type-body text-muted-foreground">{visit.cancellation_reason}</p>
+        ) : null}
       </div>
       {movable ? (
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => onRun(() => setVisitStatus(visit.id, "ARRIVED"), visit.id)}>
-            Showed up
-          </Button>
-          <Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => onRun(() => setVisitStatus(visit.id, "NO_SHOW"), visit.id)}>
-            No-show
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            aria-expanded={postponeOpen}
-            aria-controls="postpone-visit"
-            disabled={pending}
-            onClick={() => setPostponeOpen((open) => !open)}
-          >
-            Postpone
-          </Button>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={`visit-status-${visit.id}`}>Status</Label>
+            <Select
+              value={visit.status}
+              disabled={pending}
+              onValueChange={(next) => {
+                if (next === "POSTPONED") {
+                  setCancelOpen(false);
+                  setPostponeOpen(true);
+                  return;
+                }
+                if (next === "CANCELLED") {
+                  setPostponeOpen(false);
+                  setCancelOpen(true);
+                  return;
+                }
+                if (next === "ARRIVED" || next === "NO_SHOW") {
+                  onRun(() => setVisitStatus(visit.id, next), visit.id);
+                }
+              }}
+            >
+              <SelectTrigger id={`visit-status-${visit.id}`} className="h-11">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  value={visit.status}
+                  onPointerDown={() => {
+                    if (visit.status === "POSTPONED") setPostponeOpen(true);
+                  }}
+                >
+                  {STATUS_LABEL[visit.status]}
+                </SelectItem>
+                <SelectItem value="ARRIVED">Showed up</SelectItem>
+                <SelectItem value="NO_SHOW">No-show</SelectItem>
+                {visit.status === "POSTPONED" ? null : (
+                  <SelectItem value="POSTPONED" onPointerDown={() => setPostponeOpen(true)}>
+                    Postponed
+                  </SelectItem>
+                )}
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {postponeOpen ? (
+            <VisitTimePicker
+              confirmLabel="Move visit"
+              loadSlots={ownClinicSlots}
+              onClose={() => setPostponeOpen(false)}
+              onConfirm={async (date, time) => {
+                await postponeClinicianVisit(visit.id, date, time);
+                onRun(async () => undefined, visit.id);
+              }}
+            />
+          ) : null}
+          {cancelOpen ? (
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (!cancelReason.trim()) return;
+                onRun(() => cancelClinicianVisit(visit.id, cancelReason.trim()), visit.id);
+              }}
+            >
+              <TextField
+                id={`cancel-reason-${visit.id}`}
+                label="Reason"
+                value={cancelReason}
+                onChange={setCancelReason}
+                placeholder="Why is this visit cancelled?"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <Button type="button" variant="outline" onClick={() => setCancelOpen(false)}>
+                  Keep visit
+                </Button>
+                <Button type="submit" disabled={pending || !cancelReason.trim()}>
+                  Cancel visit
+                </Button>
+              </div>
+            </form>
+          ) : null}
         </div>
       ) : null}
-      {movable && postponeOpen ? (
-        <form
-          id="postpone-visit"
-          className="grid gap-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onRun(() => postponeClinicianVisit(visit.id, moveDate, moveTime), visit.id);
-          }}
-        >
-          <p className="type-helper text-muted-foreground">They will come on another day.</p>
-          <TextField id="postpone-date" label="Date" type="date" value={moveDate} onChange={onMoveDate} />
-          <TextField id="postpone-time" label="Time" type="time" value={moveTime} onChange={onMoveTime} />
-          <Button type="submit" size="sm" variant="outline" disabled={pending || !moveDate || !moveTime}>
-            Move visit
-          </Button>
-        </form>
-      ) : null}
-      {missed ? (
+      {missed || arrived ? (
         <div className="flex flex-col items-start gap-2">
           <Button
             type="button"
@@ -551,13 +620,36 @@ function VisitPanel({
           className="grid gap-3"
           onSubmit={(event) => {
             event.preventDefault();
-            const file = new FormData(event.currentTarget).get("file");
-            if (!(file instanceof File) || file.size === 0) return;
-            onRun(() => uploadVisitResult(visit.id, file, title), visit.id);
+            if (!resultFile || resultFile.size === 0) {
+              setFileError("Choose a file to send.");
+              return;
+            }
+            setFileError(null);
+            onRun(() => uploadVisitResult(visit.id, resultFile, title), visit.id);
           }}
         >
           <TextField id="result-title" label="Result title" value={title} onChange={onTitle} />
-          <input name="file" type="file" accept=".pdf,image/jpeg,image/png,image/webp" className="type-helper" />
+          <div className="flex flex-col items-start gap-2">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/pdf,.pdf,image/jpeg,image/png,image/webp"
+              className="sr-only"
+              onChange={(event) => {
+                setResultFile(event.target.files?.[0] ?? null);
+                setFileError(null);
+              }}
+            />
+            <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
+              Choose file
+            </Button>
+            <p className="type-helper text-muted-foreground">{resultFile ? resultFile.name : "No file chosen"}</p>
+            {fileError ? (
+              <p role="alert" className="type-helper text-destructive">
+                {fileError}
+              </p>
+            ) : null}
+          </div>
           <Button type="submit" size="sm" variant="outline" disabled={pending}>
             Send result
           </Button>
@@ -602,20 +694,6 @@ function VisitPanel({
             Offer follow-up
           </Button>
         </form>
-      ) : null}
-      {arrived ? (
-        <div className="flex flex-col items-start gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={pending}
-            onClick={() => onRun(() => setVisitStatus(visit.id, "BOOKED"), visit.id)}
-          >
-            Undo
-          </Button>
-          <p className="type-helper text-muted-foreground">Puts this visit back to booked.</p>
-        </div>
       ) : null}
     </div>
   );

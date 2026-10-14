@@ -2,13 +2,16 @@
 
 import { ChevronLeft, Send } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { VisitTimePicker } from "@/components/features/visits/VisitTimeSheet";
 import { Button } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
 import { TextField } from "@/components/ui/text-field";
 import {
   getApiErrorMessage,
+  clinicianSlots,
   listThreads,
   openVisitResult,
+  ownClinicSlots,
   postponeClinicianVisit,
   postponePatientVisit,
   readThread,
@@ -125,6 +128,7 @@ export function HcpMessageDesk({
       setThreads(refreshed.data);
     } catch (cause) {
       setError(getApiErrorMessage(cause));
+      throw cause;
     } finally {
       setPending(false);
     }
@@ -171,7 +175,12 @@ export function HcpMessageDesk({
           onDraft={setDraft}
           onBack={() => setActiveId(null)}
           onSubmit={() => void submit()}
-          onPostpone={(visitId, date, time) => void postpone(visitId, date, time)}
+          onPostpone={(visitId, date, time) => postpone(visitId, date, time)}
+          loadSlots={
+            audience === "hcp" || activeId === null
+              ? ownClinicSlots
+              : () => clinicianSlots(String(activeId))
+          }
           resultScope={audience}
         />
       )}
@@ -244,6 +253,7 @@ function PatientThread({
   onBack,
   onSubmit,
   onPostpone,
+  loadSlots,
   resultScope,
 }: {
   detail: ThreadDetail | null;
@@ -254,7 +264,8 @@ function PatientThread({
   onDraft: (value: string) => void;
   onBack: () => void;
   onSubmit: () => void;
-  onPostpone: (visitId: number, date: string, time: string) => void;
+  onPostpone: (visitId: number, date: string, time: string) => Promise<void>;
+  loadSlots: () => Promise<{ data: Record<string, string[]> }>;
   resultScope: "hcp" | "patient";
 }) {
   const patient = detail?.user;
@@ -296,12 +307,7 @@ function PatientThread({
             ),
           )}
           {next ? (
-            <NextCard
-              visit={next}
-              pending={pending}
-              note={resultScope === "patient" ? "You will come on another day." : "They will come on another day."}
-              onPostpone={onPostpone}
-            />
+            <NextCard visit={next} pending={pending} loadSlots={loadSlots} onPostpone={onPostpone} />
           ) : null}
           <form
             className="mt-2 flex items-end gap-2"
@@ -382,17 +388,15 @@ function VisitCard({ visit, resultScope }: { visit: ThreadVisit; resultScope: "h
 function NextCard({
   visit,
   pending,
-  note,
+  loadSlots,
   onPostpone,
 }: {
   visit: ThreadVisit;
   pending: boolean;
-  note: string;
-  onPostpone: (visitId: number, date: string, time: string) => void;
+  loadSlots: () => Promise<{ data: Record<string, string[]> }>;
+  onPostpone: (visitId: number, date: string, time: string) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
   const canMove = visit.status === "BOOKED" || visit.status === "POSTPONED";
 
   return (
@@ -403,35 +407,25 @@ function NextCard({
         {visit.reason || "Visit"} · {STATUS_LABEL[visit.status]}
       </p>
       {canMove ? (
-        <div className="mt-4 flex flex-col gap-3">
+        <div className="mt-4">
           <Button
             type="button"
             size="sm"
             variant="outline"
-            className="self-start"
-            aria-expanded={open}
-            aria-controls="next-postpone"
             disabled={pending}
             onClick={() => setOpen((current) => !current)}
           >
             Postpone
           </Button>
           {open ? (
-            <form
-              id="next-postpone"
-              className="grid max-w-sm gap-3"
-              onSubmit={(event) => {
-                event.preventDefault();
-                onPostpone(visit.id, date, time);
-              }}
-            >
-              <p className="type-helper text-muted-foreground">{note}</p>
-              <TextField id="next-postpone-date" label="Date" type="date" value={date} onChange={setDate} />
-              <TextField id="next-postpone-time" label="Time" type="time" value={time} onChange={setTime} />
-              <Button type="submit" size="sm" variant="outline" className="self-start" disabled={pending || !date || !time}>
-                Move visit
-              </Button>
-            </form>
+            <div className="mt-3">
+              <VisitTimePicker
+                confirmLabel="Move visit"
+                loadSlots={loadSlots}
+                onClose={() => setOpen(false)}
+                onConfirm={(date, time) => onPostpone(visit.id, date, time)}
+              />
+            </div>
           ) : null}
         </div>
       ) : null}

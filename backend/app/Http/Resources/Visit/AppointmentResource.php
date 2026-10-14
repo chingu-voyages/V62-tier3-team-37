@@ -23,6 +23,7 @@ class AppointmentResource extends JsonResource
             'date' => $appointment->appointment_date->toDateString(),
             'time' => substr((string) $appointment->start_time, 0, 5),
             'reason' => $appointment->reason,
+            'cancellation_reason' => $appointment->cancellation_reason,
             'summary' => $appointment->summary,
             'follow_up_of_id' => $appointment->follow_up_of_id,
             'clinician' => [

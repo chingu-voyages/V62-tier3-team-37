@@ -99,9 +99,11 @@ Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, EnsureEmailIsVe
     Route::delete('/hcp/profile/clinic-photo', [HcpClinicPhotoController::class, 'destroy']);
 
     Route::get('/hcp/appointments', [HcpAppointmentController::class, 'index']);
+    Route::get('/hcp/appointments/slots', [HcpAppointmentController::class, 'slots']);
     Route::get('/hcp/patients', [HcpAppointmentController::class, 'patients']);
     Route::post('/hcp/appointments/{appointment}/status', [HcpAppointmentController::class, 'status']);
     Route::post('/hcp/appointments/{appointment}/postpone', [HcpAppointmentController::class, 'postpone']);
+    Route::post('/hcp/appointments/{appointment}/cancel', [HcpAppointmentController::class, 'cancel']);
     Route::post('/hcp/appointments/{appointment}/summary', [HcpAppointmentController::class, 'summary']);
     Route::post('/hcp/appointments/{appointment}/results', [HcpAppointmentController::class, 'result']);
     Route::post('/hcp/appointments/{appointment}/follow-up', [HcpAppointmentController::class, 'followUp']);

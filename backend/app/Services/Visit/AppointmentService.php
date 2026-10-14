@@ -117,7 +117,7 @@ class AppointmentService
         return $appointment->fresh();
     }
 
-    public function cancel(Appointment $appointment): Appointment
+    public function cancel(Appointment $appointment, ?string $reason = null): Appointment
     {
         if (! $appointment->status->canMove()) {
             throw ValidationException::withMessages([
@@ -125,7 +125,10 @@ class AppointmentService
             ]);
         }
 
-        $appointment->update(['status' => AppointmentStatus::CANCELLED]);
+        $appointment->update([
+            'status' => AppointmentStatus::CANCELLED,
+            'cancellation_reason' => $reason,
+        ]);
 
         return $appointment;
     }
