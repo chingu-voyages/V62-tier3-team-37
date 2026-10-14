@@ -3,10 +3,10 @@
 namespace App\Http\Requests\Profile\Hcp;
 
 use App\Enums\LivenessStatus;
+use App\Enums\Specialty;
 use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use App\Enums\Specialty;
 
 class HcpOnboardingRequest extends FormRequest
 {
@@ -92,7 +92,7 @@ class HcpOnboardingRequest extends FormRequest
 
             'specialty' => [
                 'required',
-                Rule::enum(Specialty::class)
+                Rule::enum(Specialty::class),
             ],
 
             'years_of_experience' => [

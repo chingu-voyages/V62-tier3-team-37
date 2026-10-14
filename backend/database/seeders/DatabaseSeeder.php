@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            // First: the admin desk is what approves access requests, so the
+            // account that opens it should exist before anything else is seeded.
+            AdminUserSeeder::class,
             DemoPatientSeeder::class,
             HcpProfileSeeder::class,
             VerifiedHcpSeeder::class,

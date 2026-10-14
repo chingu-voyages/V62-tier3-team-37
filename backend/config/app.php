@@ -69,6 +69,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Seeded Admin Password
+    |--------------------------------------------------------------------------
+    |
+    | Password given to the administrator created by `AdminUserSeeder`. Set it to
+    | something else before seeding any database that is not local or throwaway:
+    | the default is shared with the demo seeders so seeded logins stay
+    | predictable, which is exactly wrong for a reachable environment.
+    |
+    */
+
+    'admin_seed_password' => env('ADMIN_SEED_PASSWORD', 'Password1!'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

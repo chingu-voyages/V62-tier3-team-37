@@ -6,7 +6,6 @@ use App\Http\Controllers\Admin\AdminDeskController;
 use App\Http\Controllers\Admin\AdminDocumentController;
 use App\Http\Controllers\Admin\AdminPatientController;
 use App\Http\Controllers\Admin\AdminReportController;
-use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Controllers\Hcp\HcpAppointmentController;
 use App\Http\Controllers\Hcp\HcpClinicPhotoController;
 use App\Http\Controllers\Hcp\HcpOnboardingController;
@@ -14,10 +13,11 @@ use App\Http\Controllers\Hcp\HcpProfileController;
 use App\Http\Controllers\Patient\PatientAppointmentController;
 use App\Http\Controllers\Patient\PatientDirectoryController;
 use App\Http\Controllers\Patient\PatientFeedbackController;
-use App\Http\Controllers\Patient\PatientMedicalDocumentController;
+use App\Http\Controllers\Patient\PatientMedicalRecordController;
 use App\Http\Controllers\Patient\PatientProfileController;
-use App\Http\Controllers\Visit\MessageController;
 use App\Http\Controllers\Profile\ProfilePhotoController;
+use App\Http\Controllers\Visit\MessageController;
+use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureEmailIsVerified;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -59,7 +59,6 @@ Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, EnsureEmailIsVe
     /**************************PATIENT************************************** */
     Route::get('/patient/directory', [PatientDirectoryController::class, 'index']);
     Route::get('/patient/directory/places', [PatientDirectoryController::class, 'places']);
-    Route::get('/patient/directory/featured', [PatientDirectoryController::class, 'featured']);
     Route::get('/patient/clinicians/{user}/slots', [PatientDirectoryController::class, 'slots']);
     Route::get('/patient/appointments', [PatientAppointmentController::class, 'index']);
     Route::post('/patient/appointments', [PatientAppointmentController::class, 'store']);
@@ -75,13 +74,9 @@ Route::middleware(['auth:sanctum', EnsureAccountIsActive::class, EnsureEmailIsVe
 
     Route::patch('/patient/profile', [PatientProfileController::class, 'update']);
 
-    Route::get('/patient/medical-examinations', [PatientMedicalDocumentController::class, 'index']);
-
-    Route::post('/patient/medical-examinations', [PatientMedicalDocumentController::class, 'store']);
-
-    Route::get('/patient/medical-examinations/{document}', [PatientMedicalDocumentController::class, 'show']);
-
-    Route::delete('/patient/medical-examinations/{document}', [PatientMedicalDocumentController::class, 'destroy']);
+    // Records a patient receives. A patient never uploads files here: every
+    // document listed was attached by a clinician to a visit they finished.
+    Route::get('/patient/records', [PatientMedicalRecordController::class, 'index']);
 
     /**************************HCP************************************** */
 

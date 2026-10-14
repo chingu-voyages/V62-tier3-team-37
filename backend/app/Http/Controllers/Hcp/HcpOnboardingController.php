@@ -22,13 +22,11 @@ class HcpOnboardingController extends Controller
             'message' => 'HCP application submitted successfully.',
 
             'data' => [
-                'verification_status' =>
-                    $user->hcpVerification->status->value,
+                'verification_status' => $user->hcpVerification->status->value,
 
-                'submitted_at' =>
-                    $user->hcpVerification
-                        ->submitted_at
-                        ?->toISOString(),
+                'submitted_at' => $user->hcpVerification
+                    ->submitted_at
+                    ?->toISOString(),
             ],
         ], 201);
     }

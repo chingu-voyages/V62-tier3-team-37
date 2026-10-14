@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Patient;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Profile\UpdatePatientProfileRequest;
+use App\Http\Requests\Profile\Patient\UpdatePatientProfileRequest;
 use App\Http\Resources\Profile\PatientProfileResource;
 use App\Services\Profile\ProfileService;
 use Illuminate\Http\JsonResponse;

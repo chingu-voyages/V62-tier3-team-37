@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Requests\Profile;
+namespace App\Http\Requests\Profile\Patient;
 
-use App\Enums\AllergySeverity;
 use App\Enums\BloodType;
 use App\Enums\UserRole;
 use Illuminate\Foundation\Http\FormRequest;
@@ -53,7 +52,7 @@ class UpdatePatientProfileRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:100',
-            
+
             ],
 
             'blood_type' => [

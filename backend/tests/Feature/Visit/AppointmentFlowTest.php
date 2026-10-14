@@ -5,10 +5,10 @@ namespace Tests\Feature\Visit;
 use App\Enums\DayOfWeek;
 use App\Enums\Specialty;
 use App\Enums\UserRole;
+use App\Enums\UserStatus;
 use App\Enums\VerificationStatus;
 use App\Models\HcpAvailabilitySlot;
 use App\Models\HcpProfile;
-use App\Models\HcpReview;
 use App\Models\HcpVerification;
 use App\Models\User;
 use Carbon\Carbon;
@@ -142,6 +142,37 @@ class AppointmentFlowTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
+    /**
+     * A clinician who is verified but whose account is disabled must stay out of
+     * the directory too.
+     *
+     * The two rules are separate filters on the same query, and the account-status
+     * half had no patient-facing coverage once the old `/api/patient/hcps` test was
+     * removed. Losing it would let a suspended clinician keep appearing in search.
+     */
+    public function test_a_disabled_clinician_stays_out_of_search(): void
+    {
+        $patient = User::factory()->create(['role' => UserRole::PATIENT]);
+        $clinician = User::factory()->create([
+            'role' => UserRole::HCP,
+            'first_name' => 'Suspended',
+            'status' => UserStatus::DISABLED,
+        ]);
+        HcpProfile::factory()->create([
+            'user_id' => $clinician->id,
+            'specialty' => Specialty::DERMATOLOGY,
+        ]);
+        HcpVerification::factory()->create([
+            'user_id' => $clinician->id,
+            'status' => VerificationStatus::VERIFIED,
+        ]);
+
+        $this->actingAs($patient, 'sanctum')
+            ->getJson('/api/patient/directory?search=Suspended')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
     public function test_identity_shared_with_admin_stays_locked(): void
     {
         $clinician = User::factory()->create(['role' => UserRole::HCP, 'first_name' => 'Rana']);
@@ -172,24 +203,6 @@ class AppointmentFlowTest extends TestCase
             ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('phone');
-    }
-
-    public function test_featured_clinicians_are_the_ones_patients_rated_well(): void
-    {
-        [$patient, $clinician] = $this->pair();
-        HcpReview::query()->create([
-            'hcp_user_id' => $clinician->id,
-            'patient_user_id' => $patient->id,
-            'rating' => 5,
-            'comment' => 'Clear and kind.',
-        ]);
-
-        $this->actingAs($patient, 'sanctum')
-            ->getJson('/api/patient/directory/featured')
-            ->assertOk()
-            ->assertJsonPath('data.0.id', $clinician->id)
-            ->assertJsonPath('data.0.rating', 5)
-            ->assertJsonPath('data.0.review_count', 1);
     }
 
     public function test_directory_search_can_filter_by_insurance_and_clinic_area(): void

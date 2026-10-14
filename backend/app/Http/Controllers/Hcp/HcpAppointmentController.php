@@ -43,6 +43,10 @@ class HcpAppointmentController extends Controller
 
         return response()->json([
             'data' => $appointments->openSlots($clinician, $from, $to),
+
+            // Mirrors the patient-facing slots endpoint: the reschedule picker
+            // needs the same visit length the slots it is offering were built on.
+            'duration_minutes' => Appointment::DURATION_MINUTES,
         ]);
     }
 

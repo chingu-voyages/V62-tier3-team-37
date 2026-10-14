@@ -20,8 +20,7 @@ class HcpOnboardingService
 {
     public function __construct(
         private readonly DocumentService $documentService
-    ) {
-    }
+    ) {}
 
     public function submit(User $user, array $data): User
     {
@@ -30,7 +29,7 @@ class HcpOnboardingService
         $storedDocuments = [];
 
         try {
-           DB::transaction(function () use (
+            DB::transaction(function () use (
                 $user,
                 $data,
                 &$storedDocuments
@@ -66,17 +65,13 @@ class HcpOnboardingService
         array $data
     ): void {
         $user->hcpProfile()->create([
-            'specialty' =>
-                $data['specialty'],
+            'specialty' => $data['specialty'],
 
-            'years_of_experience' =>
-                $data['years_of_experience'],
+            'years_of_experience' => $data['years_of_experience'],
 
-            'medical_license_number' =>
-                $data['medical_license_number'],
+            'medical_license_number' => $data['medical_license_number'],
 
-            'license_issuing_authority' =>
-                $data['license_issuing_authority'],
+            'license_issuing_authority' => $data['license_issuing_authority'],
         ]);
     }
 
@@ -84,38 +79,39 @@ class HcpOnboardingService
      * @return Document[]
      */
     private function storeDocuments(
-    User $user,
-    array $data,
-    array &$storedDocuments
-): void {
-    $storedDocuments[] = $this->documentService->store(
-        $user,
-        $data['government_id_front'],
-        DocumentCategory::KYC,
-        DocumentType::GOVERNMENT_ID_FRONT
-    );
+        User $user,
+        array $data,
+        array &$storedDocuments
+    ): void {
+        $storedDocuments[] = $this->documentService->store(
+            $user,
+            $data['government_id_front'],
+            DocumentCategory::KYC,
+            DocumentType::GOVERNMENT_ID_FRONT
+        );
 
-    $storedDocuments[] = $this->documentService->store(
-        $user,
-        $data['government_id_back'],
-        DocumentCategory::KYC,
-        DocumentType::GOVERNMENT_ID_BACK
-    );
+        $storedDocuments[] = $this->documentService->store(
+            $user,
+            $data['government_id_back'],
+            DocumentCategory::KYC,
+            DocumentType::GOVERNMENT_ID_BACK
+        );
 
-    $storedDocuments[] = $this->documentService->store(
-        $user,
-        $data['medical_license'],
-        DocumentCategory::CREDENTIAL,
-        DocumentType::MEDICAL_LICENSE
-    );
+        $storedDocuments[] = $this->documentService->store(
+            $user,
+            $data['medical_license'],
+            DocumentCategory::CREDENTIAL,
+            DocumentType::MEDICAL_LICENSE
+        );
 
-    $storedDocuments[] = $this->documentService->store(
-        $user,
-        $data['qualification'],
-        DocumentCategory::CREDENTIAL,
-        DocumentType::QUALIFICATION
-    );
-}
+        $storedDocuments[] = $this->documentService->store(
+            $user,
+            $data['qualification'],
+            DocumentCategory::CREDENTIAL,
+            DocumentType::QUALIFICATION
+        );
+    }
+
     private function createVerification(
         User $user,
         array $data
@@ -126,23 +122,18 @@ class HcpOnboardingService
 
         if ($livenessStatus !== LivenessStatus::PASSED) {
             throw ValidationException::withMessages([
-                'liveness_status' =>
-                    'The liveness check must be passed before submitting.',
+                'liveness_status' => 'The liveness check must be passed before submitting.',
             ]);
         }
 
         $user->hcpVerification()->create([
-            'liveness_status' =>
-                $livenessStatus,
+            'liveness_status' => $livenessStatus,
 
-            'consent_accepted_at' =>
-                now(),
+            'consent_accepted_at' => now(),
 
-            'status' =>
-                VerificationStatus::UNDER_REVIEW,
+            'status' => VerificationStatus::UNDER_REVIEW,
 
-            'submitted_at' =>
-                now(),
+            'submitted_at' => now(),
         ]);
     }
 
@@ -167,14 +158,13 @@ class HcpOnboardingService
 
         if ($user->hcpVerification()->exists()) {
             throw ValidationException::withMessages([
-                'application' =>
-                    'The HCP application has already been submitted.',
+                'application' => 'The HCP application has already been submitted.',
             ]);
         }
     }
 
     /**
-     * @param Document[] $documents
+     * @param  Document[]  $documents
      */
     private function cleanupFiles(
         array $documents

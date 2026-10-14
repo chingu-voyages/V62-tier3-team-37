@@ -42,7 +42,7 @@ class MessageController extends Controller
 
         $partners = User::query()->whereIn('id', $partnerIds)->get()->keyBy('id');
 
-        $threads = $partnerIds->map(function (int $partnerId) use ($messages, $partners, $userId) {
+        $threads = $partnerIds->map(function (int $partnerId) use ($messages, $partners) {
             $latest = $messages->first(
                 fn (ConversationMessage $message) => $message->sender_id === $partnerId || $message->recipient_id === $partnerId,
             );

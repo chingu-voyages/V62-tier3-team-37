@@ -7,8 +7,8 @@ use App\Enums\DocumentType;
 use App\Models\Document;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Support\Collection;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -18,15 +18,12 @@ class DocumentService
 {
     private const DISK = 'local';
 
-
-
-
     public function store(
-    User $user,
-    UploadedFile $file,
-    DocumentCategory $category,
-    DocumentType $documentType,
-    ?string $title = null): Document 
+        User $user,
+        UploadedFile $file,
+        DocumentCategory $category,
+        DocumentType $documentType,
+        ?string $title = null): Document
     {
         $documents = $this->storeMany(
             $user,
@@ -40,7 +37,7 @@ class DocumentService
     }
 
     /**
-     * @param UploadedFile[] $files
+     * @param  UploadedFile[]  $files
      */
     public function storeMany(
         User $user,
@@ -79,16 +76,13 @@ class DocumentService
                                 'document_type' => $documentType,
                                 'title' => $title,
 
-                                'original_file_name' =>
-                                    $file->getClientOriginalName(),
+                                'original_file_name' => $file->getClientOriginalName(),
 
                                 'storage_path' => $path,
 
-                                'mime_type' =>
-                                    $file->getMimeType(),
+                                'mime_type' => $file->getMimeType(),
 
-                                'file_size_bytes' =>
-                                    $file->getSize(),
+                                'file_size_bytes' => $file->getSize(),
 
                                 'uploaded_at' => now(),
                             ]);
@@ -109,7 +103,8 @@ class DocumentService
         }
     }
 
-    public function getByType(User $user,DocumentCategory $category,DocumentType $documentType): Collection {
+    public function getByType(User $user, DocumentCategory $category, DocumentType $documentType): Collection
+    {
         return $user
             ->documents()
             ->where('category', $category->value)
@@ -121,7 +116,7 @@ class DocumentService
     /**
      * @throws AuthorizationException
      */
-    public function getOwnedDocument(User $user,Document $document): Document 
+    public function getOwnedDocument(User $user, Document $document): Document
     {
         $this->ensureOwnership(
             $user,
@@ -134,7 +129,7 @@ class DocumentService
     /**
      * @throws AuthorizationException
      */
-    public function delete(User $user,Document $document): void 
+    public function delete(User $user, Document $document): void
     {
         $this->ensureOwnership(
             $user,
@@ -149,7 +144,7 @@ class DocumentService
             ->delete($path);
     }
 
-    private function storeFile(User $user,UploadedFile $file,DocumentCategory $category): string 
+    private function storeFile(User $user, UploadedFile $file, DocumentCategory $category): string
     {
         $directory = sprintf(
             'documents/%s/%d',
@@ -174,7 +169,7 @@ class DocumentService
     /**
      * @throws AuthorizationException
      */
-    private function ensureOwnership(User $user,Document $document): void 
+    private function ensureOwnership(User $user, Document $document): void
     {
         if ($document->user_id !== $user->id) {
             throw new AuthorizationException(

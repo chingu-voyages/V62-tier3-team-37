@@ -5,9 +5,10 @@ namespace App\Http\Controllers\Profile;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Profile\ProfilePhotoRequest;
 use App\Services\Profile\ProfilePhotoService;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Filesystem\FilesystemAdapter;
+
 class ProfilePhotoController extends Controller
 {
     public function update(
@@ -22,9 +23,9 @@ class ProfilePhotoController extends Controller
         );
 
         /** @var FilesystemAdapter $disk */
-            $disk = Storage::disk('public');
+        $disk = Storage::disk('public');
 
-            $url = $disk->url($path);
+        $url = $disk->url($path);
 
         return response()->json([
             'message' => 'Profile photo updated successfully.',
@@ -32,8 +33,8 @@ class ProfilePhotoController extends Controller
             'data' => [
                 'profile_photo_path' => $path,
 
-                'profile_photo_url' => $url,           
-                ],
+                'profile_photo_url' => $url,
+            ],
         ]);
     }
 
