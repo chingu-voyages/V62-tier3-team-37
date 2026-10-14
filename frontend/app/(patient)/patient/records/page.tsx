@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PatientRecords } from "@/components/features/Patient/records/PatientRecords";
+import { PatientRecords } from "@/components/features/patient/records/PatientRecords";
 
 export const metadata: Metadata = {
   title: "Health records",

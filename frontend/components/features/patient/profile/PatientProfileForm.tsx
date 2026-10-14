@@ -109,9 +109,7 @@ export function PatientProfileForm({
   const [formError, setFormError] = useState<string | null>(null);
 
   function updateAllergy(key: string, patch: Partial<AllergyDraft>) {
-    setAllergies((current) =>
-      current.map((row) => (row.key === key ? { ...row, ...patch } : row)),
-    );
+    setAllergies((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)));
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -190,7 +188,12 @@ export function PatientProfileForm({
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={updateProfile.isPending}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={updateProfile.isPending}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={updateProfile.isPending}>
@@ -480,7 +483,8 @@ function validate(values: {
   }
 
   for (const row of values.allergies) {
-    if (!row.name.trim()) errors[`allergy-${row.key}`] = "Enter an allergy name, or remove this row.";
+    if (!row.name.trim())
+      errors[`allergy-${row.key}`] = "Enter an allergy name, or remove this row.";
   }
 
   return errors;

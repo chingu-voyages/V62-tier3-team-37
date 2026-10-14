@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { startOfDay, VisitCalendar } from "@/components/features/visits/VisitCalendar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,10 +11,18 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { startOfDay, VisitCalendar } from "@/components/features/visits/VisitCalendar";
-import { formatClockTime, formatLongDate } from "@/lib/format";
+import type { AvailabilitySlots } from "@/lib/api/visit-client";
 import { getApiErrorMessage } from "@/lib/api/visit-client";
+import { describeVisitDuration, formatClockTime, formatLongDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+
+/**
+ * Used only if the slots response omits `duration_minutes`.
+ *
+ * The backend sends the real figure with every slots request; this keeps the copy
+ * sensible rather than blank if an older API answers without it.
+ */
+const DEFAULT_VISIT_MINUTES = 30;
 
 export function VisitTimeSheet({
   open,
@@ -30,7 +39,7 @@ export function VisitTimeSheet({
   subtitle: string;
   description: string;
   confirmLabel: string;
-  loadSlots: () => Promise<{ data: Record<string, string[]> }>;
+  loadSlots: () => Promise<AvailabilitySlots>;
   onClose: () => void;
   onConfirm: (date: string, time: string) => Promise<void>;
 }) {
@@ -69,7 +78,7 @@ export function VisitTimePicker({
   onConfirm,
 }: {
   confirmLabel: string;
-  loadSlots: () => Promise<{ data: Record<string, string[]> }>;
+  loadSlots: () => Promise<AvailabilitySlots>;
   onClose: () => void;
   onConfirm: (date: string, time: string) => Promise<void>;
 }) {
@@ -102,7 +111,7 @@ function TimeForm({
   subtitle: string;
   description: string;
   confirmLabel: string;
-  loadSlots: () => Promise<{ data: Record<string, string[]> }>;
+  loadSlots: () => Promise<AvailabilitySlots>;
   onClose: () => void;
   onConfirm: (date: string, time: string) => Promise<void>;
 }) {
@@ -111,6 +120,7 @@ function TimeForm({
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [slots, setSlots] = useState<Record<string, string[]> | null>(null);
+  const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -119,9 +129,12 @@ function TimeForm({
 
   useEffect(() => {
     let cancelled = false;
-    loadSlotsRef.current()
+    loadSlotsRef
+      .current()
       .then((response) => {
-        if (!cancelled) setSlots(response.data);
+        if (cancelled) return;
+        setSlots(response.data);
+        setDurationMinutes(response.duration_minutes ?? null);
       })
       .catch((cause: unknown) => {
         if (!cancelled) setError(getApiErrorMessage(cause));
@@ -155,100 +168,119 @@ function TimeForm({
   }
 
   const schedule = (
-        <section className={variant === "inline" ? "" : "rounded-2xl bg-background p-4 shadow-card ring-1 ring-border/70"}>
-          <div className="flex items-baseline justify-between gap-3">
-            <h3 className="type-label text-foreground">When</h3>
-            <p className="type-helper text-muted-foreground">
-              {selectedDate ? formatLongDate(selectedDate) : "Open days are highlighted"}
+    <section
+      className={
+        variant === "inline"
+          ? ""
+          : "rounded-2xl bg-background p-4 shadow-card ring-1 ring-border/70"
+      }
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="type-label text-foreground">When</h3>
+        <p className="type-helper text-muted-foreground">
+          {selectedDate ? formatLongDate(selectedDate) : "Open days are highlighted"}
+        </p>
+      </div>
+      <VisitCalendar
+        month={month}
+        today={today}
+        selected={selectedDate}
+        openDates={new Set(Object.keys(slots ?? {}))}
+        onMonth={setMonth}
+        onSelect={(value) => {
+          setSelectedDate(value);
+          setSelectedTime(null);
+          setError(null);
+        }}
+      />
+      <div className="mt-4 border-t border-border/70 pt-4">
+        {slots === null && !error ? (
+          <p className="type-helper text-muted-foreground">Loading open times…</p>
+        ) : selectedDate ? (
+          <>
+            <p className="type-label text-foreground">Available times</p>
+            <p className="mt-1 type-helper text-muted-foreground">
+              {describeVisitDuration(durationMinutes, DEFAULT_VISIT_MINUTES)}
             </p>
-          </div>
-          <VisitCalendar
-            month={month}
-            today={today}
-            selected={selectedDate}
-            openDates={new Set(Object.keys(slots ?? {}))}
-            onMonth={setMonth}
-            onSelect={(value) => {
-              setSelectedDate(value);
-              setSelectedTime(null);
-              setError(null);
-            }}
-          />
-          <div className="mt-4 border-t border-border/70 pt-4">
-            {slots === null && !error ? (
-              <p className="type-helper text-muted-foreground">Loading open times…</p>
-            ) : selectedDate ? (
-              <>
-                <p className="type-label text-foreground">Available times</p>
-                <p className="mt-1 type-helper text-muted-foreground">
-                  Each visit is 30 minutes, inside the clinic hours.
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {times.length === 0 ? (
+                <p className="col-span-3 type-helper text-muted-foreground">
+                  No open times on this day.
                 </p>
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  {times.length === 0 ? (
-                    <p className="col-span-3 type-helper text-muted-foreground">No open times on this day.</p>
-                  ) : null}
-                  {times.map((slot) => {
-                    const chosen = selectedTime === slot.value;
-                    return (
-                      <button
-                        key={slot.value}
-                        type="button"
-                        aria-pressed={chosen}
-                        className={cn(
-                          "rounded-full border px-2 py-2 type-helper",
-                          chosen
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-background text-foreground hover:border-primary/30 hover:bg-accent",
-                        )}
-                        onClick={() => {
-                          setSelectedTime(slot.value);
-                          setError(null);
-                        }}
-                      >
-                        {slot.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            ) : (
-              <p className="rounded-xl bg-muted px-3 py-3 type-helper text-muted-foreground">
-                Choose an open day. Times for that day appear here.
-              </p>
-            )}
-          </div>
-        </section>
+              ) : null}
+              {times.map((slot) => {
+                const chosen = selectedTime === slot.value;
+                return (
+                  <button
+                    key={slot.value}
+                    type="button"
+                    aria-pressed={chosen}
+                    className={cn(
+                      "rounded-full border px-2 py-2 type-helper",
+                      chosen
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-foreground hover:border-primary/30 hover:bg-accent",
+                    )}
+                    onClick={() => {
+                      setSelectedTime(slot.value);
+                      setError(null);
+                    }}
+                  >
+                    {slot.label}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <p className="rounded-xl bg-muted px-3 py-3 type-helper text-muted-foreground">
+            Choose an open day. Times for that day appear here.
+          </p>
+        )}
+      </div>
+    </section>
   );
 
   const actions = (
-      <div className={variant === "inline" ? "mt-4 border-t border-border/70 pt-4" : "shrink-0 border-t border-border bg-background px-5 py-4"}>
-        {error ? (
-          <p role="alert" className="mb-3 type-helper text-destructive">
-            {error}
-          </p>
-        ) : null}
-        <div className="flex flex-col gap-3">
-          <p className="type-helper text-muted-foreground">
-            {selectedDate && timeLabel ? (
-              <span className="font-medium text-foreground">
-                {formatLongDate(selectedDate)} · {timeLabel}
-              </span>
-            ) : selectedDate ? (
-              "Choose a time for this day."
-            ) : (
-              "Choose an open day to continue."
-            )}
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <Button type="button" variant="outline" size="lg" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="button" size="lg" disabled={!selectedDate || !selectedTime || saving} onClick={() => void confirm()}>
-              {saving ? "Saving…" : confirmLabel}
-            </Button>
-          </div>
+    <div
+      className={
+        variant === "inline"
+          ? "mt-4 border-t border-border/70 pt-4"
+          : "shrink-0 border-t border-border bg-background px-5 py-4"
+      }
+    >
+      {error ? (
+        <p role="alert" className="mb-3 type-helper text-destructive">
+          {error}
+        </p>
+      ) : null}
+      <div className="flex flex-col gap-3">
+        <p className="type-helper text-muted-foreground">
+          {selectedDate && timeLabel ? (
+            <span className="font-medium text-foreground">
+              {formatLongDate(selectedDate)} · {timeLabel}
+            </span>
+          ) : selectedDate ? (
+            "Choose a time for this day."
+          ) : (
+            "Choose an open day to continue."
+          )}
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <Button type="button" variant="outline" size="lg" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            size="lg"
+            disabled={!selectedDate || !selectedTime || saving}
+            onClick={() => void confirm()}
+          >
+            {saving ? "Saving…" : confirmLabel}
+          </Button>
         </div>
       </div>
+    </div>
   );
 
   if (variant === "inline") {
@@ -268,7 +300,13 @@ function TimeForm({
           <p className="mt-0.5 truncate type-helper text-muted-foreground">{subtitle}</p>
         </div>
         <DialogClose asChild>
-          <Button type="button" variant="ghost" size="icon" className="shrink-0" aria-label="Close booking">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0"
+            aria-label="Close booking"
+          >
             <X aria-hidden="true" />
           </Button>
         </DialogClose>

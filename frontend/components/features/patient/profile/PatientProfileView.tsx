@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import {
   CalendarDays,
   Droplets,
@@ -11,6 +10,7 @@ import {
   ShieldAlert,
   UserRound,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { userDisplayName, userInitials } from "@/lib/auth/display";
 import { calculateAge, formatLongDate } from "@/lib/format";
@@ -45,7 +45,8 @@ export function PatientProfileView({
   const health = profile.patient_profile;
   const birthDate = formatLongDate(profile.birth_date);
   const age = profile.age ?? calculateAge(profile.birth_date);
-  const ageLabel = age === undefined || age === null ? null : `${age} ${age === 1 ? "year" : "years"}`;
+  const ageLabel =
+    age === undefined || age === null ? null : `${age} ${age === 1 ? "year" : "years"}`;
   const genderLabel = profile.gender ? (GENDER_LABELS[profile.gender] ?? profile.gender) : null;
   const summary = [ageLabel, genderLabel].filter(Boolean).join(" · ") || "Your account details";
   const allergies = formatAllergies(health?.allergies);
@@ -69,17 +70,17 @@ export function PatientProfileView({
       <header className="rounded-3xl border border-secondary/20 bg-accent p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-4 sm:gap-5">
-          <Avatar className="size-16 ring-4 ring-background sm:size-20">
-            {photo ? <AvatarImage src={photo} alt="" /> : null}
-            <AvatarFallback className="bg-background text-lg font-semibold text-primary sm:text-xl">
-              {userInitials(profile)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="type-step text-primary">Profile</p>
-            <h1 className="mt-1 truncate type-h2 text-foreground">{name}</h1>
-            <p className="mt-1 type-body text-muted-foreground">{summary}</p>
-          </div>
+            <Avatar className="size-16 ring-4 ring-background sm:size-20">
+              {photo ? <AvatarImage src={photo} alt="" /> : null}
+              <AvatarFallback className="bg-background text-lg font-semibold text-primary sm:text-xl">
+                {userInitials(profile)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="type-step text-primary">Profile</p>
+              <h1 className="mt-1 truncate type-h2 text-foreground">{name}</h1>
+              <p className="mt-1 type-body text-muted-foreground">{summary}</p>
+            </div>
           </div>
           {action ? <div className="shrink-0">{action}</div> : null}
         </div>
@@ -99,10 +100,7 @@ export function PatientProfileView({
         </section>
 
         <section className="flex flex-col gap-3">
-          <SectionIntro
-            title="Health"
-            description="Clinical details kept with your profile."
-          />
+          <SectionIntro title="Health" description="Clinical details kept with your profile." />
           <div className="rounded-2xl bg-background p-4 shadow-card ring-1 ring-border/70 sm:p-5">
             <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {measures.map((item) => (
@@ -156,7 +154,12 @@ function FactRow({ item }: { item: Fact }) {
       </span>
       <div className="min-w-0">
         <p className="type-helper text-muted-foreground">{item.label}</p>
-        <p className={cn("truncate type-label", item.filled ? "text-foreground" : "text-muted-foreground")}>
+        <p
+          className={cn(
+            "truncate type-label",
+            item.filled ? "text-foreground" : "text-muted-foreground",
+          )}
+        >
           {item.value}
         </p>
       </div>

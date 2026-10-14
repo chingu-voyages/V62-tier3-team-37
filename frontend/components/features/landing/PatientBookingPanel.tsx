@@ -1,17 +1,9 @@
 "use client";
 
-import {
-  Banknote,
-  CalendarDays,
-  Check,
-  Clock3,
-  Mail,
-  MapPin,
-  UserRound,
-  X,
-} from "lucide-react";
+import { Banknote, CalendarDays, Check, Clock3, Mail, MapPin, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { startOfDay, VisitCalendar } from "@/components/features/visits/VisitCalendar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,10 +15,15 @@ import {
 import { Label } from "@/components/ui/label";
 import { TextField } from "@/components/ui/text-field";
 import { savePatientPhone } from "@/lib/api/patient-client";
-import { formatCalendarDate, formatClockTime, formatLongDate } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import { startOfDay, VisitCalendar } from "@/components/features/visits/VisitCalendar";
 import { bookVisit, clinicianSlots, getApiErrorMessage } from "@/lib/api/visit-client";
+import {
+  describeVisitDuration,
+  formatCalendarDate,
+  formatClockTime,
+  formatLongDate,
+  formatVisitDuration,
+} from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { useAppointmentStore } from "@/store/use-appointment-store";
 import type { HCP } from "@/types/hcp-directory";
 
@@ -40,6 +37,15 @@ export type BookingPatient = {
 };
 
 const TIME_SLOTS = buildTimeSlots();
+
+/**
+ * Visit length for the sample clinician, used until the API answers.
+ *
+ * A real clinician's duration arrives with their slots and wins over this. The
+ * sample data is generated locally by `buildTimeSlots`, so there is no request to
+ * read a duration from.
+ */
+const SAMPLE_VISIT_MINUTES = 60;
 
 export function PatientBookingPanel({
   doctor,
@@ -88,6 +94,7 @@ function BookingForm({
   const [error, setError] = useState<string | null>(null);
   const [booked, setBooked] = useState(false);
   const [slots, setSlots] = useState<Record<string, string[]> | null>(null);
+  const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -95,7 +102,9 @@ function BookingForm({
     let cancelled = false;
     clinicianSlots(doctor.id)
       .then((response) => {
-        if (!cancelled) setSlots(response.data);
+        if (cancelled) return;
+        setSlots(response.data);
+        setDurationMinutes(response.duration_minutes ?? null);
       })
       .catch((cause) => {
         if (!cancelled) setError(getApiErrorMessage(cause));
@@ -106,6 +115,11 @@ function BookingForm({
   }, [doctor.id, live]);
 
   const location = [doctor.area, doctor.city].filter(Boolean).join(", ");
+  const visitLength = formatVisitDuration(durationMinutes, live ? 30 : SAMPLE_VISIT_MINUTES);
+  const visitDurationCopy = describeVisitDuration(
+    durationMinutes,
+    live ? 30 : SAMPLE_VISIT_MINUTES,
+  );
   const times = live
     ? (selectedDate ? (slots?.[selectedDate] ?? []) : []).map((value) => ({
         value,
@@ -170,13 +184,17 @@ function BookingForm({
             {booked ? "Visit requested" : "Book appointment"}
           </DialogTitle>
           <p className="mt-0.5 truncate type-helper text-muted-foreground">
-            {booked
-              ? "Saved with your appointments."
-              : `${doctor.fullName} · ${live ? "30 minutes" : "1 hour"}`}
+            {booked ? "Saved with your appointments." : `${doctor.fullName} · ${visitLength}`}
           </p>
         </div>
         <DialogClose asChild>
-          <Button type="button" variant="ghost" size="icon" className="shrink-0" aria-label="Close booking">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0"
+            aria-label="Close booking"
+          >
             <X aria-hidden="true" />
           </Button>
         </DialogClose>
@@ -193,7 +211,7 @@ function BookingForm({
             location={location}
             date={selectedDate}
             time={timeLabel}
-            length={live ? "30 minutes" : "1 hour"}
+            length={visitLength}
             notes={notes.trim()}
           />
         ) : (
@@ -243,9 +261,7 @@ function BookingForm({
                 {selectedDate ? (
                   <>
                     <p className="type-label text-foreground">Available times</p>
-                    <p className="mt-1 type-helper text-muted-foreground">
-                      {live ? "Each visit is 30 minutes, inside the clinic hours." : "Each visit lasts one hour."}
-                    </p>
+                    <p className="mt-1 type-helper text-muted-foreground">{visitDurationCopy}</p>
                     <div className="mt-3 grid grid-cols-3 gap-2">
                       {times.length === 0 ? (
                         <p className="col-span-3 type-helper text-muted-foreground">
@@ -373,7 +389,11 @@ function DoctorCard({ doctor, location }: { doctor: HCP; location: string }) {
         {location ? <MetaChip icon={MapPin} label={location} /> : null}
         {doctor.waitingTime ? <MetaChip icon={Clock3} label={doctor.waitingTime} /> : null}
         {doctor.fees !== undefined ? (
-          <MetaChip icon={Banknote} label={`${doctor.fees} ${doctor.currency ?? ""}`.trim()} tone="accent" />
+          <MetaChip
+            icon={Banknote}
+            label={`${doctor.fees} ${doctor.currency ?? ""}`.trim()}
+            tone="accent"
+          />
         ) : null}
       </ul>
     </article>
@@ -404,7 +424,11 @@ function MetaChip({
 
 function IdentityCard({ patient, name }: { patient: BookingPatient; name: string }) {
   const rows = [
-    { icon: CalendarDays, label: "Date of birth", value: formatCalendarDate(patient.birthDate) ?? "Not added" },
+    {
+      icon: CalendarDays,
+      label: "Date of birth",
+      value: formatCalendarDate(patient.birthDate) ?? "Not added",
+    },
     { icon: UserRound, label: "Gender", value: genderLabel(patient.gender) ?? "Not added" },
     { icon: Mail, label: "Email", value: patient.email || "Not added" },
   ];
@@ -415,7 +439,10 @@ function IdentityCard({ patient, name }: { patient: BookingPatient; name: string
       <p className="px-3 pb-2 type-h4 text-foreground">{name || "Your profile"}</p>
       <ul className="bg-background/70">
         {rows.map((row) => (
-          <li key={row.label} className="flex items-center gap-3 border-t border-secondary/15 px-3 py-2.5">
+          <li
+            key={row.label}
+            className="flex items-center gap-3 border-t border-secondary/15 px-3 py-2.5"
+          >
             <row.icon className="size-4 shrink-0 text-primary/70" aria-hidden="true" />
             <span className="type-helper text-muted-foreground">{row.label}</span>
             <span className="ml-auto min-w-0 truncate text-right type-helper font-medium text-foreground">
@@ -463,7 +490,10 @@ function Confirmation({
       </div>
       <dl className="overflow-hidden rounded-2xl bg-background shadow-card ring-1 ring-border/70">
         {rows.map((row) => (
-          <div key={row.label} className="flex items-baseline justify-between gap-4 border-b border-border/70 px-4 py-3 last:border-b-0">
+          <div
+            key={row.label}
+            className="flex items-baseline justify-between gap-4 border-b border-border/70 px-4 py-3 last:border-b-0"
+          >
             <dt className="type-helper text-muted-foreground">{row.label}</dt>
             <dd className="text-right type-helper font-medium text-foreground">{row.value}</dd>
           </div>

@@ -21,10 +21,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TextField } from "@/components/ui/text-field";
+import {
+  type DirectoryClinician,
+  getApiErrorMessage,
+  listDirectory,
+  listDirectoryPlaces,
+} from "@/lib/api/visit-client";
 import { cn } from "@/lib/utils";
-import { getApiErrorMessage, listDirectory, listDirectoryPlaces, type DirectoryClinician } from "@/lib/api/visit-client";
 import type { HCP, HCPFilters } from "@/types/hcp-directory";
-import { PatientBookingPanel, type BookingPatient } from "./PatientBookingPanel";
+import { type BookingPatient, PatientBookingPanel } from "./PatientBookingPanel";
 
 type DoctorGender = "female" | "male";
 type Availability = "today" | "tomorrow";
@@ -136,8 +141,10 @@ const INSURANCES = ["Medicare", "AXA", "Allianz", "Cigna", "BUPA"];
 
 function matchesLive(doctor: LandingDoctor, filters: LandingFilters): boolean {
   if (filters.specialty && !doctor.specialties.includes(filters.specialty)) return false;
-  if (filters.city && !doctor.city?.toLowerCase().includes(filters.city.toLowerCase())) return false;
-  if (filters.area && !doctor.area?.toLowerCase().includes(filters.area.toLowerCase())) return false;
+  if (filters.city && !doctor.city?.toLowerCase().includes(filters.city.toLowerCase()))
+    return false;
+  if (filters.area && !doctor.area?.toLowerCase().includes(filters.area.toLowerCase()))
+    return false;
   if (filters.insurance && !doctor.insuranceAccepted?.includes(filters.insurance)) return false;
   if (filters.gender && doctor.gender !== filters.gender) return false;
   if (filters.minExperience !== undefined && doctor.yearsOfExperience < filters.minExperience) {
@@ -146,7 +153,8 @@ function matchesLive(doctor: LandingDoctor, filters: LandingFilters): boolean {
   if (filters.availability && !doctor.availableOn.includes(filters.availability)) return false;
   if (filters.search) {
     const query = filters.search.trim().toLowerCase();
-    const haystack = `${doctor.fullName} ${doctor.title} ${doctor.specialties.join(" ")} ${doctor.city ?? ""}`.toLowerCase();
+    const haystack =
+      `${doctor.fullName} ${doctor.title} ${doctor.specialties.join(" ")} ${doctor.city ?? ""}`.toLowerCase();
     if (!haystack.includes(query)) return false;
   }
   return true;
@@ -177,8 +185,10 @@ function toLandingDoctor(row: DirectoryClinician): LandingDoctor {
 
 function matches(doctor: LandingDoctor, filters: LandingFilters): boolean {
   if (filters.specialty && !doctor.specialties.includes(filters.specialty)) return false;
-  if (filters.city && !doctor.city?.toLowerCase().includes(filters.city.toLowerCase())) return false;
-  if (filters.area && !doctor.area?.toLowerCase().includes(filters.area.toLowerCase())) return false;
+  if (filters.city && !doctor.city?.toLowerCase().includes(filters.city.toLowerCase()))
+    return false;
+  if (filters.area && !doctor.area?.toLowerCase().includes(filters.area.toLowerCase()))
+    return false;
   if (filters.insurance && !doctor.insuranceAccepted?.includes(filters.insurance)) return false;
   if (filters.gender && doctor.gender !== filters.gender) return false;
   if (
@@ -221,11 +231,22 @@ export function LandingSearch({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [extraOpen, setExtraOpen] = useState(false);
   const [applied, setApplied] = useState(false);
+  /**
+   * The filters the current results were produced from.
+   *
+   * Snapshotted when a search runs rather than read live, so editing a field does
+   * not silently re-filter the rows already on screen - those rows came back for
+   * the old filters, and the honest answer is to wait for the next search.
+   */
+  const [searchedFilters, setSearchedFilters] = useState<LandingFilters | null>(null);
   const [bookingDoctor, setBookingDoctor] = useState<HCP | null>(null);
   const [liveDoctors, setLiveDoctors] = useState<LandingDoctor[] | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
-  const [places, setPlaces] = useState<{ cities: string[]; areas: string[] }>({ cities: [], areas: [] });
+  const [places, setPlaces] = useState<{ cities: string[]; areas: string[] }>({
+    cities: [],
+    areas: [],
+  });
 
   useEffect(() => {
     if (!signedIn) return;
@@ -259,15 +280,44 @@ export function LandingSearch({
   );
 
   const results = useMemo(() => {
-    if (!applied) return [];
-    if (signedIn) return (liveDoctors ?? []).filter((doctor) => matchesLive(doctor, filters));
-    return SAMPLE_DOCTORS.filter((doctor) => matches(doctor, filters));
-  }, [applied, filters, liveDoctors, signedIn]);
+    if (!applied || !searchedFilters) return [];
+    if (signedIn)
+      return (liveDoctors ?? []).filter((doctor) => matchesLive(doctor, searchedFilters));
+    return SAMPLE_DOCTORS.filter((doctor) => matches(doctor, searchedFilters));
+  }, [applied, searchedFilters, liveDoctors, signedIn]);
 
   const extraCount = [gender, maxPrice, minExperience, availability].filter(Boolean).length;
 
+  /**
+   * Whether the visitor has said anything about the clinician they want.
+   *
+   * The page is an entry point, not a directory: someone arriving here is on their
+   * way to a particular clinician, so there is nothing useful to show until they
+   * name one. Requiring a value keeps the panel honest about that and keeps the
+   * directory query off the critical path for the many visitors who bounce before
+   * they type.
+   *
+   * Compared trimmed, so a stray space does not unlock an empty search.
+   */
+  const hasAnyFilter =
+    query.trim() !== "" ||
+    specialty !== "" ||
+    city.trim() !== "" ||
+    area.trim() !== "" ||
+    insurance !== "" ||
+    gender !== "" ||
+    maxPrice !== "" ||
+    minExperience !== "" ||
+    availability !== "";
+
   async function search() {
+    // Also checked here, not only via the disabled button: pressing Enter in a
+    // text field can submit the form without activating the submit button, and a
+    // guest submit would otherwise clear the results with no query behind them.
+    if (!hasAnyFilter) return;
+
     setApplied(true);
+    setSearchedFilters(filters);
     if (!signedIn) return;
     setSearching(true);
     setSearchError(null);
@@ -300,6 +350,14 @@ export function LandingSearch({
     setMaxPrice("");
     setMinExperience("");
     setAvailability("");
+
+    // Drop the results too: they were fetched for the filters just cleared, so
+    // leaving them under an empty form would claim a search happened when it did
+    // not, and the Search button is disabled again until a field is refilled.
+    setApplied(false);
+    setSearchedFilters(null);
+    setLiveDoctors(null);
+    setSearchError(null);
   }
 
   return (
@@ -343,10 +401,21 @@ export function LandingSearch({
                 placeholder="Doctor name, specialty, or clinic"
                 value={query}
                 onChange={setQuery}
+                hint={
+                  hasAnyFilter
+                    ? "Search looks for accepted clinicians matching what you set."
+                    : "Fill in at least one field to enable search."
+                }
               />
             </div>
             <div className="flex gap-2">
-              <Button type="submit" size="lg" className="flex-1 sm:flex-none">
+              <Button
+                type="submit"
+                size="lg"
+                className="flex-1 sm:flex-none"
+                disabled={!hasAnyFilter}
+                title={hasAnyFilter ? undefined : "Fill in at least one field to search"}
+              >
                 <Search aria-hidden="true" />
                 Search
               </Button>
@@ -498,14 +567,16 @@ export function LandingSearch({
         </form>
       </search>
 
-      {searchError ? (
-        <Callout tone="danger">{searchError}</Callout>
-      ) : null}
+      {searchError ? <Callout tone="danger">{searchError}</Callout> : null}
 
       {applied ? (
         <div id="landing-results" className="flex flex-col gap-4">
           <h2 className="type-h3 text-foreground">
-            {searching ? "Searching…" : results.length === 1 ? "1 doctor" : `${results.length} doctors`}
+            {searching
+              ? "Searching…"
+              : results.length === 1
+                ? "1 doctor"
+                : `${results.length} doctors`}
           </h2>
           {searching ? (
             <p className="rounded-2xl bg-card px-5 py-10 text-center type-body text-muted-foreground shadow-soft ring-1 ring-border">
@@ -719,8 +790,7 @@ function GuestBookingForm({
       <DialogHeader className="items-start">
         <DialogTitle>{signedIn ? "Book a visit" : "Book as a guest"}</DialogTitle>
         <DialogDescription>
-          {doctor.fullName}, {doctor.specialties[0]}.
-          {signedIn ? "" : " No account is required."}
+          {doctor.fullName}, {doctor.specialties[0]}.{signedIn ? "" : " No account is required."}
         </DialogDescription>
       </DialogHeader>
       {booked ? (

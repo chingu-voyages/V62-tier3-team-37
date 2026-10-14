@@ -2,8 +2,10 @@
 
 import { Search } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { VisitTimePicker } from "@/components/features/visits/VisitTimeSheet";
 import { Button } from "@/components/ui/button";
+import { Callout } from "@/components/ui/callout";
 import {
   Dialog,
   DialogContent,
@@ -12,11 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { VisitTimePicker } from "@/components/features/visits/VisitTimeSheet";
-import { Callout } from "@/components/ui/callout";
 import { TextField } from "@/components/ui/text-field";
-import { ROUTES } from "@/lib/constants/routes";
-import { formatClockTime, formatLongDate } from "@/lib/format";
 import {
   cancelPatientVisit,
   clinicianSlots,
@@ -26,6 +24,8 @@ import {
   postponePatientVisit,
   type Visit,
 } from "@/lib/api/visit-client";
+import { ROUTES } from "@/lib/constants/routes";
+import { formatClockTime, formatLongDate } from "@/lib/format";
 import type { Appointment, AppointmentStatus } from "@/types/appointment";
 
 type AppointmentFilter = "upcoming" | "past" | "all";
@@ -110,7 +110,10 @@ function minutes(time: string): number {
   return hour * 60 + minute;
 }
 
-function closestVisit(list: Appointment[], time: string): { visit: Appointment; exact: boolean } | null {
+function closestVisit(
+  list: Appointment[],
+  time: string,
+): { visit: Appointment; exact: boolean } | null {
   if (!time || list.length === 0) return null;
   const target = minutes(time);
   let best = list[0];
@@ -136,14 +139,22 @@ export function PatientAppointments({ initialDay = "" }: { initialDay?: string }
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [cancelId, setCancelId] = useState<string | null>(null);
 
-  async function reload() {
+  /**
+   * Re-read the patient's visits.
+   *
+   * Memoised because the mount effect below depends on it: a plain function is a new
+   * reference on every render, so the effect would re-run continuously instead of
+   * fetching once. Handlers that call it after a mutation use it directly, so they
+   * do not need it in their own dependency lists.
+   */
+  const reload = useCallback(async () => {
     const response = await listPatientVisits();
     setAppointments(response.data.map(toAppointment));
-  }
+  }, []);
 
   useEffect(() => {
     reload().catch((cause) => setLoadError(getApiErrorMessage(cause)));
-  }, []);
+  }, [reload]);
 
   const bookedDays = useMemo(() => {
     const counts = new Map<string, number>();
@@ -164,7 +175,9 @@ export function PatientAppointments({ initialDay = "" }: { initialDay?: string }
     return filtered.sort((left, right) => {
       const leftKey = `${left.date}T${left.time}`;
       const rightKey = `${right.date}T${right.time}`;
-      return filter === "past" && !dayQuery ? rightKey.localeCompare(leftKey) : leftKey.localeCompare(rightKey);
+      return filter === "past" && !dayQuery
+        ? rightKey.localeCompare(leftKey)
+        : leftKey.localeCompare(rightKey);
     });
   }, [appointments, filter, dayQuery]);
 
@@ -194,7 +207,11 @@ export function PatientAppointments({ initialDay = "" }: { initialDay?: string }
   }, [visible, selectedId]);
 
   return (
-    <section id="appointments" aria-labelledby="appointments-heading" className="flex flex-col gap-5">
+    <section
+      id="appointments"
+      aria-labelledby="appointments-heading"
+      className="flex flex-col gap-5"
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 id="appointments-heading" className="type-h1 text-foreground">
@@ -241,7 +258,13 @@ export function PatientAppointments({ initialDay = "" }: { initialDay?: string }
                 if (value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value)) setDayQuery(value);
               }}
             />
-            <TextField id="appointment-time" label="Time" type="time" value={timeQuery} onChange={setTimeQuery} />
+            <TextField
+              id="appointment-time"
+              label="Time"
+              type="time"
+              value={timeQuery}
+              onChange={setTimeQuery}
+            />
             {dayQuery || timeQuery ? (
               <Button
                 type="button"
@@ -259,8 +282,8 @@ export function PatientAppointments({ initialDay = "" }: { initialDay?: string }
           </div>
           {timeMatch && !timeMatch.exact ? (
             <p className="type-body text-muted-foreground">
-              No visit at {formatClockTime(timeQuery.slice(0, 5))}. Closest is {timeMatch.visit.doctorName} at{" "}
-              {formatClockTime(timeMatch.visit.time)}.
+              No visit at {formatClockTime(timeQuery.slice(0, 5))}. Closest is{" "}
+              {timeMatch.visit.doctorName} at {formatClockTime(timeMatch.visit.time)}.
             </p>
           ) : null}
           {bookedDays.length > 0 ? (
@@ -329,32 +352,40 @@ export function PatientAppointments({ initialDay = "" }: { initialDay?: string }
                 <h2 className="type-label text-foreground">{formatLongDate(date)}</h2>
                 <ul className="flex flex-col gap-2">
                   {dayVisits.map((appointment) => {
-              const open = appointment.id === selected?.id;
-              return (
-                <li key={appointment.id} id={`visit-${appointment.id}`}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(appointment.id)}
-                    className={`grid w-full grid-cols-[5.5rem_minmax(0,1fr)] gap-4 rounded-2xl bg-card py-5 pr-5 pl-8 text-left shadow-soft ${open ? "ring-2 ring-primary" : ""}`}
-                  >
-                    <p className="type-label text-foreground">{formatClockTime(appointment.time)}</p>
-                    <div className="min-w-0">
-                      <div className="flex items-start justify-between gap-3">
-                        <h2 className="type-h3 text-foreground">{appointment.doctorName}</h2>
-                        <span className="shrink-0 type-label text-muted-foreground">
-                          {STATUS_LABEL[appointment.status]}
-                        </span>
-                      </div>
-                      <p className="mt-1 type-body text-muted-foreground">{appointment.specialty}</p>
-                      <p className="mt-2 type-label text-muted-foreground">{appointment.email || "No email"}</p>
-                      <p className="type-label text-muted-foreground">{appointment.phone || "No phone"}</p>
-                      <p className="mt-2 type-label text-muted-foreground">
-                        {formatLongDate(appointment.date)} · {appointment.location}
-                      </p>
-                    </div>
-                  </button>
-                </li>
-                  );
+                    const open = appointment.id === selected?.id;
+                    return (
+                      <li key={appointment.id} id={`visit-${appointment.id}`}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedId(appointment.id)}
+                          className={`grid w-full grid-cols-[5.5rem_minmax(0,1fr)] gap-4 rounded-2xl bg-card py-5 pr-5 pl-8 text-left shadow-soft ${open ? "ring-2 ring-primary" : ""}`}
+                        >
+                          <p className="type-label text-foreground">
+                            {formatClockTime(appointment.time)}
+                          </p>
+                          <div className="min-w-0">
+                            <div className="flex items-start justify-between gap-3">
+                              <h2 className="type-h3 text-foreground">{appointment.doctorName}</h2>
+                              <span className="shrink-0 type-label text-muted-foreground">
+                                {STATUS_LABEL[appointment.status]}
+                              </span>
+                            </div>
+                            <p className="mt-1 type-body text-muted-foreground">
+                              {appointment.specialty}
+                            </p>
+                            <p className="mt-2 type-label text-muted-foreground">
+                              {appointment.email || "No email"}
+                            </p>
+                            <p className="type-label text-muted-foreground">
+                              {appointment.phone || "No phone"}
+                            </p>
+                            <p className="mt-2 type-label text-muted-foreground">
+                              {formatLongDate(appointment.date)} · {appointment.location}
+                            </p>
+                          </div>
+                        </button>
+                      </li>
+                    );
                   })}
                 </ul>
               </section>
@@ -363,6 +394,11 @@ export function PatientAppointments({ initialDay = "" }: { initialDay?: string }
           <div className="lg:sticky lg:top-24">
             {selected ? (
               <VisitPanel
+                // Remount when the visit itself changes, rather than resetting the
+                // panel's open state from an effect. Selecting a different visit,
+                // or the same visit after a postpone, then starts from clean state
+                // instead of inheriting the previous visit's picker.
+                key={`${selected.id}:${selected.date}:${selected.time}:${selected.status}`}
                 appointment={selected}
                 onPostpone={async (date, time) => {
                   setActionError(null);
@@ -412,10 +448,6 @@ function VisitPanel({
   onCancel: () => void;
 }) {
   const [postponeOpen, setPostponeOpen] = useState(false);
-
-  useEffect(() => {
-    setPostponeOpen(false);
-  }, [appointment.id, appointment.date, appointment.time, appointment.status]);
 
   return (
     <article className="flex flex-col gap-4 rounded-2xl bg-card p-5 shadow-soft">
@@ -501,7 +533,8 @@ function CancelAppointmentDialog({
             <DialogHeader className="items-start">
               <DialogTitle>Cancel this visit?</DialogTitle>
               <DialogDescription>
-                {appointment.doctorName} on {formatLongDate(appointment.date)} will be marked as cancelled.
+                {appointment.doctorName} on {formatLongDate(appointment.date)} will be marked as
+                cancelled.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>

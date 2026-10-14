@@ -2,6 +2,7 @@
 
 import { Info } from "lucide-react";
 import { useState } from "react";
+import { ProfileEditDialog } from "@/components/features/shared/profile";
 import { Callout } from "@/components/ui/callout";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -13,7 +14,6 @@ import {
   PROFILE_LIMITS,
   type UpdateHcpProfileInput,
 } from "@/types/hcp-profile-api";
-import { ProfileEditDialog } from "./ProfileEditDialog";
 
 type EditableProfile = {
   firstName: string;
@@ -136,67 +136,70 @@ export function EditProfileForm({ values, identityLocked = false }: EditProfileF
       </Callout>
 
       {identityLocked ? null : (
-      <>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <TextField
-          id="pf-first-name"
-          label="First name"
-          required
-          maxLength={PROFILE_LIMITS.name}
-          value={draft.firstName}
-          error={fieldErrors.firstName || undefined}
-          onChange={(value) => set("firstName", value)}
-        />
-        <TextField
-          id="pf-last-name"
-          label="Last name"
-          required
-          maxLength={PROFILE_LIMITS.name}
-          value={draft.lastName}
-          error={fieldErrors.lastName || undefined}
-          onChange={(value) => set("lastName", value)}
-        />
-      </div>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField
+              id="pf-first-name"
+              label="First name"
+              required
+              maxLength={PROFILE_LIMITS.name}
+              value={draft.firstName}
+              error={fieldErrors.firstName || undefined}
+              onChange={(value) => set("firstName", value)}
+            />
+            <TextField
+              id="pf-last-name"
+              label="Last name"
+              required
+              maxLength={PROFILE_LIMITS.name}
+              value={draft.lastName}
+              error={fieldErrors.lastName || undefined}
+              onChange={(value) => set("lastName", value)}
+            />
+          </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <TextField
-          id="pf-birth-date"
-          label="Date of birth"
-          type="date"
-          max={MAX_DATE_OF_BIRTH}
-          value={draft.birthDate}
-          error={fieldErrors.birthDate || undefined}
-          onChange={(value) => set("birthDate", value)}
-        />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField
+              id="pf-birth-date"
+              label="Date of birth"
+              type="date"
+              max={MAX_DATE_OF_BIRTH}
+              value={draft.birthDate}
+              error={fieldErrors.birthDate || undefined}
+              onChange={(value) => set("birthDate", value)}
+            />
 
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Label htmlFor="pf-gender-male">Gender</Label>
-          <RadioGroup
-            id="pf-gender"
-            value={draft.gender}
-            onValueChange={(value) => set("gender", value as ApiGender)}
-            aria-labelledby="pf-gender-label"
-            aria-invalid={fieldErrors.gender ? true : undefined}
-            className="sm:grid-cols-2"
-          >
-            {GENDERS.map((option) => (
-              <div
-                key={option.value}
-                className="flex items-center gap-2.5 rounded-lg border border-input px-3.5 py-2.5 transition-colors has-data-[state=checked]:border-primary has-data-[state=checked]:bg-accent"
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <Label htmlFor="pf-gender-male">Gender</Label>
+              <RadioGroup
+                id="pf-gender"
+                value={draft.gender}
+                onValueChange={(value) => set("gender", value as ApiGender)}
+                aria-labelledby="pf-gender-label"
+                aria-invalid={fieldErrors.gender ? true : undefined}
+                className="sm:grid-cols-2"
               >
-                <RadioGroupItem
-                  id={`pf-gender-${option.value.toLowerCase()}`}
-                  value={option.value}
-                />
-                <Label htmlFor={`pf-gender-${option.value.toLowerCase()}`} className="type-label">
-                  {option.label}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </div>
-      </div>
-      </>
+                {GENDERS.map((option) => (
+                  <div
+                    key={option.value}
+                    className="flex items-center gap-2.5 rounded-lg border border-input px-3.5 py-2.5 transition-colors has-data-[state=checked]:border-primary has-data-[state=checked]:bg-accent"
+                  >
+                    <RadioGroupItem
+                      id={`pf-gender-${option.value.toLowerCase()}`}
+                      value={option.value}
+                    />
+                    <Label
+                      htmlFor={`pf-gender-${option.value.toLowerCase()}`}
+                      className="type-label"
+                    >
+                      {option.label}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+          </div>
+        </>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">

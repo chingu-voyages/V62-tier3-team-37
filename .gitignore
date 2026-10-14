@@ -1,2 +1,5 @@
 # MacOS-specific files
 .DS_Store
+
+# Local dev server logs (e.g. `npm run start > nextstart.log`)
+*.log

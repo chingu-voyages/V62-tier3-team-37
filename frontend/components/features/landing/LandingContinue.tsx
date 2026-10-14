@@ -1,6 +1,5 @@
 import { CalendarCheck, SlidersHorizontal, UserRound } from "lucide-react";
 import Link from "next/link";
-import { FeaturedClinicians } from "@/components/features/landing/FeaturedClinicians";
 import type { BookingPatient } from "@/components/features/landing/PatientBookingPanel";
 import { Footer } from "@/components/layout/Footer";
 import { buttonVariants } from "@/components/ui/button";
@@ -66,43 +65,53 @@ export function LandingContinue({
   return (
     <>
       {signedIn && patient ? (
-        <FeaturedClinicians patient={patient} />
+        <section aria-labelledby="landing-saved" className="border-t border-border bg-background">
+          <div className="w-full px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+            <h2 id="landing-saved" className="type-h2 text-foreground">
+              Search is the only way in
+            </h2>
+            <p className="mt-2 max-w-2xl type-body text-muted-foreground">
+              Set what you need above and search. Nothing is fetched until then, and nothing is
+              booked until you ask for a visit.
+            </p>
+          </div>
+        </section>
       ) : (
-      <section aria-labelledby="landing-starts" className="border-t border-border bg-background">
-        <div className="w-full px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-          <h2 id="landing-starts" className="type-h2 text-foreground">
-            {signedIn ? "How booking works for you" : "Three ways people start"}
-          </h2>
-          <p className="mt-2 max-w-2xl type-body text-muted-foreground">
-            {signedIn
-              ? "You are signed in. Search above, narrow the list, then request the visit."
-              : "The search above is where a visit begins. These are the reasons someone uses it."}
-          </p>
-          <ul className="mt-8 divide-y divide-border overflow-hidden rounded-2xl bg-card shadow-soft ring-1 ring-border">
-            {STARTS.map((item) => {
-              const guestStart = item.title === "A visit before an account";
-              const accountStart = item.title === "The same clinician again";
-              return (
-                <li key={item.title} className="flex gap-4 p-5 sm:p-6">
-                  <item.icon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
-                  <div>
-                    <h3 className="type-h3 text-foreground">
-                      {signedIn && guestStart ? "A visit from your account" : item.title}
-                    </h3>
-                    <p className="mt-1 type-body text-muted-foreground">
-                      {signedIn && guestStart
-                        ? "Request a time with the name already on your account."
-                        : signedIn && accountStart
-                          ? "Upcoming visits stay with this account, so the next search can start from someone you already saw."
-                          : item.body}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </section>
+        <section aria-labelledby="landing-starts" className="border-t border-border bg-background">
+          <div className="w-full px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+            <h2 id="landing-starts" className="type-h2 text-foreground">
+              {signedIn ? "How booking works for you" : "Three ways people start"}
+            </h2>
+            <p className="mt-2 max-w-2xl type-body text-muted-foreground">
+              {signedIn
+                ? "You are signed in. Search above, narrow the list, then request the visit."
+                : "The search above is where a visit begins. These are the reasons someone uses it."}
+            </p>
+            <ul className="mt-8 divide-y divide-border overflow-hidden rounded-2xl bg-card shadow-soft ring-1 ring-border">
+              {STARTS.map((item) => {
+                const guestStart = item.title === "A visit before an account";
+                const accountStart = item.title === "The same clinician again";
+                return (
+                  <li key={item.title} className="flex gap-4 p-5 sm:p-6">
+                    <item.icon className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+                    <div>
+                      <h3 className="type-h3 text-foreground">
+                        {signedIn && guestStart ? "A visit from your account" : item.title}
+                      </h3>
+                      <p className="mt-1 type-body text-muted-foreground">
+                        {signedIn && guestStart
+                          ? "Request a time with the name already on your account."
+                          : signedIn && accountStart
+                            ? "Upcoming visits stay with this account, so the next search can start from someone you already saw."
+                            : item.body}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </section>
       )}
 
       <section aria-labelledby="landing-practices" className="bg-muted">

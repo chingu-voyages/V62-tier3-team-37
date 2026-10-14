@@ -1,4 +1,4 @@
-import { PatientProfilePanel } from "@/components/features/Patient/profile/PatientProfilePanel";
+import { PatientProfilePanel } from "@/components/features/patient/profile/PatientProfilePanel";
 import { getPatientProfile } from "@/lib/dal/patient";
 
 export default async function PatientProfilePage() {

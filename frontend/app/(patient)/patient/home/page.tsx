@@ -1,4 +1,4 @@
-import { PatientAppointments } from "@/components/features/Patient/Appointments/PatientAppointments";
+import { PatientAppointments } from "@/components/features/patient/appointments/PatientAppointments";
 
 export default async function PatientHomePage({
   searchParams,

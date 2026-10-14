@@ -122,15 +122,24 @@ export function listDirectoryPlaces(): Promise<{ data: { cities: string[]; areas
   return apiRequest("/api/patient/directory/places");
 }
 
-export function listFeaturedClinicians(): Promise<{ data: DirectoryClinician[] }> {
-  return apiRequest("/api/patient/directory/featured");
-}
+/**
+ * Open-slot response shared by the patient booking flow and the clinician
+ * reschedule picker.
+ *
+ * `duration_minutes` is sent by the backend and is the authority for how long a
+ * visit runs. It is optional so an older or proxied API that omits it degrades to
+ * a caller-supplied fallback instead of failing the request.
+ */
+export type AvailabilitySlots = {
+  data: Record<string, string[]>;
+  duration_minutes?: number;
+};
 
-export function clinicianSlots(clinicianId: string): Promise<{ data: Record<string, string[]> }> {
+export function clinicianSlots(clinicianId: string): Promise<AvailabilitySlots> {
   return apiRequest(`/api/patient/clinicians/${clinicianId}/slots`);
 }
 
-export function ownClinicSlots(): Promise<{ data: Record<string, string[]> }> {
+export function ownClinicSlots(): Promise<AvailabilitySlots> {
   return apiRequest("/api/hcp/appointments/slots");
 }
 
@@ -155,7 +164,11 @@ export function listPatientVisits(): Promise<{ data: Visit[] }> {
   return apiRequest("/api/patient/appointments");
 }
 
-export function postponePatientVisit(id: number, date: string, time: string): Promise<{ data: Visit }> {
+export function postponePatientVisit(
+  id: number,
+  date: string,
+  time: string,
+): Promise<{ data: Visit }> {
   return apiRequest(`/api/patient/appointments/${id}/postpone`, {
     method: "POST",
     body: { date, time: time.slice(0, 5) },
@@ -170,7 +183,9 @@ export function listClinicianVisits(): Promise<{ data: Visit[] }> {
   return apiRequest("/api/hcp/appointments");
 }
 
-export function listConnectedPatients(): Promise<{ data: { id: number; name: string; email: string | null }[] }> {
+export function listConnectedPatients(): Promise<{
+  data: { id: number; name: string; email: string | null }[];
+}> {
   return apiRequest("/api/hcp/patients");
 }
 
@@ -181,7 +196,11 @@ export function setVisitStatus(
   return apiRequest(`/api/hcp/appointments/${id}/status`, { method: "POST", body: { status } });
 }
 
-export function postponeClinicianVisit(id: number, date: string, time: string): Promise<{ data: Visit }> {
+export function postponeClinicianVisit(
+  id: number,
+  date: string,
+  time: string,
+): Promise<{ data: Visit }> {
   return apiRequest(`/api/hcp/appointments/${id}/postpone`, {
     method: "POST",
     body: { date, time: time.slice(0, 5) },
@@ -227,7 +246,11 @@ export function sendMessage(recipientId: number, body: string): Promise<{ data: 
   return apiRequest("/api/messages", { method: "POST", body: { recipient_id: recipientId, body } });
 }
 
-export async function openVisitResult(scope: "patient" | "hcp", visitId: number, documentId: number): Promise<void> {
+export async function openVisitResult(
+  scope: "patient" | "hcp",
+  visitId: number,
+  documentId: number,
+): Promise<void> {
   const response = await fetch(
     `${API_BASE_URL}/api/${scope}/appointments/${visitId}/results/${documentId}`,
     { credentials: "include", headers: { accept: "*/*" } },
