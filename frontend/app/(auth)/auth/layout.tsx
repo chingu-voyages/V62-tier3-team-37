@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
-  return <AuthSplitShell>{children}</AuthSplitShell>;
+  return <AuthSplitShell hideIdentity>{children}</AuthSplitShell>;
 }

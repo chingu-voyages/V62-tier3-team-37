@@ -56,12 +56,12 @@ function isGuestOnlyPath(pathname: string): boolean {
 /**
  * Reachable without a session.
  *
- * `/auth/otp` qualifies because the OTP endpoints are authenticated but the
- * account is not verified yet, which is exactly the state the user is in when they
- * land there.
+ * The landing page stays public. `/auth/otp` qualifies because the OTP endpoints
+ * are authenticated but the account is not verified yet, which is exactly the
+ * state the user is in when they land there.
  */
 function isPubliclyReachableWhileGuest(pathname: string): boolean {
-  return isGuestOnlyPath(pathname) || pathname === ROUTES.otp;
+  return isGuestOnlyPath(pathname) || pathname === ROUTES.otp || pathname === ROUTES.home;
 }
 
 export type RouteDecision = { action: "allow" } | { action: "redirect"; to: string };
@@ -70,7 +70,11 @@ export function decideRouteAccess(pathname: string, user: AuthUser): RouteDecisi
   const guestOnly = isGuestOnlyPath(pathname);
 
   if (guestOnly) {
-    return user ? { action: "redirect", to: homePathForRole(user?.role) } : { action: "allow" };
+    if (!user) return { action: "allow" };
+    return {
+      action: "redirect",
+      to: isEmailVerified(user) ? homePathForRole(user.role) : ROUTES.otp,
+    };
   }
 
   if (!user) {
@@ -81,6 +85,10 @@ export function decideRouteAccess(pathname: string, user: AuthUser): RouteDecisi
     return isPubliclyReachableWhileGuest(pathname)
       ? { action: "allow" }
       : { action: "redirect", to: ROUTES.auth };
+  }
+
+  if (!isEmailVerified(user) && pathname !== ROUTES.otp) {
+    return { action: "redirect", to: ROUTES.otp };
   }
 
   const onPatientRoute = isPatientArea(pathname);

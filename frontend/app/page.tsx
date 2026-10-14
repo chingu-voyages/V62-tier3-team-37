@@ -8,7 +8,7 @@ import { PatientAIAssistant } from "@/components/features/Patient/AIAssistant/Pa
 import { AppAsideLayout } from "@/components/layout/AppAsideLayout";
 import { Navbar } from "@/components/layout/Navbar";
 import { userFirstName } from "@/lib/auth/display";
-import { ADMIN_ROLE, HCP_ROLE, PATIENT_ROLE } from "@/lib/auth/permissions";
+import { ADMIN_ROLE, HCP_ROLE, isEmailVerified, PATIENT_ROLE } from "@/lib/auth/permissions";
 import { availableNavItems, patientNavigation } from "@/lib/constants/navigation";
 import { ROUTES } from "@/lib/constants/routes";
 import { getOptionalUser } from "@/lib/dal/auth";
@@ -24,6 +24,10 @@ import type { AuthUser } from "@/types/auth";
  */
 export default async function HomePage() {
   const user = await getOptionalUser();
+
+  if (user && !isEmailVerified(user)) {
+    redirect(ROUTES.otp);
+  }
 
   if (user?.role === ADMIN_ROLE) {
     redirect(ROUTES.adminHome);

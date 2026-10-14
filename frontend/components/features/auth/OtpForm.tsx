@@ -60,10 +60,6 @@ export function OtpForm() {
   const complete = code.length === OTP_LENGTH;
 
   useEffect(() => {
-    if (!email) router.replace(ROUTES.auth);
-  }, [email, router]);
-
-  useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
 

@@ -222,6 +222,46 @@ class AppointmentFlowTest extends TestCase
             ->assertJsonPath('data.2026-10-12.0', '09:00');
     }
 
+    public function test_updating_a_summary_replaces_it_and_undo_returns_the_visit_to_booked(): void
+    {
+        [$patient, $clinician] = $this->pair();
+
+        $booked = $this->actingAs($patient, 'sanctum')
+            ->postJson('/api/patient/appointments', [
+                'clinician_id' => $clinician->id,
+                'date' => '2026-10-12',
+                'time' => '10:00',
+                'reason' => 'Skin check',
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->actingAs($clinician, 'sanctum')
+            ->postJson("/api/hcp/appointments/{$booked}/status", ['status' => 'ARRIVED'])
+            ->assertOk();
+
+        $this->actingAs($clinician, 'sanctum')
+            ->postJson("/api/hcp/appointments/{$booked}/summary", [
+                'summary' => 'First note.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.summary', 'First note.');
+
+        $this->actingAs($clinician, 'sanctum')
+            ->postJson("/api/hcp/appointments/{$booked}/summary", [
+                'summary' => 'Replaced note.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'COMPLETED')
+            ->assertJsonPath('data.summary', 'Replaced note.');
+
+        $this->actingAs($clinician, 'sanctum')
+            ->postJson("/api/hcp/appointments/{$booked}/status", ['status' => 'BOOKED'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'BOOKED')
+            ->assertJsonPath('data.summary', null);
+    }
+
     public function test_a_clinician_cancel_keeps_the_visit_and_stores_the_reason(): void
     {
         [$patient, $clinician] = $this->pair();

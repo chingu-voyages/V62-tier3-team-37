@@ -145,6 +145,7 @@ class AppointmentService
             AppointmentStatus::BOOKED => in_array($appointment->status, [
                 AppointmentStatus::ARRIVED,
                 AppointmentStatus::NO_SHOW,
+                AppointmentStatus::COMPLETED,
             ], true),
             default => false,
         };
@@ -155,11 +156,17 @@ class AppointmentService
             ]);
         }
 
-        if ($status === AppointmentStatus::BOOKED && $appointment->status === AppointmentStatus::NO_SHOW) {
+        if ($status === AppointmentStatus::BOOKED && in_array($appointment->status, [
+            AppointmentStatus::NO_SHOW,
+            AppointmentStatus::COMPLETED,
+        ], true)) {
             $this->assertSlotFree($appointment);
         }
 
-        $appointment->update(['status' => $status]);
+        $appointment->update([
+            'status' => $status,
+            'summary' => $status === AppointmentStatus::BOOKED ? null : $appointment->summary,
+        ]);
 
         return $appointment;
     }

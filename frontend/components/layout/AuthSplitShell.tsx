@@ -3,15 +3,21 @@ import { AuthBrandPanel } from "@/components/layout/AuthBrandPanel";
 import { Navbar } from "@/components/layout/Navbar";
 import { getOptionalUser } from "@/lib/dal/auth";
 
+type AuthSplitShellProps = {
+  children: ReactNode;
+  /** Auth screens leave the name and avatar off the bar. */
+  hideIdentity?: boolean;
+};
+
 /**
- * Split shell for every auth route.
+ * Split shell for auth, password reset, and the admin sign-in gate.
  *
- * Reads the session so the navbar can show the right state: a signed-out visitor
- * sees only the language control, while someone part-way through signup (the OTP
- * or credential-upload screens) also sees their name and email.
+ * A signed-out visitor sees only the language control. A signed-in visitor on the
+ * admin gate sees their name. Auth screens pass `hideIdentity` so the bar stays
+ * clear while the account is still being confirmed.
  */
-export async function AuthSplitShell({ children }: { children: ReactNode }) {
-  const user = await getOptionalUser();
+export async function AuthSplitShell({ children, hideIdentity = false }: AuthSplitShellProps) {
+  const user = hideIdentity ? null : await getOptionalUser();
 
   return (
     <div className="fixed inset-x-0 top-0 grid h-dvh grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,42%)_minmax(0,58%)]">

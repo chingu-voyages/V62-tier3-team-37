@@ -103,7 +103,6 @@ export function HcpDayDesk() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [summary, setSummary] = useState("");
   const [title, setTitle] = useState("");
   const [moveDate, setMoveDate] = useState("");
   const [moveTime, setMoveTime] = useState("");
@@ -157,10 +156,6 @@ export function HcpDayDesk() {
     if (!queryTime || !timeMatch) return;
     document.getElementById(`visit-${timeMatch.visit.id}`)?.scrollIntoView({ block: "nearest" });
   }, [queryTime, day, timeMatch]);
-
-  useEffect(() => {
-    setSummary(selected?.summary ?? "");
-  }, [selected?.id, selected?.summary]);
 
   async function run(action: () => Promise<unknown>, prefer?: number) {
     setPending(true);
@@ -317,12 +312,10 @@ export function HcpDayDesk() {
               <VisitPanel
                 visit={selected}
                 pending={pending}
-                summary={summary}
                 title={title}
                 moveDate={moveDate}
                 moveTime={moveTime}
                 reason={reason}
-                onSummary={setSummary}
                 onTitle={setTitle}
                 onMoveDate={setMoveDate}
                 onMoveTime={setMoveTime}
@@ -402,12 +395,10 @@ function DayGroup({
 function VisitPanel({
   visit,
   pending,
-  summary,
   title,
   moveDate,
   moveTime,
   reason,
-  onSummary,
   onTitle,
   onMoveDate,
   onMoveTime,
@@ -416,12 +407,10 @@ function VisitPanel({
 }: {
   visit: Visit;
   pending: boolean;
-  summary: string;
   title: string;
   moveDate: string;
   moveTime: string;
   reason: string;
-  onSummary: (value: string) => void;
   onTitle: (value: string) => void;
   onMoveDate: (value: string) => void;
   onMoveTime: (value: string) => void;
@@ -434,6 +423,7 @@ function VisitPanel({
   const [resultOpen, setResultOpen] = useState(false);
   const [followOpen, setFollowOpen] = useState(false);
   const [summaryEdit, setSummaryEdit] = useState(false);
+  const [draft, setDraft] = useState(visit.summary ?? "");
   const [resultFile, setResultFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -442,6 +432,7 @@ function VisitPanel({
   const missed = visit.status === "NO_SHOW";
   const finished = visit.status === "COMPLETED";
   const seen = arrived || finished;
+  const canUndo = missed || arrived || finished;
   const showSummaryForm = arrived || (finished && (!visit.summary || summaryEdit));
 
   useEffect(() => {
@@ -451,19 +442,35 @@ function VisitPanel({
     setResultOpen(false);
     setFollowOpen(false);
     setSummaryEdit(false);
+    setDraft(visit.summary ?? "");
     setResultFile(null);
     setFileError(null);
-  }, [visit.id, visit.status]);
+  }, [visit.id, visit.status, visit.summary]);
 
   return (
     <div className="flex flex-col gap-4 rounded-2xl bg-card p-5 shadow-soft">
-      <div>
-        <h2 className="type-h3 text-foreground">{visit.patient.name}</h2>
-        <p className="mt-1 type-body text-muted-foreground">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="min-w-0 type-h3 text-foreground">{visit.patient.name}</h2>
+          {canUndo ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="shrink-0"
+              disabled={pending}
+              title="Puts this visit back to booked."
+              onClick={() => onRun(() => setVisitStatus(visit.id, "BOOKED"), visit.id)}
+            >
+              Undo
+            </Button>
+          ) : null}
+        </div>
+        <p className="type-body text-muted-foreground">
           {formatClockTime(visitClock(visit.time))} · {visit.reason || "Visit"} · {STATUS_LABEL[visit.status]}
         </p>
         {visit.status === "CANCELLED" && visit.cancellation_reason ? (
-          <p className="mt-2 type-body text-muted-foreground">{visit.cancellation_reason}</p>
+          <p className="type-body text-muted-foreground">{visit.cancellation_reason}</p>
         ) : null}
       </div>
       {movable ? (
@@ -551,21 +558,7 @@ function VisitPanel({
           ) : null}
         </div>
       ) : null}
-      {missed || arrived ? (
-        <div className="flex flex-col items-start gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={pending}
-            onClick={() => onRun(() => setVisitStatus(visit.id, "BOOKED"), visit.id)}
-          >
-            Undo
-          </Button>
-          <p className="type-helper text-muted-foreground">Puts this visit back to booked.</p>
-        </div>
-      ) : null}
-      {finished && visit.summary ? (
+      {finished && visit.summary && !summaryEdit ? (
         <div>
           <p className="type-label text-foreground">Summary sent</p>
           <p className="mt-1 type-body text-foreground">{visit.summary}</p>
@@ -576,29 +569,44 @@ function VisitPanel({
           className="grid gap-3"
           onSubmit={(event) => {
             event.preventDefault();
-            onRun(() => saveVisitSummary(visit.id, summary), visit.id);
+            const next = draft.trim();
+            if (!next) return;
+            onRun(async () => {
+              await saveVisitSummary(visit.id, next);
+              setSummaryEdit(false);
+            }, visit.id);
           }}
         >
           <label htmlFor="visit-summary" className="type-label text-foreground">
             Visit summary
           </label>
           <p className="type-helper text-muted-foreground">
-            Sending this finishes the visit. The patient sees it on Appointments.
+            {summaryEdit
+              ? "This replaces the summary the patient already has."
+              : "Sending this finishes the visit. The patient sees it on Appointments."}
           </p>
           <textarea
             id="visit-summary"
-            value={summary}
-            onChange={(event) => onSummary(event.target.value)}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
             rows={4}
             className="rounded-xl border border-input bg-background px-3 py-2 type-body text-foreground"
           />
-          <Button type="submit" size="sm" disabled={pending || !summary.trim()}>
-            Send summary
+          <Button type="submit" size="sm" disabled={pending || !draft.trim()}>
+            {summaryEdit ? "Update summary" : "Send summary"}
           </Button>
         </form>
       ) : null}
       {finished && visit.summary && !summaryEdit ? (
-        <Button type="button" size="sm" variant="outline" onClick={() => setSummaryEdit(true)}>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            setDraft(visit.summary ?? "");
+            setSummaryEdit(true);
+          }}
+        >
           Update summary
         </Button>
       ) : null}

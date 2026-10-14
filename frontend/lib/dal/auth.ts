@@ -42,7 +42,7 @@ export async function requireUser(): Promise<NonNullable<AuthUser>> {
 export async function requireGuest(): Promise<void> {
   const user = await getOptionalUser();
   if (user) {
-    redirect(homePathForRole(user.role));
+    redirect(isEmailVerified(user) ? homePathForRole(user.role) : ROUTES.otp);
   }
 }
 
