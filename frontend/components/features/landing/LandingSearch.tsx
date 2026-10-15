@@ -392,7 +392,7 @@ export function LandingSearch({
             search();
           }}
         >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
             <div className="min-w-0 flex-1">
               <TextField
                 id="landing-search"
@@ -408,7 +408,7 @@ export function LandingSearch({
                 }
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 sm:mt-[calc(1.375rem+0.375rem)]">
               <Button
                 type="submit"
                 size="lg"

@@ -3,3 +3,6 @@
 
 # Local dev server logs (e.g. `npm run start > nextstart.log`)
 *.log
+
+node_modules/
+.husky/

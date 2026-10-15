@@ -35,13 +35,13 @@ export const patientNavigation: NavItem[] = [
     ariaLabel: "Navigate to Health Records",
     implemented: true,
   },
-  {
-    label: "Messages",
-    href: ROUTES.patientMessages,
-    icon: "message",
-    ariaLabel: "Navigate to Messages",
-    implemented: true,
-  },
+  // {
+  //   label: "Messages",
+  //   href: ROUTES.patientMessages,
+  //   icon: "message",
+  //   ariaLabel: "Navigate to Messages",
+  //   implemented: true,
+  // },
   {
     label: "Profile",
     href: ROUTES.patientProfile,
@@ -80,13 +80,13 @@ export const hcpNavigation: NavItem[] = [
     ariaLabel: "Navigate to Connected Patients",
     implemented: true,
   },
-  {
-    label: "Messages",
-    href: ROUTES.hcpMessages,
-    icon: "message",
-    ariaLabel: "Navigate to Messages",
-    implemented: true,
-  },
+  // {
+  //   label: "Messages",
+  //   href: ROUTES.hcpMessages,
+  //   icon: "message",
+  //   ariaLabel: "Navigate to Messages",
+  //   implemented: true,
+  // },
 ];
 
 /** Only destinations whose route actually exists. */

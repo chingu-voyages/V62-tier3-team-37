@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronDown, LogOut, Star, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, UserRound } from "lucide-react";
+// import { Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -63,7 +64,7 @@ export function UserMenu({ user, withMenu = true }: UserMenuProps) {
       email={email}
       photo={photo}
       profileHref={userProfileHref(user)}
-      feedbackHref={user?.role === "PATIENT" ? ROUTES.patientFeedback : undefined}
+      // feedbackHref={user?.role === "PATIENT" ? ROUTES.patientFeedback : undefined}
     />
   );
 }
@@ -77,7 +78,14 @@ type AccountMenuProps = {
   feedbackHref?: string;
 };
 
-function AccountMenu({ displayName, initials, email, photo, profileHref, feedbackHref }: AccountMenuProps) {
+function AccountMenu({
+  displayName,
+  initials,
+  email,
+  photo,
+  profileHref,
+  feedbackHref: _feedbackHref,
+}: AccountMenuProps) {
   const logoutMutation = useLogoutMutation();
   const router = useRouter();
 
@@ -131,6 +139,7 @@ function AccountMenu({ displayName, initials, email, photo, profileHref, feedbac
           </Link>
         </DropdownMenuItem>
 
+        {/*
         {feedbackHref ? (
           <DropdownMenuItem asChild>
             <Link href={feedbackHref}>
@@ -139,6 +148,7 @@ function AccountMenu({ displayName, initials, email, photo, profileHref, feedbac
             </Link>
           </DropdownMenuItem>
         ) : null}
+        */}
 
         <DropdownMenuSeparator />
 
