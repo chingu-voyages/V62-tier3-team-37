@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Str;
-use Pdo\Mysql;
 
 return [
 
@@ -15,10 +14,10 @@ return [
     | the connection which will be utilized unless another connection
     | is explicitly specified when you execute a query / statement.
     |
-    | Postgres is the only database this application targets, so an absent
-    | DB_CONNECTION falls back to pgsql rather than sqlite. The sqlite
-    | connection below is kept for the test suite, which pins an in-memory
-    | database in phpunit.xml and never resolves through this default.
+    | Postgres is the only database this application supports, and the only
+    | connection defined below. An absent DB_CONNECTION falls back to pgsql;
+    | any other value fails loudly rather than quietly reaching for a
+    | different engine, which is what makes the test suite safe to run.
     |
     */
 
@@ -29,65 +28,13 @@ return [
     | Database Connections
     |--------------------------------------------------------------------------
     |
-    | Below are all of the database connections defined for your application.
-    | An example configuration is provided for each database system which
-    | is supported by Laravel. You're free to add / remove connections.
+    | Postgres is the only connection defined here, because it is the only
+    | database this application supports. Naming any other driver fails
+    | loudly rather than silently falling back to something else.
     |
     */
 
     'connections' => [
-
-        'sqlite' => [
-            'driver' => 'sqlite',
-            'url' => env('DB_URL'),
-            'database' => env('DB_DATABASE', database_path('database.sqlite')),
-            'prefix' => '',
-            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
-            'busy_timeout' => null,
-            'journal_mode' => null,
-            'synchronous' => null,
-            'transaction_mode' => 'DEFERRED',
-        ],
-
-        'mysql' => [
-            'driver' => 'mysql',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
-        ],
-
-        'mariadb' => [
-            'driver' => 'mariadb',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
-        ],
 
         'pgsql' => [
             'driver' => 'pgsql',
@@ -102,21 +49,6 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
-        ],
-
-        'sqlsrv' => [
-            'driver' => 'sqlsrv',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', 'localhost'),
-            'port' => env('DB_PORT', '1433'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'charset' => env('DB_CHARSET', 'utf8'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            // 'encrypt' => env('DB_ENCRYPT', 'yes'),
-            // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
     ],
