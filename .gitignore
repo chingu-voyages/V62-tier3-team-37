@@ -2,17 +2,15 @@
 .DS_Store
 
 # Node.js
-# Already covered by frontend/.gitignore, which scopes the rule to the app that
-# actually has dependencies. Repeated here so this file is self-sufficient for
-# anyone reading the repository root.
+# Also covered by frontend/.gitignore, which scopes the rule to the app that
+# actually has dependencies. Repeated here so this file stands on its own.
 node_modules/
 
 # Husky
-# .husky/_ ignores itself through its own .gitignore; same reasoning as above.
+# Only .husky/_ is ignored: it holds husky's own generated shims and ignores
+# itself. The hooks we write (.husky/pre-commit and friends) must stay tracked,
+# so the whole directory is deliberately not ignored.
 .husky/_
 
 # Local dev server logs (e.g. `npm run start > nextstart.log`)
 *.log
-
-node_modules/
-.husky/
