@@ -29,6 +29,7 @@ class AppointmentBookingService
      *     first_name?: string,
      *     last_name?: string,
      *     email?: string,
+     *     phone?: string,
      *     birth_date?: string,
      *     gender?: UserGender|string
      * }  $attendee
@@ -39,6 +40,7 @@ class AppointmentBookingService
         CarbonInterface $start,
         BookingFor $bookingFor,
         array $attendee = [],
+        ?string $phone = null,
         ?string $notes = null,
     ): Appointment {
         $startAt = CarbonImmutable::instance($start);
@@ -53,6 +55,7 @@ class AppointmentBookingService
             $startAt,
             $bookingFor,
             $attendee,
+            $phone,
             $notes
         ): Appointment {
             [$lockedPatient, $lockedHcp] = $this->lockParticipants($patient, $hcp);
@@ -84,7 +87,7 @@ class AppointmentBookingService
                 throw new AppointmentSlotUnavailableException;
             }
 
-            $attendeeData = $this->attendeeData($lockedPatient, $bookingFor, $attendee);
+            $attendeeData = $this->attendeeData($lockedPatient, $bookingFor, $attendee, $phone);
 
             return Appointment::query()->create([
                 'patient_user_id' => $lockedPatient->id,
@@ -144,6 +147,7 @@ class AppointmentBookingService
      *     first_name?: string,
      *     last_name?: string,
      *     email?: string,
+     *     phone?: string,
      *     birth_date?: string,
      *     gender?: UserGender|string
      * }  $attendee
@@ -151,23 +155,33 @@ class AppointmentBookingService
      *     attendee_first_name: string,
      *     attendee_last_name: string,
      *     attendee_email: string,
+     *     attendee_phone: string,
      *     attendee_birth_date: mixed,
      *     attendee_gender: UserGender
      * }
      */
-    private function attendeeData(User $patient, BookingFor $bookingFor, array $attendee): array
-    {
+    private function attendeeData(
+        User $patient,
+        BookingFor $bookingFor,
+        array $attendee,
+        ?string $phone
+    ): array {
         if ($bookingFor === BookingFor::SELF) {
+            if ($phone === null || trim($phone) === '') {
+                throw new InvalidArgumentException('The attendee phone field is required.');
+            }
+
             return [
                 'attendee_first_name' => $patient->first_name,
                 'attendee_last_name' => $patient->last_name,
                 'attendee_email' => $patient->email,
+                'attendee_phone' => trim($phone),
                 'attendee_birth_date' => $patient->birth_date,
                 'attendee_gender' => $patient->gender,
             ];
         }
 
-        $requiredFields = ['first_name', 'last_name', 'email', 'birth_date', 'gender'];
+        $requiredFields = ['first_name', 'last_name', 'email', 'phone', 'birth_date', 'gender'];
 
         foreach ($requiredFields as $field) {
             if (! array_key_exists($field, $attendee)) {
@@ -183,6 +197,7 @@ class AppointmentBookingService
             'attendee_first_name' => $attendee['first_name'],
             'attendee_last_name' => $attendee['last_name'],
             'attendee_email' => $attendee['email'],
+            'attendee_phone' => trim($attendee['phone']),
             'attendee_birth_date' => $attendee['birth_date'],
             'attendee_gender' => $gender,
         ];

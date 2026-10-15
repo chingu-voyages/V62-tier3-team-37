@@ -33,11 +33,11 @@ class GetHcpAvailabilityTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_a_patient_can_get_availability_for_a_date_range(): void
+    public function test_a_verified_authenticated_user_can_get_availability_for_a_date_range(): void
     {
-        $patient = User::factory()->create();
         $monday = CarbonImmutable::parse('2030-01-07');
         [$hcp, $profile] = $this->createVerifiedHcp();
+        $user = User::factory()->create();
 
         HcpAvailabilitySlot::factory()->for($profile)->create([
             'day_of_week' => DayOfWeek::MONDAY,
@@ -50,8 +50,8 @@ class GetHcpAvailabilityTest extends TestCase
             'status' => AppointmentStatus::BOOKED,
         ]);
 
-        $this->actingAs($patient, 'sanctum')
-            ->getJson("/api/patient/hcps/{$hcp->id}/availability?from=2030-01-07&to=2030-01-08")
+        $this->actingAs($user, 'sanctum')
+            ->getJson("/api/hcps/{$hcp->id}/availability?from=2030-01-07&to=2030-01-08")
             ->assertOk()
             ->assertJsonPath('data.hcp_id', $hcp->id)
             ->assertJsonPath('data.duration_minutes', 30)
@@ -63,26 +63,26 @@ class GetHcpAvailabilityTest extends TestCase
 
     public function test_the_availability_range_may_not_exceed_thirty_one_days(): void
     {
-        $patient = User::factory()->create();
         [$hcp] = $this->createVerifiedHcp();
+        $user = User::factory()->create();
 
-        $this->actingAs($patient, 'sanctum')
-            ->getJson("/api/patient/hcps/{$hcp->id}/availability?from=2030-01-01&to=2030-02-01")
+        $this->actingAs($user, 'sanctum')
+            ->getJson("/api/hcps/{$hcp->id}/availability?from=2030-01-01&to=2030-02-01")
             ->assertUnprocessable()
             ->assertJsonValidationErrors('to');
     }
 
-    public function test_an_unverified_hcp_is_not_exposed_to_patients(): void
+    public function test_an_unverified_hcp_is_not_exposed(): void
     {
-        $patient = User::factory()->create();
         [$hcp] = $this->createVerifiedHcp(VerificationStatus::UNDER_REVIEW);
+        $user = User::factory()->create();
 
-        $this->actingAs($patient, 'sanctum')
-            ->getJson("/api/patient/hcps/{$hcp->id}/availability?from=2030-01-07&to=2030-01-07")
+        $this->actingAs($user, 'sanctum')
+            ->getJson("/api/hcps/{$hcp->id}/availability?from=2030-01-07&to=2030-01-07")
             ->assertNotFound();
     }
 
-    public function test_a_non_patient_cannot_get_patient_facing_availability(): void
+    public function test_an_authenticated_non_patient_can_get_availability(): void
     {
         $hcpUser = User::factory()->create([
             'role' => UserRole::HCP,
@@ -90,14 +90,27 @@ class GetHcpAvailabilityTest extends TestCase
         [$provider] = $this->createVerifiedHcp();
 
         $this->actingAs($hcpUser, 'sanctum')
-            ->getJson("/api/patient/hcps/{$provider->id}/availability?from=2030-01-07&to=2030-01-07")
-            ->assertForbidden();
+            ->getJson("/api/hcps/{$provider->id}/availability?from=2030-01-07&to=2030-01-07")
+            ->assertOk();
     }
 
-    public function test_a_guest_cannot_get_availability(): void
+    public function test_availability_requires_authentication(): void
     {
-        $this->getJson('/api/patient/hcps/1/availability?from=2030-01-07&to=2030-01-07')
+        [$hcp] = $this->createVerifiedHcp();
+
+        $this->getJson("/api/hcps/{$hcp->id}/availability?from=2030-01-07&to=2030-01-07")
             ->assertUnauthorized();
+    }
+
+    public function test_availability_requires_a_verified_email(): void
+    {
+        $user = User::factory()->unverified()->create();
+        [$hcp] = $this->createVerifiedHcp();
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson("/api/hcps/{$hcp->id}/availability?from=2030-01-07&to=2030-01-07")
+            ->assertStatus(409)
+            ->assertJsonPath('message', 'Your email address is not verified.');
     }
 
     /**

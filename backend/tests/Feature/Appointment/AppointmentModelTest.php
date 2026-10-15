@@ -34,6 +34,7 @@ class AppointmentModelTest extends TestCase
             'attendee_first_name' => $patient->first_name,
             'attendee_last_name' => $patient->last_name,
             'attendee_email' => $patient->email,
+            'attendee_phone' => '+96170123456',
             'attendee_birth_date' => $patient->birth_date,
             'attendee_gender' => $patient->gender,
         ])->refresh();

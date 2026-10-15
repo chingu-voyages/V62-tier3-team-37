@@ -4,21 +4,22 @@ namespace App\Http\Controllers\Patient;
 
 use App\Enums\BookingFor;
 use App\Enums\DocumentType;
-use App\Enums\UserRole;
+use App\Enums\ReportStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Patient\StoreAppointmentRequest;
 use App\Http\Resources\Patient\AppointmentResource;
 use App\Models\Appointment;
 use App\Models\Document;
+use App\Models\Report;
 use App\Models\User;
 use App\Services\Appointment\AppointmentBookingService;
 use App\Services\Appointment\AppointmentManagementService;
 use Carbon\CarbonImmutable;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -26,8 +27,6 @@ class PatientAppointmentController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $this->ensurePatient($request);
-
         $appointments = $request->user()
             ->patientAppointments()
             ->with(['hcp.hcpProfile', 'patient', 'results'])
@@ -57,6 +56,7 @@ class PatientAppointmentController extends Controller
             start: CarbonImmutable::parse($validated['scheduled_start_at']),
             bookingFor: BookingFor::from($validated['booking_for']),
             attendee: $validated['attendee'] ?? [],
+            phone: $validated['attendee_phone'] ?? null,
             notes: $validated['notes'] ?? null,
         )->load(['hcp.hcpProfile', 'patient']);
 
@@ -71,8 +71,6 @@ class PatientAppointmentController extends Controller
         int $appointment,
         AppointmentManagementService $managementService
     ): AppointmentResource {
-        $this->ensurePatient($request);
-
         $validated = $request->validate([
             'scheduled_start_at' => [
                 'required',
@@ -98,8 +96,6 @@ class PatientAppointmentController extends Controller
         int $appointment,
         AppointmentManagementService $managementService
     ): AppointmentResource {
-        $this->ensurePatient($request);
-
         $validated = $request->validate([
             'reason' => ['required', 'string', 'max:1000'],
         ]);
@@ -131,21 +127,52 @@ class PatientAppointmentController extends Controller
         return $disk->download($document->storage_path, $document->original_file_name);
     }
 
+    public function report(Request $request, int $appointment): JsonResponse
+    {
+        $appointmentModel = $this->patientAppointment($request, $appointment);
+        $validated = $request->validate([
+            'message' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $report = DB::transaction(function () use ($request, $appointmentModel, $validated): Report {
+            $lockedAppointment = Appointment::query()
+                ->whereKey($appointmentModel->id)
+                ->where('patient_user_id', $request->user()->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $hasOpenReport = Report::query()
+                ->where('appointment_id', $lockedAppointment->id)
+                ->where('status', ReportStatus::OPEN->value)
+                ->exists();
+
+            abort_if(
+                $hasOpenReport,
+                409,
+                'An open report already exists for this appointment.'
+            );
+
+            return Report::query()->create([
+                'reporter_user_id' => $request->user()->id,
+                'reported_hcp_user_id' => $lockedAppointment->hcp_user_id,
+                'appointment_id' => $lockedAppointment->id,
+                'message' => $validated['message'],
+                'status' => ReportStatus::OPEN,
+            ]);
+        });
+
+        return response()->json([
+            'message' => 'Report submitted successfully.',
+            'data' => $report,
+        ], 201);
+    }
+
     private function patientAppointment(Request $request, int $appointment): Appointment
     {
-        $this->ensurePatient($request);
-
         return $request->user()
             ->patientAppointments()
             ->with(['hcp.hcpProfile', 'patient', 'results'])
             ->whereKey($appointment)
             ->firstOrFail();
-    }
-
-    private function ensurePatient(Request $request): void
-    {
-        if ($request->user()?->role !== UserRole::PATIENT) {
-            throw new AuthorizationException('Only patients can access patient appointments.');
-        }
     }
 }

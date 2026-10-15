@@ -70,6 +70,7 @@ class AppointmentBookingServiceTest extends TestCase
                 'birth_date' => '2000-01-01',
                 'gender' => UserGender::FEMALE,
             ],
+            phone: '+96170123456',
             notes: 'First consultation',
         )->refresh();
 
@@ -78,6 +79,7 @@ class AppointmentBookingServiceTest extends TestCase
         $this->assertSame('Ahmad', $appointment->attendee_first_name);
         $this->assertSame('Ameen', $appointment->attendee_last_name);
         $this->assertSame('ahmad@example.com', $appointment->attendee_email);
+        $this->assertSame('+96170123456', $appointment->attendee_phone);
         $this->assertSame(UserGender::MALE, $appointment->attendee_gender);
         $this->assertSame('First consultation', $appointment->notes);
         $this->assertEquals(
@@ -101,6 +103,7 @@ class AppointmentBookingServiceTest extends TestCase
                 'first_name' => 'Mona',
                 'last_name' => 'Ali',
                 'email' => 'mona@example.com',
+                'phone' => '+96170987654',
                 'birth_date' => '2001-02-03',
                 'gender' => UserGender::FEMALE,
             ],
@@ -110,6 +113,7 @@ class AppointmentBookingServiceTest extends TestCase
         $this->assertSame('Mona', $appointment->attendee_first_name);
         $this->assertSame('Ali', $appointment->attendee_last_name);
         $this->assertSame('mona@example.com', $appointment->attendee_email);
+        $this->assertSame('+96170987654', $appointment->attendee_phone);
         $this->assertSame('2001-02-03', $appointment->attendee_birth_date->toDateString());
         $this->assertSame(UserGender::FEMALE, $appointment->attendee_gender);
     }
@@ -143,6 +147,7 @@ class AppointmentBookingServiceTest extends TestCase
             hcp: $hcp,
             start: $availableStart->setTime(15, 0),
             bookingFor: BookingFor::SELF,
+            phone: '+96170123456',
         );
     }
 
@@ -210,6 +215,7 @@ class AppointmentBookingServiceTest extends TestCase
             hcp: $hcp,
             start: $start,
             bookingFor: BookingFor::SELF,
+            phone: '+96170123456',
         );
 
         $this->assertSame(AppointmentStatus::BOOKED, $appointment->status);

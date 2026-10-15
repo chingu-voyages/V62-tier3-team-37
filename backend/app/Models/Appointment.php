@@ -27,6 +27,7 @@ class Appointment extends Model
         'attendee_first_name',
         'attendee_last_name',
         'attendee_email',
+        'attendee_phone',
         'attendee_birth_date',
         'attendee_gender',
         'notes',

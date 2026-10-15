@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Requests\Patient;
+namespace App\Http\Requests\PublicApi;
 
-use App\Enums\UserRole;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
@@ -11,7 +10,7 @@ class GetHcpAvailabilityRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->role === UserRole::PATIENT;
+        return true;
     }
 
     public function rules(): array

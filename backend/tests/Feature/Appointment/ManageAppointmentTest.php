@@ -160,6 +160,47 @@ class ManageAppointmentTest extends TestCase
             ->assertJsonPath('data.medical_summary', 'Patient is improving.');
     }
 
+    public function test_a_verified_hcp_can_undo_any_status_to_booked(): void
+    {
+        [, $hcp, $appointment] = $this->createAppointment();
+
+        foreach ([
+            AppointmentStatus::ARRIVED,
+            AppointmentStatus::RESCHEDULED,
+            AppointmentStatus::NO_SHOW,
+            AppointmentStatus::COMPLETED,
+            AppointmentStatus::CANCELLED,
+        ] as $status) {
+            $appointment->update([
+                'status' => $status,
+                'arrived_at' => now(),
+                'no_show_at' => now(),
+                'completed_at' => now(),
+                'cancelled_at' => now(),
+                'cancelled_by_user_id' => $hcp->id,
+                'cancellation_reason' => 'Status reset test.',
+                'rescheduled_at' => now(),
+                'rescheduled_by_user_id' => $hcp->id,
+            ]);
+
+            $this->actingAs($hcp, 'sanctum')
+                ->deleteJson("/api/hcp/appointments/{$appointment->id}/status")
+                ->assertOk()
+                ->assertJsonPath('data.status', AppointmentStatus::BOOKED->value);
+
+            $appointment->refresh();
+            $this->assertSame(AppointmentStatus::BOOKED, $appointment->status);
+            $this->assertNull($appointment->arrived_at);
+            $this->assertNull($appointment->no_show_at);
+            $this->assertNull($appointment->completed_at);
+            $this->assertNull($appointment->cancelled_at);
+            $this->assertNull($appointment->cancelled_by_user_id);
+            $this->assertNull($appointment->cancellation_reason);
+            $this->assertNull($appointment->rescheduled_at);
+            $this->assertNull($appointment->rescheduled_by_user_id);
+        }
+    }
+
     public function test_a_summary_requires_an_arrived_appointment_and_cancelled_cannot_be_rescheduled(): void
     {
         [$patient, $hcp, $appointment] = $this->createAppointment();

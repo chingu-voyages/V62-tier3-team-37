@@ -100,6 +100,7 @@ class HcpAppointmentWorkflowTest extends TestCase
             ])
             ->assertCreated()
             ->assertJsonPath('data.status', AppointmentStatus::BOOKED->value)
+            ->assertJsonPath('data.attendee.phone', $appointment->attendee_phone)
             ->assertJsonPath('data.parent_appointment_id', $appointment->id);
     }
 

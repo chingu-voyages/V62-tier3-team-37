@@ -115,6 +115,21 @@ class HcpAppointmentController extends Controller
         );
     }
 
+    public function undoStatus(
+        Request $request,
+        int $appointment,
+        AppointmentManagementService $managementService
+    ): AppointmentResource {
+        $managedAppointment = $managementService->undoStatus(
+            $request->user(),
+            $this->hcpAppointment($request, $appointment)
+        );
+
+        return new AppointmentResource(
+            $managedAppointment->load(['hcp.hcpProfile', 'patient', 'results'])
+        );
+    }
+
     public function summary(
         Request $request,
         int $appointment,

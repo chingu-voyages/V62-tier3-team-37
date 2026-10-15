@@ -31,6 +31,7 @@ class AppointmentResource extends JsonResource
                 'first_name' => $this->attendee_first_name,
                 'last_name' => $this->attendee_last_name,
                 'email' => $this->attendee_email,
+                'phone' => $this->attendee_phone,
                 'birth_date' => $this->attendee_birth_date->toDateString(),
                 'gender' => $this->attendee_gender->value,
             ],

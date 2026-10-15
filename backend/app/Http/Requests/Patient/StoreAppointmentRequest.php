@@ -34,6 +34,16 @@ class StoreAppointmentRequest extends FormRequest
             }
         }
 
+        if (is_string($this->input('attendee_phone'))) {
+            $normalized['attendee_phone'] = trim($this->input('attendee_phone'));
+        }
+
+        $attendee = $normalized['attendee'] ?? $this->input('attendee');
+        if (is_array($attendee) && is_string($attendee['phone'] ?? null)) {
+            $attendee['phone'] = trim($attendee['phone']);
+            $normalized['attendee'] = $attendee;
+        }
+
         if ($normalized !== []) {
             $this->merge($normalized);
         }
@@ -57,6 +67,13 @@ class StoreAppointmentRequest extends FormRequest
                 'required',
                 Rule::enum(BookingFor::class),
             ],
+            'attendee_phone' => [
+                'required_if:booking_for,'.BookingFor::SELF->value,
+                'nullable',
+                'string',
+                'max:30',
+                'regex:/^\+?[0-9][0-9\s().-]{6,29}$/',
+            ],
             'attendee' => [
                 'required_if:booking_for,'.BookingFor::OTHER->value,
                 'array',
@@ -75,6 +92,13 @@ class StoreAppointmentRequest extends FormRequest
                 'required_if:booking_for,'.BookingFor::OTHER->value,
                 'email:rfc',
                 'max:255',
+            ],
+            'attendee.phone' => [
+                'required_if:booking_for,'.BookingFor::OTHER->value,
+                'nullable',
+                'string',
+                'max:30',
+                'regex:/^\+?[0-9][0-9\s().-]{6,29}$/',
             ],
             'attendee.birth_date' => [
                 'required_if:booking_for,'.BookingFor::OTHER->value,

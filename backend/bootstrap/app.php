@@ -4,6 +4,8 @@ use App\Console\Commands\ServeCommand;
 use App\Exceptions\AppointmentSlotUnavailableException;
 use App\Exceptions\AppointmentStateException;
 use App\Http\Middleware\EnsureHcpIsVerified;
+use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\EnsureUserIsPatient;
 use App\Http\Middleware\RedirectIfAuthenticatedToJson;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -21,6 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'guest' => RedirectIfAuthenticatedToJson::class,
             'hcp.verified' => EnsureHcpIsVerified::class,
+            'admin' => EnsureUserIsAdmin::class,
+            'patient' => EnsureUserIsPatient::class,
         ]);
     })
     ->withCommands([

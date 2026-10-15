@@ -151,6 +151,32 @@ class AppointmentManagementService
         });
     }
 
+    public function undoStatus(User $hcp, Appointment $appointment): Appointment
+    {
+        return DB::transaction(function () use ($hcp, $appointment): Appointment {
+            $lockedAppointment = Appointment::query()
+                ->whereKey($appointment->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $this->ensureOwningHcp($hcp, $lockedAppointment);
+
+            $lockedAppointment->update([
+                'status' => AppointmentStatus::BOOKED,
+                'arrived_at' => null,
+                'no_show_at' => null,
+                'completed_at' => null,
+                'cancelled_at' => null,
+                'cancelled_by_user_id' => null,
+                'cancellation_reason' => null,
+                'rescheduled_at' => null,
+                'rescheduled_by_user_id' => null,
+            ]);
+
+            return $lockedAppointment->refresh();
+        });
+    }
+
     public function saveSummary(User $hcp, Appointment $appointment, string $summary): Appointment
     {
         return DB::transaction(function () use ($hcp, $appointment, $summary): Appointment {
@@ -192,6 +218,7 @@ class AppointmentManagementService
             'first_name' => $appointment->attendee_first_name,
             'last_name' => $appointment->attendee_last_name,
             'email' => $appointment->attendee_email,
+            'phone' => $appointment->attendee_phone,
             'birth_date' => $appointment->attendee_birth_date->toDateString(),
             'gender' => $appointment->attendee_gender,
         ];
@@ -201,7 +228,8 @@ class AppointmentManagementService
             $hcp,
             $start,
             $appointment->booking_for,
-            $attendee
+            $attendee,
+            $appointment->attendee_phone
         );
 
         $followUp->update(['parent_appointment_id' => $appointment->id]);

@@ -35,6 +35,7 @@ class AppointmentFactory extends Factory
             'attendee_first_name' => fake()->firstName(),
             'attendee_last_name' => fake()->lastName(),
             'attendee_email' => fake()->safeEmail(),
+            'attendee_phone' => fake()->e164PhoneNumber(),
             'attendee_birth_date' => fake()->date(),
             'attendee_gender' => UserGender::MALE,
             'notes' => fake()->optional()->sentence(),

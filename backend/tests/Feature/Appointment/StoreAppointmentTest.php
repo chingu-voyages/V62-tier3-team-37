@@ -49,6 +49,7 @@ class StoreAppointmentTest extends TestCase
                 'hcp_id' => $hcp->id,
                 'scheduled_start_at' => '2030-01-07T10:00:00+00:00',
                 'booking_for' => 'self',
+                'attendee_phone' => '+96170123456',
                 'notes' => 'First consultation',
             ])
             ->assertCreated()
@@ -62,6 +63,7 @@ class StoreAppointmentTest extends TestCase
             ->assertJsonPath('data.attendee.first_name', 'Ahmad')
             ->assertJsonPath('data.attendee.last_name', 'Ameen')
             ->assertJsonPath('data.attendee.email', 'ahmad@example.com')
+            ->assertJsonPath('data.attendee.phone', '+96170123456')
             ->assertJsonPath('data.notes', 'First consultation');
 
         $this->assertDatabaseHas('appointments', [
@@ -71,6 +73,7 @@ class StoreAppointmentTest extends TestCase
             'booking_for' => BookingFor::SELF->value,
             'attendee_first_name' => 'Ahmad',
             'attendee_last_name' => 'Ameen',
+            'attendee_phone' => '+96170123456',
         ]);
     }
 
@@ -89,6 +92,7 @@ class StoreAppointmentTest extends TestCase
                     'first_name' => 'Mona',
                     'last_name' => 'Ali',
                     'email' => 'mona@example.com',
+                    'phone' => '+96170987654',
                     'birth_date' => '2001-02-03',
                     'gender' => 'female',
                 ],
@@ -96,6 +100,7 @@ class StoreAppointmentTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.booking_for', BookingFor::OTHER->value)
             ->assertJsonPath('data.attendee.first_name', 'Mona')
+            ->assertJsonPath('data.attendee.phone', '+96170987654')
             ->assertJsonPath('data.attendee.gender', UserGender::FEMALE->value);
     }
 
@@ -122,7 +127,24 @@ class StoreAppointmentTest extends TestCase
                 'attendee.email',
                 'attendee.birth_date',
                 'attendee.gender',
+                'attendee.phone',
             ]);
+    }
+
+    public function test_a_phone_number_is_required_for_every_booking(): void
+    {
+        $patient = User::factory()->create();
+        $start = CarbonImmutable::parse('2030-01-07 10:00:00');
+        $hcp = $this->createBookableHcp($start);
+
+        $this->actingAs($patient, 'sanctum')
+            ->postJson('/api/patient/appointments', [
+                'hcp_id' => $hcp->id,
+                'scheduled_start_at' => '2030-01-07T10:00:00Z',
+                'booking_for' => 'SELF',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('attendee_phone');
     }
 
     public function test_the_start_time_must_include_a_timezone(): void
@@ -157,6 +179,7 @@ class StoreAppointmentTest extends TestCase
                 'hcp_id' => $hcp->id,
                 'scheduled_start_at' => '2030-01-07T10:00:00Z',
                 'booking_for' => 'SELF',
+                'attendee_phone' => '+96170123456',
             ])
             ->assertConflict()
             ->assertJsonPath(

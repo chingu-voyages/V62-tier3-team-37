@@ -1,19 +1,19 @@
 <?php
 
-namespace App\Http\Controllers\Patient;
+namespace App\Http\Controllers\PublicApi;
 
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Patient\GetHcpAvailabilityRequest;
+use App\Http\Requests\PublicApi\GetHcpAvailabilityRequest;
 use App\Models\Appointment;
 use App\Models\User;
 use App\Services\Appointment\AppointmentAvailabilityService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 
-class PatientHcpAvailabilityController extends Controller
+class HcpAvailabilityController extends Controller
 {
     public function index(
         GetHcpAvailabilityRequest $request,

@@ -72,20 +72,10 @@ return new class extends Migration
             $table->index('status');
         });
 
-        Schema::table('documents', function (Blueprint $table) {
-            $table->foreignId('appointment_id')
-                ->nullable()
-                ->after('user_id')
-                ->constrained('appointments')
-                ->cascadeOnDelete();
-        });
     }
 
     public function down(): void
     {
-        Schema::table('documents', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('appointment_id');
-        });
 
         Schema::dropIfExists('appointments');
     }

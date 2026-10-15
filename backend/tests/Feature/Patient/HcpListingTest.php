@@ -42,6 +42,26 @@ class HcpListingTest extends TestCase
             ->assertUnauthorized();
     }
 
+    public function test_a_non_patient_cannot_access_patient_routes(): void
+    {
+        $hcp = User::factory()->create(['role' => UserRole::HCP]);
+
+        $this->actingAs($hcp, 'sanctum')
+            ->getJson('/api/patient/hcps')
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Only active patients can access this resource.');
+    }
+
+    public function test_a_disabled_patient_cannot_access_patient_routes(): void
+    {
+        $patient = User::factory()->create(['status' => UserStatus::DISABLED]);
+
+        $this->actingAs($patient, 'sanctum')
+            ->getJson('/api/patient/hcps')
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Only active patients can access this resource.');
+    }
+
     public function test_a_patient_can_filter_hcps_by_name_specialty_location_and_insurance(): void
     {
         $patient = User::factory()->create();
