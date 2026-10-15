@@ -15,9 +15,14 @@ return [
     | the connection which will be utilized unless another connection
     | is explicitly specified when you execute a query / statement.
     |
+    | Postgres is the only database this application targets, so an absent
+    | DB_CONNECTION falls back to pgsql rather than sqlite. The sqlite
+    | connection below is kept for the test suite, which pins an in-memory
+    | database in phpunit.xml and never resolves through this default.
+    |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_CONNECTION', 'pgsql'),
 
     /*
     |--------------------------------------------------------------------------
